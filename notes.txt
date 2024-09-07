@@ -1,0 +1,9 @@
+Features
+
+	Load PGN files
+	
+	Parse PGN files into games and board positions
+	
+	Store board positions
+	
+	Analyse players games
