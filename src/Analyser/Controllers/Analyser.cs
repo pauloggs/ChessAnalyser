@@ -11,8 +11,6 @@ namespace Analyser.Controllers
         private readonly IFileHandler fileHandler = fileHandler;
         private readonly IChessRepository chessRepository = chessRepository;
 
-
-
         [HttpGet("LoadGames")]
         public IActionResult LoadGames(string filePath = "C:\\PGN")
         {
