@@ -7,3 +7,8 @@ Features
 	Store board positions
 	
 	Analyse players games
+
+
+Data
+	Example path to PGN files
+		C:\PGN\PGN test files

@@ -15,11 +15,40 @@ namespace Services
     {
         public void LoadPgnFiles(string path)
         {
-            if (Directory.Exists(path))
+            if (File.Exists(path))
+            {
+                // This path is a file
+                ProcessFile(path);
+            }
+            else if (Directory.Exists(path))
             {
                 // This path is a directory
-                Console.WriteLine("Directory exists...");
+                ProcessDirectory(path);
             }
+            else
+            {
+                Console.WriteLine("{0} is not a valid file or directory.", path);
+            }
+        }
+
+        // Process all files in the directory passed in, recurse on any directories
+        // that are found, and process the files they contain.
+        public static void ProcessDirectory(string targetDirectory)
+        {
+            // Process the list of files found in the directory.
+            string[] fileEntries = Directory.GetFiles(targetDirectory);
+            foreach (string fileName in fileEntries)
+                ProcessFile(fileName);
+
+            // Recurse into subdirectories of this directory.
+            string[] subdirectoryEntries = Directory.GetDirectories(targetDirectory);
+            foreach (string subdirectory in subdirectoryEntries)
+                ProcessDirectory(subdirectory);
+        }
+
+        public static void ProcessFile(string path)
+        {
+            Console.WriteLine("Processed file '{0}'.", path);
         }
     }
 }
