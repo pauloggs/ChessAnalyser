@@ -2,7 +2,9 @@ Features
 
 	Load PGN files
 	
-	Parse PGN files into games and board positions
+	Parse PGN files into games 
+	
+	Parse games into board positions
 	
 	Store board positions
 	
@@ -11,4 +13,20 @@ Features
 
 Data
 	Example path to PGN files
-		C:\PGN\PGN test files
+		C:\PGN\
+
+
+Persistence
+	Record of PGN files that have already been processed
+	A method to uniquely identify a PGN file (name?)
+	Store
+		Game
+		Board position
+
+
+Process
+	Analyser
+		LoadGames (endpoint)
+			From a given path, parse all the files into games, then persist to database.
+		AnalyseGames (endpoint)
+			Perform player/move/position analysis on the games stored in the database.

@@ -10,7 +10,7 @@ namespace Analyser.Controllers
         private readonly IFileHandler fileHandler = fileHandler;
 
         [HttpGet]
-        public IActionResult Index(string filePath = "C:\\PGN")
+        public IActionResult LoadGames(string filePath = "C:\\PGN")
         {
             fileHandler.LoadPgnFiles(filePath);
             return Ok();
