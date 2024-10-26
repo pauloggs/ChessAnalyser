@@ -4,16 +4,18 @@ namespace Services
 {
     public interface IFileSplitter
     {
-        List<RawGame> GetRawGamesFromPgnFile(string pgnFile);
+        List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn);
     }
 
     public class FileSplitter : IFileSplitter
     {
-        public List<RawGame> GetRawGamesFromPgnFile(string pgnFile)
+        public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
         {
             var returnValue = new List<RawGame>();
 
-            string[] tokens = pgnFile.Split(new[] { "[Event" }, StringSplitOptions.None);
+            var pgnFileName = rawPgn.Name;
+
+            string[] tokens = rawPgn.Contents.Split(new[] { "[Event" }, StringSplitOptions.None);
             
             foreach (string token in tokens)
             {
@@ -21,6 +23,8 @@ namespace Services
                 {
                     returnValue.Add(new RawGame()
                     {
+                        ParentPgnFileName = pgnFileName,
+                        GameName = "SomeGameName",
                         Contents = token
                     });
                 }

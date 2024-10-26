@@ -27,10 +27,19 @@ Persistence
 Process
 	Analyser
 		LoadGames (endpoint)
-			From a given path, parse all the files into games, then persist them to database.
+			From a given path, parse all the files into games, then persist those games to database.
 			Services
 				GetRawGamesFromPgnFile
 				ParseRawGameIntoGame
 				
 		AnalyseGames (endpoint)
 			Perform player/move/position analysis on the games stored in the database.
+
+
+Unique identifier for games
+	Event
+	Site
+	Date
+	Round
+	White
+	Black
