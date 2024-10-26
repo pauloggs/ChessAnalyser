@@ -1,21 +1,32 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Interfaces.DTO;
 
 namespace Services
 {
     public interface IFileSplitter
     {
-        void GetRawGamesFromPgnFile(string pgnFile);
+        List<RawGame> GetRawGamesFromPgnFile(string pgnFile);
     }
 
     public class FileSplitter : IFileSplitter
     {
-        public void GetRawGamesFromPgnFile(string pgnFile)
+        public List<RawGame> GetRawGamesFromPgnFile(string pgnFile)
         {
-            throw new NotImplementedException();
+            var returnValue = new List<RawGame>();
+
+            string[] tokens = pgnFile.Split(new[] { "[Event" }, StringSplitOptions.None);
+            
+            foreach (string token in tokens)
+            {
+                if (token.Length > 0)
+                {
+                    returnValue.Add(new RawGame()
+                    {
+                        Contents = token
+                    });
+                }
+            }
+            
+            return returnValue;
         }
     }
 }
