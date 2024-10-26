@@ -1,4 +1,4 @@
-namespace ServicesTests
+namespace test.ServicesTests
 {
     public class FileHandlerTests
     {

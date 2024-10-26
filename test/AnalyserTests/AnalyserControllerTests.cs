@@ -1,4 +1,4 @@
-namespace ControllerTests
+namespace test.ControllerTests
 {
     public class AnalyserControllerTests
     {
