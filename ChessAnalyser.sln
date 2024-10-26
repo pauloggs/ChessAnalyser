@@ -9,9 +9,9 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "src", "src", "{E0FAB2AE-10E
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "test", "test", "{19B6E03D-F3F4-4CB8-899A-6A628628F000}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControllerTests", "AnalyserTests\ControllerTests.csproj", "{FC09E8DE-9FAD-47CB-A6D3-65C76A6AB3BE}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ControllerTests", "test\AnalyserTests\ControllerTests.csproj", "{FC09E8DE-9FAD-47CB-A6D3-65C76A6AB3BE}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServicesTests", "ServicesTests\ServicesTests.csproj", "{B5CD115A-3744-4212-8205-A25A641D459A}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServicesTests", "test\ServicesTests\ServicesTests.csproj", "{B5CD115A-3744-4212-8205-A25A641D459A}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
