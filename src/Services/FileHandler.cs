@@ -1,4 +1,6 @@
-﻿namespace Services
+﻿using System.IO;
+
+namespace Services
 {
     public interface IFileHandler
     {
@@ -6,14 +8,18 @@
         /// Given the provided path, load all PGN files from that location and return a 
         /// List of RawPgn files.
         /// </summary>
-        void LoadPgnFiles();
+        void LoadPgnFiles(string path);
     }
 
     public class FileHandler : IFileHandler
     {
-        public void LoadPgnFiles()
+        public void LoadPgnFiles(string path)
         {
-            throw new NotImplementedException("LoadPgnFiles not implemented.");
+            if (Directory.Exists(path))
+            {
+                // This path is a directory
+                Console.WriteLine("Directory exists...");
+            }
         }
     }
 }
