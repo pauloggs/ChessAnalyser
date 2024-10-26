@@ -1,5 +1,4 @@
 ﻿using Interfaces.DTO;
-using System.IO;
 
 namespace Services
 {
