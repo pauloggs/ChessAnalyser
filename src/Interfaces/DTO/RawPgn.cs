@@ -1,8 +1,11 @@
-﻿namespace Interfaces.DTO
+﻿using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Interfaces.DTO
 {
+    [Table("RawPgn")]
     public class RawPgn
     {
-        public string FileName { get; set; }
-        public string FileContents { get; set; }
+        public required string Name { get; set; }
+        public required string Contents { get; set; }
     }
 }

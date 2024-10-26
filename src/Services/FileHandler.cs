@@ -56,8 +56,8 @@ namespace Services
 
             var rawPgn = new RawPgn()
             {
-                FileName = fileName,
-                FileContents = fileContents
+                Name = fileName,
+                Contents = fileContents
             };
 
             rawPgnFiles.Add(rawPgn);
