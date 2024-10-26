@@ -1,4 +1,4 @@
-﻿namespace Analyser.Services
+﻿namespace Services
 {
     public interface IFileHandler
     {
