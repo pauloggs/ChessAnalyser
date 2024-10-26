@@ -11,6 +11,5 @@ namespace Analyser.Controllers
         {
             return Ok();
         }
-
     }
 }
