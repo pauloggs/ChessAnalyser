@@ -6,15 +6,15 @@ namespace Analyser.Controllers
 {
     [ApiController]
     [Route("[controller]")]
-    public class Analyser(IFileHandler fileHandler, IChessRepository chessRepository) : ControllerBase
+    public class Analyser(IChessRepository chessRepository, IEtlService etlService) : ControllerBase
     {
-        private readonly IFileHandler fileHandler = fileHandler;
         private readonly IChessRepository chessRepository = chessRepository;
+        private readonly IEtlService etlService = etlService;
 
         [HttpGet("LoadGames")]
         public IActionResult LoadGames(string filePath = "C:\\PGN")
         {
-            fileHandler.LoadPgnFiles(filePath);
+            etlService.LoadGamesToDatabase(filePath);
             return Ok();
         }
 

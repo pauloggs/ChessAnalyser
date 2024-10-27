@@ -8,12 +8,12 @@ namespace Services
         /// Given the provided path, load all PGN files from that location and return a 
         /// List of RawPgn files.
         /// </summary>
-        void LoadPgnFiles(string path);
+        List<RawPgn> LoadPgnFiles(string path);
     }
 
     public class FileHandler : IFileHandler
     {
-        public void LoadPgnFiles(string path)
+        public List<RawPgn> LoadPgnFiles(string path)
         {
             var rawPgnFiles = new List<RawPgn>();
 
@@ -31,6 +31,8 @@ namespace Services
             {
                 Console.WriteLine("{0} is not a valid file or directory.", path);
             }
+
+            return rawPgnFiles;
         }
 
         // Process all files in the directory passed in, recurse on any directories

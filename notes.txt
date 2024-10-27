@@ -27,10 +27,25 @@ Persistence
 Process
 	Analyser
 		LoadGames (endpoint)
-			From a given path, parse all the files into games, then persist them to database.
-			Services
-				GetRawGamesFromPgnFile
-				ParseRawGameIntoGame
+			EtlService.LoadGamesToDatabase (this is the orchestrator that does everything)
+				from file path
+				get raw PGN files
+					for each PGN file
+						split into raw game files
+						for each raw game file
+							parse to get tags (Event, Location etc.)
+							parse to get moves
 				
+			
+			
 		AnalyseGames (endpoint)
 			Perform player/move/position analysis on the games stored in the database.
+
+
+Unique identifier for games
+	Event
+	Site
+	Date
+	Round
+	White
+	Black

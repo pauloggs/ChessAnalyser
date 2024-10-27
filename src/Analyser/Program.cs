@@ -10,6 +10,9 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
+builder.Services.AddScoped<IFileSplitter, FileSplitter>();
+builder.Services.AddScoped<IEtlService, EtlService>();
+
 builder.Services.AddScoped<IChessRepository, ChessRepository>();
 var app = builder.Build();
 
