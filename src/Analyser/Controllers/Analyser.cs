@@ -14,7 +14,7 @@ namespace Analyser.Controllers
         [HttpGet("LoadGames")]
         public IActionResult LoadGames(string filePath = "C:\\PGN")
         {
-            etlService.LoadFilesToDatabase(filePath);
+            etlService.LoadGamesToDatabase(filePath);
             return Ok();
         }
 

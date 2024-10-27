@@ -4,7 +4,7 @@ namespace Services
 {
     public interface IEtlService
     {
-        void LoadFilesToDatabase(string filePath);
+        void LoadGamesToDatabase(string filePath);
     }
 
     public class EtlService(IFileHandler fileHandler, IFileSplitter fileSplitter) : IEtlService
@@ -12,7 +12,7 @@ namespace Services
         private readonly IFileHandler fileHandler = fileHandler;
         private readonly IFileSplitter fileSplitter = fileSplitter;
 
-        public void LoadFilesToDatabase(string filePath)
+        public void LoadGamesToDatabase(string filePath)
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
