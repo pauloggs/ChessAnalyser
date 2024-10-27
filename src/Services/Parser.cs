@@ -2,12 +2,12 @@
 
 namespace Services
 {
-    public interface IFileSplitter
+    public interface IParser
     {
         List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn);
     }
 
-    public class FileSplitter : IFileSplitter
+    public class Parser : IParser
     {
         public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
         {

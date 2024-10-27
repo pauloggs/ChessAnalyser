@@ -6,11 +6,11 @@ namespace ServicesTests
 {
     public class FileSplitterTests
     {
-        private readonly IFileSplitter _sut;
+        private readonly IParser _sut;
 
         public FileSplitterTests()
         {
-            _sut = new FileSplitter();
+            _sut = new Parser();
         }
 
         [Fact]
