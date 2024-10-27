@@ -11,9 +11,11 @@ namespace Services
     {
         public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
         {
-            var gameStartMarker = "[Event";
-
             var returnValue = new List<RawGame>();
+
+            var gameStartMarker = "[Event";            
+
+            if (!rawPgn.Contents.Contains(gameStartMarker)) { return returnValue; }
 
             var pgnFileName = rawPgn.Name;
 

@@ -45,5 +45,23 @@ namespace ServicesTests
             result[0].Contents.Should().Be(expectedRawGameContents1);
             result[1].Contents.Should().Be(expectedRawGameContents2);
         }
+
+        [Fact]
+        public void GetRawGamesFromPgnFile_ShouldReturnEmptyListIfNoEventFound()
+        {
+            // Arrange
+            var testRawPgnWithNoEventInContents = new RawPgn()
+            {
+                Name = "SomeName.pgn",
+                Contents = "SomeContents"
+            };
+
+            // Act
+            var result = _sut.GetRawGamesFromPgnFile(testRawPgnWithNoEventInContents);
+
+            // Assert
+            result.Should().NotBeNull();
+            result.Should().HaveCount(0);
+        }
     }
 }
