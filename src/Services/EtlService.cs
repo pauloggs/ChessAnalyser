@@ -16,19 +16,35 @@ namespace Services
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
+            var rawGames = ProcessPgnFiles(rawPgns);
+        }
+
+        private List<RawGame> ProcessPgnFiles(List<RawPgn> rawPgns)
+        {
             var rawGames = new List<RawGame>();
 
             foreach (var rawPgn in rawPgns)
             {
-                var rawPgnFileName = rawPgn.Name;
+                var rawGamesForPgnFile = RetrieveGamesFromPgnFile(rawPgn);
 
-                var rawPgnRawGames = fileSplitter.GetRawGamesFromPgnFile(rawPgn);
-
-                foreach (var rawGame in rawPgnRawGames)
-                {
-                    rawGames.Add(rawGame);
-                }
+                rawGames.AddRange(rawGamesForPgnFile);
             }
+
+            return rawGames;
+        }
+
+        private List<RawGame> RetrieveGamesFromPgnFile(RawPgn rawPgn)
+        {
+            var rawGamesForPgnFile = new List<RawGame>();
+
+            var rawPgnRawGames = fileSplitter.GetRawGamesFromPgnFile(rawPgn);
+
+            foreach (var rawGame in rawPgnRawGames)
+            {
+                rawGamesForPgnFile.Add(rawGame);
+            }
+
+            return rawGamesForPgnFile;
         }
     }
 }
