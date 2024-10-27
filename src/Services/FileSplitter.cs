@@ -11,11 +11,13 @@ namespace Services
     {
         public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
         {
+            var gameStartMarker = "[Event";
+
             var returnValue = new List<RawGame>();
 
             var pgnFileName = rawPgn.Name;
 
-            string[] tokens = rawPgn.Contents.Split(new[] { "[Event" }, StringSplitOptions.None);
+            string[] tokens = rawPgn.Contents.Split(new[] { gameStartMarker }, StringSplitOptions.None);
             
             foreach (string token in tokens)
             {
@@ -25,7 +27,7 @@ namespace Services
                     {
                         ParentPgnFileName = pgnFileName,
                         GameName = "SomeGameName",
-                        Contents = token
+                        Contents = (gameStartMarker + token).Trim()
                     });
                 }
             }
