@@ -49,3 +49,7 @@ Unique identifier for games
 	Round
 	White
 	Black
+
+Game name?
+
+	<White>_<Black>_<Date>_<Event>_<Location>_<Round>
