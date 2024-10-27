@@ -4,47 +4,25 @@ namespace Services
 {
     public interface IEtlService
     {
+        /// <summary>
+        /// This orchestration method takes a path to a set of PGN files, splits these
+        /// into separate games, and loads thes games into the database.
+        /// </summary>
+        /// <param name="filePath"></param>
         void LoadGamesToDatabase(string filePath);
     }
 
-    public class EtlService(IFileHandler fileHandler, IFileSplitter fileSplitter) : IEtlService
+    public class EtlService(IFileHandler fileHandler, IPgnProcessor pgnProcessor) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
-        private readonly IFileSplitter fileSplitter = fileSplitter;
+        
+        private readonly IPgnProcessor pgnProcessor = pgnProcessor;
 
         public void LoadGamesToDatabase(string filePath)
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
-            var rawGames = ProcessPgnFiles(rawPgns);
-        }
-
-        private List<RawGame> ProcessPgnFiles(List<RawPgn> rawPgns)
-        {
-            var rawGames = new List<RawGame>();
-
-            foreach (var rawPgn in rawPgns)
-            {
-                var rawGamesForPgnFile = RetrieveGamesFromPgnFile(rawPgn);
-
-                rawGames.AddRange(rawGamesForPgnFile);
-            }
-
-            return rawGames;
-        }
-
-        private List<RawGame> RetrieveGamesFromPgnFile(RawPgn rawPgn)
-        {
-            var rawGamesForPgnFile = new List<RawGame>();
-
-            var rawPgnRawGames = fileSplitter.GetRawGamesFromPgnFile(rawPgn);
-
-            foreach (var rawGame in rawPgnRawGames)
-            {
-                rawGamesForPgnFile.Add(rawGame);
-            }
-
-            return rawGamesForPgnFile;
+            var rawGames = pgnProcessor.ProcessFiles(rawPgns);
         }
     }
 }
