@@ -22,7 +22,7 @@ namespace Services
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
-            var rawGames = pgnProcessor.ProcessFiles(rawPgns);
+            var rawGames = pgnProcessor.GetRawGamesFromPgnFiles(rawPgns);
         }
     }
 }
