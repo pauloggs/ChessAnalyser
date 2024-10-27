@@ -27,8 +27,24 @@ namespace Services
         Dictionary<string, string> GetGameTags(string rawGameContent);
     }
 
-    public class Parser : IParser
+    public class Parser(INaming naming) : IParser
     {
+        private readonly INaming naming = naming;
+
+        private readonly List<string> GameTagIdentifiers = new List<string>()
+        {
+            "Event",
+            "Site",
+            "Date",
+            "Round",
+            "White",
+            "Black",
+            "Result",
+            "WhiteElo",
+            "BlackElo",
+            "ECO"
+        };
+
         public List<Game> GeGamesFromRawGames(List<RawGame> rawGames)
         {
             throw new NotImplementedException();
@@ -36,16 +52,23 @@ namespace Services
 
         public Dictionary<string, string> GetGameTags(string rawGameContent)
         {
-            throw new NotImplementedException();
+            var gameTags = new Dictionary<string, string>();
+
+            foreach (var tag in GameTagIdentifiers)
+            {
+                gameTags[tag] = GetTag(tag, rawGameContent);
+            }
+
+            return gameTags;
         }
 
         public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
         {
-            var returnValue = new List<RawGame>();
+            var rawGames = new List<RawGame>();
 
             var gameStartMarker = "[Event";            
 
-            if (!rawPgn.Contents.Contains(gameStartMarker)) { return returnValue; }
+            if (!rawPgn.Contents.Contains(gameStartMarker)) { return rawGames; }
 
             var pgnFileName = rawPgn.Name;
 
@@ -54,19 +77,37 @@ namespace Services
             foreach (string token in tokens)
             {
                 if (token.Length > 0)
-                {
-                    returnValue.Add(new RawGame()
+                {                  
+                    var gameContents = (gameStartMarker + token).Trim();
+
+                    var gameTags = GetGameTags(gameContents);
+
+                    var gameName = naming.GetGameName(gameTags);
+
+                    rawGames.Add(new RawGame()
                     {
                         ParentPgnFileName = pgnFileName,
-                        GameName = "SomeGameName",
-                        Contents = (gameStartMarker + token).Trim()
+                        GameName = gameName,
+                        Contents = gameContents
                     });
                 }
             }
             
-            return returnValue;
+            return rawGames;
+        }
+
+        private static string GetTag(string tag, string gameContents)
+        {
+            var startLocationOfTag = gameContents.IndexOf(tag);
+            if (startLocationOfTag == -1) { return tag; }
+
+            var contentsStartingWithTag = gameContents.Substring(startLocationOfTag + tag.Length);
+
+            var endOfTagLocation = contentsStartingWithTag.IndexOf("]");
+
+            var tagValue = contentsStartingWithTag.Substring(0, endOfTagLocation).Replace("\"", "").Trim();
+
+            return tagValue;
         }
     }
-
-
 }

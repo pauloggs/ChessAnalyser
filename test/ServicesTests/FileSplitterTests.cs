@@ -1,5 +1,6 @@
 ﻿using FluentAssertions;
 using Interfaces.DTO;
+using Moq;
 using Services;
 
 namespace ServicesTests
@@ -7,10 +8,12 @@ namespace ServicesTests
     public class FileSplitterTests
     {
         private readonly IParser _sut;
+        private Mock<INaming> mockNaming;
 
         public FileSplitterTests()
         {
-            _sut = new Parser();
+            mockNaming = new Mock<INaming>();
+            _sut = new Parser(mockNaming.Object);
         }
 
         [Fact]
