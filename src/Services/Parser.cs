@@ -1,4 +1,5 @@
-﻿using Interfaces.DTO;
+﻿using Interfaces;
+using Interfaces.DTO;
 
 namespace Services
 {
@@ -31,20 +32,6 @@ namespace Services
     {
         private readonly INaming naming = naming;
 
-        private readonly List<string> GameTagIdentifiers = new List<string>()
-        {
-            "Event",
-            "Site",
-            "Date",
-            "Round",
-            "White",
-            "Black",
-            "Result",
-            "WhiteElo",
-            "BlackElo",
-            "ECO"
-        };
-
         public List<Game> GeGamesFromRawGames(List<RawGame> rawGames)
         {
             throw new NotImplementedException();
@@ -54,7 +41,7 @@ namespace Services
         {
             var gameTags = new Dictionary<string, string>();
 
-            foreach (var tag in GameTagIdentifiers)
+            foreach (var tag in Constants.GameTagIdentifiers)
             {
                 gameTags[tag] = GetTag(tag, rawGameContent);
             }
@@ -80,14 +67,9 @@ namespace Services
                 {                  
                     var gameContents = (gameStartMarker + token).Trim();
 
-                    var gameTags = GetGameTags(gameContents);
-
-                    var gameName = naming.GetGameName(gameTags);
-
                     rawGames.Add(new RawGame()
                     {
                         ParentPgnFileName = pgnFileName,
-                        GameName = gameName,
                         Contents = gameContents
                     });
                 }
@@ -107,6 +89,8 @@ namespace Services
 
             var tagValue = contentsStartingWithTag.Substring(0, endOfTagLocation).Replace("\"", "").Trim();
 
+            if (string.IsNullOrWhiteSpace(tagValue)) tagValue = Constants.DefaultEmptyTagValue;
+            
             return tagValue;
         }
     }

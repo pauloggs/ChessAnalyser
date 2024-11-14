@@ -2,9 +2,14 @@ Features
 
 	Load PGN files
 	
-	Parse PGN files into games 
+	Parse PGN files into raw games 
 	
 	Parse games into board positions
+		parse the pgn file into RawGame objects - GameName + Contents
+		parse each RawGame into a Game
+			Tags - default 'None'
+			Moves
+		process the Move objects into BoardPosition objects
 	
 	Store board positions
 	
