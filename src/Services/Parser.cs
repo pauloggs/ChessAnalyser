@@ -42,6 +42,7 @@ namespace Services
             var gameTags = new Dictionary<string, string>();
 
             foreach (var tag in Constants.GameTagIdentifiers)
+
             {
                 gameTags[tag] = GetTag(tag, rawGameContent);
             }
@@ -90,7 +91,7 @@ namespace Services
             var tagValue = contentsStartingWithTag.Substring(0, endOfTagLocation).Replace("\"", "").Trim();
 
             if (string.IsNullOrWhiteSpace(tagValue)) tagValue = Constants.DefaultEmptyTagValue;
-            
+
             return tagValue;
         }
     }
