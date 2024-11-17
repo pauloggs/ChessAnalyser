@@ -4,18 +4,20 @@
     {
         static public List<string> GameTagIdentifiers { get; } =
         [
-            "Event",
-            "Site",
-            "Date",
-            "Round",
-            "White",
-            "Black",
-            "Result",
-            "WhiteElo",
-            "BlackElo",
-            "ECO"
+            "event",
+            "site",
+            "date",
+            "round",
+            "white",
+            "black",
+            "result",
+            "whiteelo",
+            "blackelo",
+            "eco"
         ];
 
         static public string DefaultEmptyTagValue { get; } = "None";
+
+        public static string GameStartMarker { get; } = "[Event";
     }
 }

@@ -1,6 +1,4 @@
-﻿using Interfaces.DTO;
-
-namespace Services
+﻿namespace Services
 {
     public interface IEtlService
     {
@@ -12,19 +10,19 @@ namespace Services
         void LoadGamesToDatabase(string filePath);
     }
 
-    public class EtlService(IFileHandler fileHandler, IPgnProcessor pgnProcessor) : IEtlService
+    public class EtlService(IFileHandler fileHandler, IParser parser) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
-        
-        private readonly IPgnProcessor pgnProcessor = pgnProcessor;
+
+        private readonly IParser parser = parser;
 
         public void LoadGamesToDatabase(string filePath)
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
-            var rawGames = pgnProcessor.GetRawGamesFromPgnFiles(rawPgns);
+            var games = parser.GetGamesFromRawPgns(rawPgns);
 
-            var games = pgnProcessor.GetGamesFromRawGames(rawGames);
+            
         }
     }
 }
