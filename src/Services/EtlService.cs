@@ -21,8 +21,6 @@
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
             var games = parser.GetGamesFromRawPgns(rawPgns);
-
-            
         }
     }
 }
