@@ -8,14 +8,29 @@
     {
         public required string Name { get; set; }
 
+        /// <summary>
+        /// Represents a dictionary of all the retrieved tags from the
+        /// PGN file, such as Event, Round etc.
+        /// </summary>
         public Dictionary<string, string> Tags { get; set; }
 
+        /// <summary>
+        /// Represents a dictionary of each Ply at each
+        /// Ply number of the game.
+        /// </summary>
         public Dictionary<int, Ply> Plies { get; set; }
+
+        /// <summary>
+        /// Represents a dictionary of BoardPosition objects at
+        /// each Ply number of the game.
+        /// </summary>
+        public Dictionary<int, BoardPosition> BoardPositions { get; set; }
 
         public Game()
         {
-            Tags = [];
-            Plies = [];
+            Tags = new Dictionary<string, string>();
+            Plies = new Dictionary<int, Ply>();
+            BoardPositions = new Dictionary<int, BoardPosition>();
         }
     }
 }

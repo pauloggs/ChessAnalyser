@@ -31,11 +31,11 @@ namespace Repositories
 
             using(connection)
             {
-                var queryResult = connection.Query<Game>("SELECT * FROM dbo.[Game]");
+                var queryResult = await connection.QueryAsync<Game>("SELECT * FROM dbo.[Game]");
 
                 returnValue = queryResult.ToList();
             }
-
+            
             return returnValue;
         }
 

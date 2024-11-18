@@ -21,6 +21,8 @@
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
             var games = parser.GetGamesFromRawPgns(rawPgns);
+
+            // foreach Game, parse all the moves into board representations
         }
     }
 }
