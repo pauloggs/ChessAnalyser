@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using System.Text.RegularExpressions;
 
 namespace Services
 {
@@ -12,30 +13,12 @@ namespace Services
         /// <returns></returns>
         List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn);
 
-        /// <summary>
-        /// Converts a raw game into an actual game, complete with
-        /// tags and moves.
-        /// </summary>
-        /// <param name="rawGames"></param>
-        /// <returns></returns>
-        List<Game> GeGamesFromRawGames(List<RawGame> rawGames);
-
-        /// <summary>
-        /// Gets the game tags (Event, Location etc.) from the raw game contents.
-        /// </summary>
-        /// <param name="rawGameContent"></param>
-        /// <returns></returns>
-        Dictionary<string, string> GetGameTags(string rawGameContent);
+        List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns);
     }
 
     public class Parser(INaming naming) : IParser
     {
         private readonly INaming naming = naming;
-
-        public List<Game> GeGamesFromRawGames(List<RawGame> rawGames)
-        {
-            throw new NotImplementedException();
-        }
 
         public Dictionary<string, string> GetGameTags(string rawGameContent)
         {
@@ -54,19 +37,17 @@ namespace Services
         {
             var rawGames = new List<RawGame>();
 
-            var gameStartMarker = "[Event";            
-
-            if (!rawPgn.Contents.Contains(gameStartMarker)) { return rawGames; }
+            if (!rawPgn.Contents.Contains(Constants.GameStartMarker)) { return rawGames; }
 
             var pgnFileName = rawPgn.Name;
 
-            string[] tokens = rawPgn.Contents.Split(new[] { gameStartMarker }, StringSplitOptions.None);
+            string[] tokens = rawPgn.Contents.Split(new[] { Constants.GameStartMarker }, StringSplitOptions.None);
             
             foreach (string token in tokens)
             {
                 if (token.Length > 0)
                 {                  
-                    var gameContents = (gameStartMarker + token).Trim();
+                    var gameContents = (Constants.GameStartMarker + token).Trim();
 
                     rawGames.Add(new RawGame()
                     {
@@ -93,6 +74,110 @@ namespace Services
             if (string.IsNullOrWhiteSpace(tagValue)) tagValue = Constants.DefaultEmptyTagValue;
 
             return tagValue;
+        }     
+
+        public List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns)
+        {
+            var games = new List<Game>();
+
+            foreach (var rawPgn in rawPgns)
+            {
+                var rawGames = GetRawGamesFromPgnFile(rawPgn);
+
+                foreach (var rawGame in rawGames)
+                {
+                    var rawPgnContent = rawGame.Contents;
+
+                    var rawGameLines = Regex.Split(rawPgnContent, "\r\n|\r|\n");
+
+                    var plyNumber = 1;
+
+                    var tagDictionary = new Dictionary<string, string>();
+
+                    var plyDictionary = new Dictionary<int, Ply>();
+
+                    foreach (var rawline in rawGameLines)
+                    {
+                        string line = rawline.Trim();
+
+                        if (string.IsNullOrWhiteSpace(line)) continue;
+
+                        if (line.StartsWith("["))
+                        {
+                            AddGameTage(tagDictionary, line);
+                        }
+                        else
+                        {
+                            AddPlies(plyDictionary, line, ref plyNumber);
+                        }
+                    }
+
+                    var gameName = GetGameName(tagDictionary);
+
+                    var game = new Game() 
+                    {
+                        Name = gameName,
+                        Tags = tagDictionary,
+                        Plies = plyDictionary
+                    };
+
+                    games.Add(game);
+                }
+            }                
+            
+            return games;
+        }
+
+        private void AddGameTage(Dictionary<string, string> tagDictionary, string line)
+        {
+            var tagSections = line.Split(" ", 2);
+
+            string tagKey = tagSections[0].Trim('[').ToLower();
+
+            string tagValue = tagSections[1].Trim(']').Replace("\"","");
+
+            tagDictionary[tagKey] = tagValue;
+        }
+
+        private static void AddPlies(Dictionary<int,Ply> plyDictionary, string line, ref int plyNumber)
+        {
+            Regex moveNumbersRegex = new Regex(@"\d+\.");
+
+            line = moveNumbersRegex.Replace(line, "");
+
+            var plies = line.Split(" ");
+
+            foreach (string plyString in plies)
+            {
+                var ply = new Ply()
+                {
+                    MoveNumber = (plyNumber - 1) / 2 + 1,
+                    Move = plyString
+                };
+
+                plyDictionary[plyNumber] = ply;
+
+                plyNumber++;
+            }
+        }
+
+        private static string GetGameName(Dictionary<string, string> tagDicionary)
+        {
+            var tagList = new List<string>();
+
+            foreach (var tag in Constants.GameTagIdentifiers)
+            {
+                if (tagDicionary.ContainsKey(tag))
+                {
+                    tagList.Add(tagDicionary[tag]);
+                }
+                else
+                {
+                    tagList.Add(Constants.DefaultEmptyTagValue);
+                }
+            }
+
+            return string.Join("|", [.. tagList]);
         }
     }
 }

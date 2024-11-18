@@ -2,7 +2,9 @@ Features
 
 	Load PGN files
 	
-	Parse PGN files into raw games 
+	Parse PGN files into raw games
+		mac location
+		/Users/paulhodgkinson/Documents/PGN
 	
 	Parse games into board positions
 		parse the pgn file into RawGame objects - GameName + Contents

@@ -32,7 +32,7 @@ namespace Services
                 Console.WriteLine("{0} is not a valid file or directory.", path);
             }
 
-            return rawPgnFiles;
+            return rawPgnFiles ?? [];
         }
 
         // Process all files in the directory passed in, recurse on any directories
