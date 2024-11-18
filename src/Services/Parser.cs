@@ -14,9 +14,11 @@ namespace Services
         List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn);
 
         List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns);
+
+        void SetBoardPositions(List<Game> games);
     }
 
-    public class Parser(INaming naming) : IParser
+    public class Parser(INaming naming, IBoardPositionGenerator boardPositionGenerator) : IParser
     {
         private readonly INaming naming = naming;
 
@@ -177,7 +179,25 @@ namespace Services
                 }
             }
 
-            return string.Join("|", [.. tagList]);
+            return string.Join("|", tagList);
+        }
+
+        public void SetBoardPositions(List<Game> games)
+        {
+            foreach (var game in games)
+            {
+                game.BoardPositions[0] = boardPositionGenerator.GetStartingBoardPosition();
+
+                foreach (var ply in game.Plies)
+                {
+                    var previousBoardPosition = game.BoardPositions[ply.Key-1];
+
+                    var boardPosition
+                        = boardPositionGenerator.GetBoardPositionFromMove(previousBoardPosition, ply.Value.Move);
+
+                    game.BoardPositions[ply.Key] = boardPosition;
+                }
+            }
         }
     }
 }

@@ -2,7 +2,7 @@
 namespace Interfaces.DTO
 {
     /// <summary>
-    /// Comprises a 64bit Word (ulong) sfor each piece type and colour.
+    /// Comprises a 64bit Word (ulong) for each piece type and colour.
     /// </summary>
     public class BoardPosition
 	{
@@ -15,7 +15,7 @@ namespace Interfaces.DTO
 
 		public BoardPosition()
 		{
-			Pawns = new ulong[2]; // 0 = white, 1 = blacks
+			Pawns = new ulong[2]; // 0 = white, 1 = black
 			Knights = new ulong[2];
 			Bishops = new ulong[2];
 			Rooks = new ulong[2];
