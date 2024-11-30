@@ -126,7 +126,7 @@ namespace Services
                         Name = gameName,
                         Tags = tagDictionary,
                         Plies = plyDictionary,
-                        Id = gameId
+                        GameId = gameId
                     };
 
                     games.Add(game);

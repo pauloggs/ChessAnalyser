@@ -27,9 +27,9 @@
         public Dictionary<int, BoardPosition> BoardPositions { get; set; }
 
         /// <summary>
-        /// Id is generated from a concatenation of all the moves in the game.
+        /// GameMoves is generated from a concatenation of all the moves in the game.
         /// </summary>
-        public string? Id { get; set; }
+        public string? GameId { get; set; }
 
         public Game()
         {
