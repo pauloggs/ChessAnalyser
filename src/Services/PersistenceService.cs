@@ -1,8 +1,9 @@
 ﻿using Interfaces.DTO;
+using Repositories;
 
 namespace Services
 {
-	public interface IGameValidator
+	public interface IPersistenceService
     {
         /// <summary>
         /// For each provided <see cref="Game"/> check if it has already been written
@@ -11,18 +12,27 @@ namespace Services
         /// <param name="games"></param>
         /// <returns></returns>
 		List<Game> GetUnprocessedGames(List<Game> games);
+
+        Task InsertGames(List<Game> games);
 	}
 
-	public class GameValidator : IGameValidator
+	public class PersistenceService(IChessRepository chessRepository) : IPersistenceService
     {
-		public GameValidator()
-		{
-		}
+        private readonly IChessRepository chessRepository = chessRepository;
+
 
         public List<Game> GetUnprocessedGames(List<Game> games)
         {
             // TODO. Implement a call to the ChessRepository to see if the game has already been processed.
             return games;
+        }
+
+        public async Task InsertGames(List<Game> games)
+        {
+            foreach (var game in games)
+            {
+                await chessRepository.InsertGame(game);
+            }
         }
     }
 }

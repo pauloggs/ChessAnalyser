@@ -16,10 +16,18 @@ namespace Analyser.Controllers
         /// Load PGN files and persist to database. For Windows, try C:\PGN\ path.
         /// </summary>
         [HttpGet("LoadGames")]
-        public IActionResult LoadGames(string filePath = "/Library/PGN")
+        public async Task<IActionResult> LoadGames(string filePath = "/Library/PGN")
         {
-            etlService.LoadGamesToDatabase(filePath);
-            return Ok();
+            try
+            {
+
+                await etlService.LoadGamesToDatabase(filePath);
+                return Ok();
+            }
+            catch (Exception ex)
+            {
+                return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
+            }
         }
 
         /// <summary>

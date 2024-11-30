@@ -1,4 +1,6 @@
-﻿using Dapper;
+﻿using System;
+using System.Data;
+using Dapper;
 using Interfaces.DTO;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -10,6 +12,8 @@ namespace Repositories
         IConfiguration Configuration { get; }
 
         Task<List<Game>> GetGames();
+
+        Task<int> InsertGame(Game game);
     }
 
     public class ChessRepository : IChessRepository
@@ -44,6 +48,29 @@ namespace Repositories
             var cs = new SqlConnection(_config.GetConnectionString("ChessConnection"));
             cs.Open();
             return cs;
+        }
+
+        public async Task<int> InsertGame(Game game)
+        {
+            try
+            {
+                using var connection = GetOpenConnection();
+
+                using (connection)
+                {
+                    var sql = SqlStatements.InsertGame;
+
+                    var parameters = new { game.Name, game.GameId };
+
+                    var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
+
+                    return gameId;
+                } 
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }
