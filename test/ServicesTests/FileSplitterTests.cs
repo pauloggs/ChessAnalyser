@@ -7,15 +7,17 @@ namespace ServicesTests
 {
     public class FileSplitterTests
     {
-        private readonly IParser _sut;
+        private readonly IPgnParser _sut;
         private Mock<INaming> mockNaming;
         private Mock<IBoardPositionGenerator> mockBoardPositionGenerator;
+        private Mock<IGameIdGenerator> mockGameIdGenerator;
 
         public FileSplitterTests()
         {
             mockNaming = new Mock<INaming>();
             mockBoardPositionGenerator = new Mock<IBoardPositionGenerator>();
-            _sut = new Parser(mockNaming.Object, mockBoardPositionGenerator.Object);
+            mockGameIdGenerator = new Mock<IGameIdGenerator>();
+            _sut = new PgnParser(mockNaming.Object, mockBoardPositionGenerator.Object, mockGameIdGenerator.Object);
         }
 
         [Fact]
