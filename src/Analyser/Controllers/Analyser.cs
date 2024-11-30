@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System.Runtime.InteropServices;
+using Microsoft.AspNetCore.Mvc;
 using Repositories;
 using Services;
 
@@ -12,12 +13,10 @@ namespace Analyser.Controllers
         private readonly IEtlService etlService = etlService;
 
         /// <summary>
-        /// Load PGN files and persist to database.
+        /// Load PGN files and persist to database. For Windows, try C:\PGN\ path.
         /// </summary>
-        /// <param name="filePath"></param>
-        /// <returns></returns>
         [HttpGet("LoadGames")]
-        public IActionResult LoadGames(string filePath = "C:\\PGN")
+        public IActionResult LoadGames(string filePath = "/Library/PGN")
         {
             etlService.LoadGamesToDatabase(filePath);
             return Ok();

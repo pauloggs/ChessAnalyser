@@ -26,6 +26,11 @@
         /// </summary>
         public Dictionary<int, BoardPosition> BoardPositions { get; set; }
 
+        /// <summary>
+        /// GameMoves is generated from a concatenation of all the moves in the game.
+        /// </summary>
+        public string? GameId { get; set; }
+
         public Game()
         {
             Tags = new Dictionary<string, string>();

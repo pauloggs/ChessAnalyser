@@ -4,7 +4,7 @@ using System.Text.RegularExpressions;
 
 namespace Services
 {
-    public interface IParser
+    public interface IPgnParser
     {
         /// <summary>
         /// Gets raw games from the provided PGN file.
@@ -18,7 +18,10 @@ namespace Services
         void SetBoardPositions(List<Game> games);
     }
 
-    public partial class Parser(INaming naming, IBoardPositionGenerator boardPositionGenerator) : IParser
+    public class PgnParser(
+        INaming naming,
+        IBoardPositionGenerator boardPositionGenerator,
+        IGameIdGenerator gameIdGenerator) : IPgnParser
     {
         private readonly INaming naming = naming;
 
@@ -114,13 +117,16 @@ namespace Services
                         }
                     }
 
+                    var gameId = gameIdGenerator.CheckAndReturnGameId(plyDictionary);
+
                     var gameName = GetGameName(tagDictionary);
 
                     var game = new Game() 
                     {
                         Name = gameName,
                         Tags = tagDictionary,
-                        Plies = plyDictionary
+                        Plies = plyDictionary,
+                        GameId = gameId
                     };
 
                     games.Add(game);
@@ -143,7 +149,7 @@ namespace Services
 
         private static void AddPlies(Dictionary<int,Ply> plyDictionary, string line, ref int plyNumber)
         {
-            Regex moveNumbersRegex = MoveNumberRegex();
+            Regex moveNumbersRegex = new Regex(@"\d+\.");
 
             line = moveNumbersRegex.Replace(line, "");
 
@@ -190,7 +196,7 @@ namespace Services
 
                 foreach (var ply in game.Plies)
                 {
-                    var previousBoardPosition = game.BoardPositions[ply.Key-1];
+                    var previousBoardPosition = game.BoardPositions[ply.Key - 1];
 
                     var boardPosition
                         = boardPositionGenerator.GetBoardPositionFromMove(previousBoardPosition, ply.Value.Move);
@@ -199,8 +205,5 @@ namespace Services
                 }
             }
         }
-
-        [GeneratedRegex(@"\d+\.")]
-        private static partial Regex MoveNumberRegex();
     }
 }
