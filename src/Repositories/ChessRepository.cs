@@ -1,4 +1,6 @@
-﻿using Dapper;
+﻿using System;
+using System.Data;
+using Dapper;
 using Interfaces.DTO;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
@@ -48,9 +50,27 @@ namespace Repositories
             return cs;
         }
 
-        public Task<int> InsertGame(Game game)
+        public async Task<int> InsertGame(Game game)
         {
-            throw new NotImplementedException();
+            try
+            {
+                using var connection = GetOpenConnection();
+
+                using (connection)
+                {
+                    var sql = SqlStatements.InsertGame;
+
+                    object[] parameters = { new { game.Name, game.GameId } };
+
+                    var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
+
+                    return gameId;
+                }                
+            }
+            catch (Exception ex)
+            {
+                throw new Exception(ex.Message);
+            }
         }
     }
 }
