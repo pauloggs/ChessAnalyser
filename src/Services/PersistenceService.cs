@@ -18,7 +18,7 @@ namespace Services
 
 	public class PersistenceService(IChessRepository chessRepository) : IPersistenceService
     {
-        private readonly Repositories.IChessRepository chessRepository = chessRepository;
+        private readonly IChessRepository chessRepository = chessRepository;
 
 
         public List<Game> GetUnprocessedGames(List<Game> games)

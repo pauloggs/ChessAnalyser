@@ -7,7 +7,7 @@
         /// into separate games, and loads thes games into the database.
         /// </summary>
         /// <param name="filePath"></param>
-        void LoadGamesToDatabase(string filePath);
+        Task LoadGamesToDatabase(string filePath);
     }
 
     public class EtlService(
@@ -19,7 +19,7 @@
 
         private readonly IPgnParser pgnParser = pgnParser;
 
-        public void LoadGamesToDatabase(string filePath)
+        public async Task LoadGamesToDatabase(string filePath)
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
@@ -27,10 +27,10 @@
 
             var unprocessedGames = persistenceService.GetUnprocessedGames(games);
 
-            // process each Game to the board positions - BoardPositionGenerator
+            // TODO. process each Game to the board positions - BoardPositionGenerator
 
             // write each Game to the database PersistenceService
-            persistenceService.InsertGames(unprocessedGames);
+            await persistenceService.InsertGames(unprocessedGames);
         }
     }
 }
