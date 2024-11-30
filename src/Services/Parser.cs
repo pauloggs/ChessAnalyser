@@ -18,7 +18,7 @@ namespace Services
         void SetBoardPositions(List<Game> games);
     }
 
-    public class Parser(INaming naming, IBoardPositionGenerator boardPositionGenerator) : IParser
+    public partial class Parser(INaming naming, IBoardPositionGenerator boardPositionGenerator) : IParser
     {
         private readonly INaming naming = naming;
 
@@ -143,7 +143,7 @@ namespace Services
 
         private static void AddPlies(Dictionary<int,Ply> plyDictionary, string line, ref int plyNumber)
         {
-            Regex moveNumbersRegex = new Regex(@"\d+\.");
+            Regex moveNumbersRegex = MoveNumberRegex();
 
             line = moveNumbersRegex.Replace(line, "");
 
@@ -199,5 +199,8 @@ namespace Services
                 }
             }
         }
+
+        [GeneratedRegex(@"\d+\.")]
+        private static partial Regex MoveNumberRegex();
     }
 }
