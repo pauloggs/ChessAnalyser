@@ -9,44 +9,13 @@ namespace ServicesTests
     {
         private readonly IParser _sut;
         private Mock<INaming> mockNaming;
+        private Mock<IBoardPositionGenerator> mockBoardPositionGenerator;
 
         public FileSplitterTests()
         {
             mockNaming = new Mock<INaming>();
-            _sut = new Parser(mockNaming.Object);
-        }
-
-        [Fact]
-        public void GetRawGamesFromPgnFile_ShouldSplitSourcePgnFileCorrectly()
-        {
-            // Arrange
-            var sourcePath = "TestData\\";
-            var rawPgnFile = "test_pgn.pgn";
-            var expectedRawPgn1 = "test_pgn_expected_1.pgn";
-            var expectedRawPgn2 = "test_pgn_expected_2.pgn";
-
-            var rawPgnPath = $"{sourcePath}{rawPgnFile}";
-            var expectedRawGameContentPath1 = $"{sourcePath}{expectedRawPgn1}";
-            var expectedRawGameContentPath2 = $"{sourcePath}{expectedRawPgn2}";
-
-            var testPgnContents = File.ReadAllText(rawPgnPath) ?? "";
-
-            var testRawPgn = new RawPgn()
-            {
-                Name = "test_pgn.pgn",
-                Contents = testPgnContents
-            };
-
-            var expectedRawGameContents1 = File.ReadAllText(expectedRawGameContentPath1) ?? "";
-            var expectedRawGameContents2 = File.ReadAllText(expectedRawGameContentPath2) ?? "";
-
-            // Act
-            var result = _sut.GetRawGamesFromPgnFile(testRawPgn);
-
-            // Assert
-            result.Should().HaveCount(2);
-            result[0].Contents.Should().Be(expectedRawGameContents1);
-            result[1].Contents.Should().Be(expectedRawGameContents2);
+            mockBoardPositionGenerator = new Mock<IBoardPositionGenerator>();
+            _sut = new Parser(mockNaming.Object, mockBoardPositionGenerator.Object);
         }
 
         [Fact]

@@ -20,7 +20,8 @@ Features
 
 Data
 	Example path to PGN files
-		C:\PGN\
+		PC: C:\PGN\
+		MAC: /Library/PGN
 
 
 Persistence

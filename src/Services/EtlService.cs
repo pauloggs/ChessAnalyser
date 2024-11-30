@@ -21,6 +21,11 @@
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
             var games = parser.GetGamesFromRawPgns(rawPgns);
+
+            // foreach Game, parse all the moves to
+            //  1. get a GameId from the moves
+            //  2. check if this has already been processed (TODO)
+            //  3. if it hasn't been processed, convert the moves to board positions and persist
         }
     }
 }
