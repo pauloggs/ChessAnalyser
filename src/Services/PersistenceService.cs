@@ -13,6 +13,11 @@ namespace Services
         /// <returns></returns>
 		List<Game> GetUnprocessedGames(List<Game> games);
 
+        /// <summary>
+        /// Inserts each of the <see cref="Game"/>s into the database.
+        /// </summary>
+        /// <param name="games"></param>
+        /// <returns></returns>
         Task InsertGames(List<Game> games);
 	}
 
