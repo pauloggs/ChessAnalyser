@@ -10,6 +10,8 @@ namespace Repositories
         IConfiguration Configuration { get; }
 
         Task<List<Game>> GetGames();
+
+        Task<int> InsertGame(Game game);
     }
 
     public class ChessRepository : IChessRepository
@@ -44,6 +46,11 @@ namespace Repositories
             var cs = new SqlConnection(_config.GetConnectionString("ChessConnection"));
             cs.Open();
             return cs;
+        }
+
+        public Task<int> InsertGame(Game game)
+        {
+            throw new NotImplementedException();
         }
     }
 }
