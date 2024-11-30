@@ -196,7 +196,7 @@ namespace Services
 
                 foreach (var ply in game.Plies)
                 {
-                    var previousBoardPosition = game.BoardPositions[ply.Key-1];
+                    var previousBoardPosition = game.BoardPositions[ply.Key - 1];
 
                     var boardPosition
                         = boardPositionGenerator.GetBoardPositionFromMove(previousBoardPosition, ply.Value.Move);
