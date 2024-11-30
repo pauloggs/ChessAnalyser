@@ -2,7 +2,7 @@
 
 namespace Services
 {
-	public interface IGameValidator
+	public interface IPersistenceService
     {
         /// <summary>
         /// For each provided <see cref="Game"/> check if it has already been written
@@ -13,9 +13,9 @@ namespace Services
 		List<Game> GetUnprocessedGames(List<Game> games);
 	}
 
-	public class GameValidator : IGameValidator
+	public class PersistenceService : IPersistenceService
     {
-		public GameValidator()
+		public PersistenceService()
 		{
 		}
 

@@ -10,19 +10,26 @@
         void LoadGamesToDatabase(string filePath);
     }
 
-    public class EtlService(IFileHandler fileHandler, IPgnParser pgnParser, IGameValidator gameValidator) : IEtlService
+    public class EtlService(
+        IFileHandler fileHandler,
+        IPgnParser pgnParser,
+        IPersistenceService gameValidator) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
 
-        private readonly IPgnParser parser = pgnParser;
+        private readonly IPgnParser pgnParser = pgnParser;
 
         public void LoadGamesToDatabase(string filePath)
         {
             var rawPgns = fileHandler.LoadPgnFiles(filePath);
 
-            var games = parser.GetGamesFromRawPgns(rawPgns);
+            var games = pgnParser.GetGamesFromRawPgns(rawPgns);
 
             var unprocessedGames = gameValidator.GetUnprocessedGames(games);
+
+            // process each Game to the board positions - BoardPositionGenerator
+
+            // write each Game to the database PersistenceService
         }
     }
 }

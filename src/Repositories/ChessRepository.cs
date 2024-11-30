@@ -65,7 +65,7 @@ namespace Repositories
                     var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
 
                     return gameId;
-                }                
+                } 
             }
             catch (Exception ex)
             {
