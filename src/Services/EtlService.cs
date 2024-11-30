@@ -13,11 +13,14 @@
     public class EtlService(
         IFileHandler fileHandler,
         IPgnParser pgnParser,
-        IPersistenceService persistenceService) : IEtlService
+        IPersistenceService persistenceService,
+        IBoardPositionGenerator boardPositionGenerator) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
 
         private readonly IPgnParser pgnParser = pgnParser;
+
+        private readonly IBoardPositionGenerator boardPositionGenerator1 = boardPositionGenerator;
 
         public async Task LoadGamesToDatabase(string filePath)
         {
@@ -29,6 +32,7 @@
 
             // TODO. process each Game to the board positions - BoardPositionGenerator
             // needs to include a bit of feedback - i.e. visual display of the board! Best way to check
+            boardPositionGenerator.SetBoardPositions(games);
 
             // write each Game to the database PersistenceService
             await persistenceService.InsertGames(unprocessedGames);

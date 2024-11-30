@@ -7,6 +7,8 @@ namespace Services
         BoardPosition GetBoardPositionFromMove(BoardPosition previousBoardPosition, string rawMove);
 
         BoardPosition GetStartingBoardPosition();
+
+        void SetBoardPositions(List<Game> games);
     }
 
     /// <summary>
@@ -53,6 +55,19 @@ namespace Services
             startingBoardPosition.Kings[1] = 60;
 
             return startingBoardPosition;
+        }
+
+        public void SetBoardPositions(List<Game> games)
+        {
+            foreach (var game in games)
+            {
+                // set starting position
+                // display board
+
+                // loop through each ply
+                //  from the previous position, apply the ply to get the current position
+                //  display board
+            }
         }
     }
 }
