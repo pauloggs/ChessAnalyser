@@ -21,6 +21,7 @@ Features
 Data
 	Example path to PGN files
 		C:\PGN\
+		MAC:
 
 
 Persistence

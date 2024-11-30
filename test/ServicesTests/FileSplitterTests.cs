@@ -9,11 +9,13 @@ namespace ServicesTests
     {
         private readonly IParser _sut;
         private Mock<INaming> mockNaming;
+        private Mock<IBoardPositionGenerator> mockBoardPositionGenerator;
 
         public FileSplitterTests()
         {
             mockNaming = new Mock<INaming>();
-            _sut = new Parser(mockNaming.Object);
+            mockBoardPositionGenerator = new Mock<IBoardPositionGenerator>();
+            _sut = new Parser(mockNaming.Object, mockBoardPositionGenerator.Object);
         }
 
         [Fact]
