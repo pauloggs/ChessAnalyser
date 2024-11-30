@@ -13,7 +13,7 @@
     public class EtlService(
         IFileHandler fileHandler,
         IPgnParser pgnParser,
-        IPersistenceService gameValidator) : IEtlService
+        IPersistenceService persistenceService) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
 
@@ -25,11 +25,12 @@
 
             var games = pgnParser.GetGamesFromRawPgns(rawPgns);
 
-            var unprocessedGames = gameValidator.GetUnprocessedGames(games);
+            var unprocessedGames = persistenceService.GetUnprocessedGames(games);
 
             // process each Game to the board positions - BoardPositionGenerator
 
             // write each Game to the database PersistenceService
+            persistenceService.InsertGames(unprocessedGames);
         }
     }
 }

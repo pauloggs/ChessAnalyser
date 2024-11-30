@@ -60,7 +60,7 @@ namespace Repositories
                 {
                     var sql = SqlStatements.InsertGame;
 
-                    object[] parameters = { new { game.Name, game.GameId } };
+                    var parameters = new { game.Name, game.GameId };
 
                     var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
 
