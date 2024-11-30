@@ -83,7 +83,7 @@ namespace Services
 
         public List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns)
         {
-            var games = new List<Game>();
+            List<Game> games = new();
 
             foreach (var rawPgn in rawPgns)
             {
@@ -131,12 +131,12 @@ namespace Services
 
                     games.Add(game);
                 }
-            }                
-            
+            }
+
             return games;
         }
 
-        private void AddGameTage(Dictionary<string, string> tagDictionary, string line)
+        private static void AddGameTage(Dictionary<string, string> tagDictionary, string line)
         {
             var tagSections = line.Split(" ", 2);
 
