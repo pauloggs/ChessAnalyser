@@ -67,8 +67,55 @@ namespace Services
                 // loop through each ply
                 //  from the previous position, apply the ply to get the current position
                 //  display board
+                DisplayBoard(game.BoardPositions[0]);
+
             }
         }
+
+        public void DisplayBoard(BoardPosition boardPosition)
+        {
+            // display pawns as a test
+            for (var rank = 8; rank >= 1; rank--)
+            {
+                Console.Write($"{rank} |");
+                for (var file = 1; file <= 8; file++)
+                {
+                    Console.Write(" {0}", GetBit(boardPosition.Pawns[0], ((rank - 1) * 8) + (file - 1)) ? 1 : 0);
+                }
+            }
+
+            for (var rank = 8; rank >= 1; rank--)
+            {
+                Console.Write($"{rank} |");
+                for (var file = 1; file <= 8; file++)
+                {
+                    Console.Write(" {0}", GetBit(boardPosition.Pawns[1], ((rank - 1) * 8) + (file - 1)) ? 1 : 0);
+                }
+            }
+
+        }
+
+        private static bool GetBit(ulong piecePositions, int index) => (piecePositions & (1ul << (index))) > 0;
+
+        /*
+         * public static void printBoard(ulong board)
+    public static bool getBit(ulong board, int index) => (board & (1u << (index))) > 0;
+
+    public static void printBoard(ulong board)
+        {
+            for (int i = 7; i >= 0; i--)
+            {
+                Console.Write($"{i + 1} |");
+                for (int j = 0; j < 8; j++)
+                {
+                    Console.Write(" {0}", getBit(board, (i * 8) + j) ? 1 : 0);
+                }
+                Console.WriteLine();
+            }
+            Console.WriteLine("    - - - - - - - -\n    a b c d e f g h\n");
+            Console.WriteLine($"    Decimal: {board}\n    Hexadecimal: {board:X}\n");
+        }
+         */
     }
 }
 
