@@ -192,7 +192,10 @@ namespace Services
         {
             foreach (var game in games)
             {
+                Console.WriteLine($"Displaying board for game {game.Name}");
                 game.BoardPositions[0] = boardPositionGenerator.GetStartingBoardPosition();
+
+                boardPositionGenerator.DisplayBoard(game.BoardPositions[0]);
 
                 foreach (var ply in game.Plies)
                 {

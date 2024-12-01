@@ -9,6 +9,8 @@ namespace Services
         BoardPosition GetStartingBoardPosition();
 
         void SetBoardPositions(List<Game> games);
+
+        void DisplayBoard(BoardPosition boardPosition);
     }
 
     /// <summary>
@@ -59,6 +61,7 @@ namespace Services
 
         public void SetBoardPositions(List<Game> games)
         {
+            Console.WriteLine("setting board positions.");
             foreach (var game in games)
             {
                 // set starting position

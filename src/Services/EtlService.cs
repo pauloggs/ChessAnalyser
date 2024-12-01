@@ -20,7 +20,7 @@
 
         private readonly IPgnParser pgnParser = pgnParser;
 
-        private readonly IBoardPositionGenerator boardPositionGenerator1 = boardPositionGenerator;
+        private readonly IBoardPositionGenerator boardPositionGenerator = boardPositionGenerator;
 
         public async Task LoadGamesToDatabase(string filePath)
         {
