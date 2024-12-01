@@ -9,13 +9,13 @@ namespace ServicesTests
     {
         private readonly IPgnParser _sut;
         private Mock<INaming> mockNaming;
-        private Mock<IBoardPositionGenerator> mockBoardPositionGenerator;
+        private Mock<IBoardPositionService> mockBoardPositionGenerator;
         private Mock<IGameIdGenerator> mockGameIdGenerator;
 
         public FileSplitterTests()
         {
             mockNaming = new Mock<INaming>();
-            mockBoardPositionGenerator = new Mock<IBoardPositionGenerator>();
+            mockBoardPositionGenerator = new Mock<IBoardPositionService>();
             mockGameIdGenerator = new Mock<IGameIdGenerator>();
             _sut = new PgnParser(mockNaming.Object, mockBoardPositionGenerator.Object, mockGameIdGenerator.Object);
         }

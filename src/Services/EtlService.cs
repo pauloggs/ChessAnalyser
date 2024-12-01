@@ -14,13 +14,13 @@
         IFileHandler fileHandler,
         IPgnParser pgnParser,
         IPersistenceService persistenceService,
-        IBoardPositionGenerator boardPositionGenerator) : IEtlService
+        IBoardPositionService boardPositionGenerator) : IEtlService
     {
         private readonly IFileHandler fileHandler = fileHandler;
 
         private readonly IPgnParser pgnParser = pgnParser;
 
-        private readonly IBoardPositionGenerator boardPositionGenerator = boardPositionGenerator;
+        private readonly IBoardPositionService boardPositionGenerator = boardPositionGenerator;
 
         public async Task LoadGamesToDatabase(string filePath)
         {

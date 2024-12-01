@@ -20,7 +20,7 @@ namespace Services
 
     public class PgnParser(
         INaming naming,
-        IBoardPositionGenerator boardPositionGenerator,
+        IBoardPositionService boardPositionGenerator,
         IGameIdGenerator gameIdGenerator) : IPgnParser
     {
         private readonly INaming naming = naming;
@@ -190,23 +190,7 @@ namespace Services
 
         public void SetBoardPositions(List<Game> games)
         {
-            foreach (var game in games)
-            {
-                Console.WriteLine($"Displaying board for game {game.Name}");
-                game.BoardPositions[0] = boardPositionGenerator.GetStartingBoardPosition();
-
-                boardPositionGenerator.DisplayBoard(game.BoardPositions[0]);
-
-                foreach (var ply in game.Plies)
-                {
-                    var previousBoardPosition = game.BoardPositions[ply.Key - 1];
-
-                    var boardPosition
-                        = boardPositionGenerator.GetBoardPositionFromMove(previousBoardPosition, ply.Value.Move);
-
-                    game.BoardPositions[ply.Key] = boardPosition;
-                }
-            }
+            boardPositionGenerator.SetBoardPositions(games);            
         }
     }
 }
