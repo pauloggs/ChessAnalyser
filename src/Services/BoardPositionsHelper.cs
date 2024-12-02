@@ -20,7 +20,7 @@ namespace Services
             var startingBoardPosition = new BoardPosition();
 
             // set white pieces
-            startingBoardPosition.PiecePositions[Constants.PieceIndex['P']] = 0b_1111_1111_0000_0000;
+            startingBoardPosition.PiecePositions[Constants.PieceIndex['P']] = 0b_1111_1101_0000_0000;
 
             // TODO. Remove test removal
             RemovePieceFromBoardPosition(startingBoardPosition, 'P', 0, 'b', 1);
@@ -63,7 +63,7 @@ namespace Services
         {
             var square = (ulong)Math.Pow(2, rank * 8 + Constants.FileLookup[file]);
 
-            boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] ^= square;
+            boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] &= ~square;
         }
 
         public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
