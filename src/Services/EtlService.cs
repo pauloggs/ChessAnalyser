@@ -20,7 +20,7 @@
 
         private readonly IPgnParser pgnParser = pgnParser;
 
-        private readonly IBoardPositionService boardPositionGenerator = boardPositionGenerator;
+        private readonly IBoardPositionService boardPositionService = boardPositionGenerator;
 
         public async Task LoadGamesToDatabase(string filePath)
         {
@@ -30,9 +30,9 @@
 
             var unprocessedGames = persistenceService.GetUnprocessedGames(games);
 
-            // TODO. process each Game to the board positions - BoardPositionGenerator
+            // TODO. process each Game to the board positions
             // needs to include a bit of feedback - i.e. visual display of the board! Best way to check
-            boardPositionGenerator.SetBoardPositions(games);
+            boardPositionService.SetBoardPositions(unprocessedGames);
 
             // write each Game to the database PersistenceService
             await persistenceService.InsertGames(unprocessedGames);

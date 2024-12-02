@@ -1,11 +1,12 @@
-﻿using System.Text;
-using Interfaces.DTO;
+﻿using Interfaces.DTO;
 
 namespace Services
 {
-	public interface IBoardPositionService
+    public interface IBoardPositionService
     {    
         void SetBoardPositions(List<Game> games);
+
+        void DisplayBoardPosition(BoardPosition boardPosition);
     }
 
     /// <summary>
@@ -17,12 +18,17 @@ namespace Services
     {
         private readonly IMoveInterpreter _moveInterpreter;
         private readonly IBoardPositionsHelper _boardPositionsHelper;
+        private readonly IDisplayService _displayService;
 
-        public BoardPositionService(IMoveInterpreter moveInterpreter, IBoardPositionsHelper boardPositionsHelper)
+        public BoardPositionService(
+            IMoveInterpreter moveInterpreter,
+            IBoardPositionsHelper boardPositionsHelper,
+            IDisplayService displayService)
 		{
             _moveInterpreter = moveInterpreter;
             _boardPositionsHelper = boardPositionsHelper;
-		}
+            _displayService = displayService;
+        }
 
         public void SetBoardPositions(List<Game> games)
         {
@@ -30,11 +36,20 @@ namespace Services
             {
                 game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
 
-                // TODO. Remove test display
-                _boardPositionsHelper.DisplayBoardPosition(game.BoardPositions[0]);
+                // TODO delete this test display
+                var boardArray = _displayService.GetBoardArrayFromBoardPositions(game.BoardPositions[0]);
+                //_displayService.
+
+                //// TODO. Remove test display
+                //_boardPositionsHelper.DisplayBoardPosition(game.BoardPositions[0]);
             }
         }
 
+        public void DisplayBoardPosition(BoardPosition boardPosition)
+        {
+
+            throw new NotImplementedException();
+        }
     }
 }
 

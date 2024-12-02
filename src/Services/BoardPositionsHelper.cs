@@ -8,9 +8,9 @@ namespace Services
 	{
 		BoardPosition GetStartingBoardPosition();
 
-        void DisplayBoardPosition(BoardPosition boardPosition);
-
         void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
+
+        void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
     }
 
     public class BoardPositionsHelper : IBoardPositionsHelper
@@ -29,36 +29,8 @@ namespace Services
             startingBoardPosition.PiecePositions["BP"] = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
 
             return startingBoardPosition;
-        }
+        }        
 
-        public void DisplayBoardPosition(BoardPosition boardPosition)
-        {
-            var pawnBoard = new StringBuilder();
-
-            for (var col = 0; col <=1; col++)
-            {
-                var pieceKey = col == 0 ? "WP" : "BP";
-
-                for (var rank = 8; rank >= 1; rank--)
-                {
-                    pawnBoard.Append($"{rank} |");
-
-                    for (var file = 1; file <= 8; file++)
-                    {
-                        var bit = GetBit(boardPosition.PiecePositions[pieceKey], ((rank - 1) * 8) + (file - 1)) ? 1 : 0;
-                        pawnBoard.Append(bit);
-                    }
-
-                    pawnBoard.AppendLine();
-                }
-
-                Console.Write(pawnBoard);
-                Console.WriteLine();
-                pawnBoard.Clear();
-            }            
-        }
-
-        private static bool GetBit(ulong piecePositions, int index) => (piecePositions & (1ul << (index))) > 0;
 
         public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
         {

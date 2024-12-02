@@ -26,6 +26,7 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IGameIdGenerator, GameIdGenerator>();

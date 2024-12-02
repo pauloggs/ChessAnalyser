@@ -10,14 +10,6 @@ namespace Interfaces.DTO
 
 		public BoardPosition()
 		{
-			// 0-5 are white pieces, 6 to 11 are black pieces
-			// 0 / 6	P
-			// 1 / 7	K
-			// 2 / 8	B
-			// 3 / 9	R
-			// 4 / 10	Q
-			// 5 / 11	K
-			//PiecePositions = new ulong[12];
 			PiecePositions = new Dictionary<string, ulong>()
 			{
 				{ "WP", 0 },
@@ -33,7 +25,6 @@ namespace Interfaces.DTO
 				{ "BQ", 0 },
 				{ "BK", 0 }
             };
-
         }
 	}
 }
