@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Repositories;
 using Services;
 
@@ -20,7 +19,8 @@ namespace Analyser.Controllers
         {
             try
             {
-
+                Console.Write("\f\u001bc\x1b[3J");
+                Console.WriteLine($"Controller > LoadGames");
                 await etlService.LoadGamesToDatabase(filePath);
                 return Ok();
             }
