@@ -6,21 +6,18 @@ namespace Interfaces.DTO
     /// </summary>
     public class BoardPosition
 	{
-		public ulong[] Pawns { get; set; }
-		public ulong[] Knights { get; set; }
-		public ulong[] Bishops { get; set; }
-		public ulong[] Rooks { get; set; }
-		public ulong[] Queens { get; set; }
-		public ulong[] Kings { get; set; }
+		public ulong[] PiecePositions { get; set; }
 
 		public BoardPosition()
 		{
-			Pawns = new ulong[2]; // 0 = white, 1 = black
-			Knights = new ulong[2];
-			Bishops = new ulong[2];
-			Rooks = new ulong[2];
-			Queens = new ulong[2];
-			Kings = new ulong[2];
+			// 0-5 are white pieces, 6 to 11 are black pieces
+			// 0 / 6	P
+			// 1 / 7	K
+			// 2 / 8	B
+			// 3 / 9	R
+			// 4 / 10	Q
+			// 5 / 11	K
+			PiecePositions = new ulong[12];
 		}
 	}
 }

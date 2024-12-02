@@ -188,9 +188,6 @@ namespace Services
             return string.Join("|", tagList);
         }
 
-        public void SetBoardPositions(List<Game> games)
-        {
-            boardPositionGenerator.SetBoardPositions(games);            
-        }
+        public void SetBoardPositions(List<Game> games) => boardPositionGenerator.SetBoardPositions(games);
     }
 }
