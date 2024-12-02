@@ -27,8 +27,6 @@
 
                 var piece = key[1].ToString();
 
-                var emptySquare = (sbyte)0;
-
                 var piecePositions = boardPosition.PiecePositions[key];
 
                 byte[] ranks = BitConverter.GetBytes(piecePositions);
@@ -39,21 +37,16 @@
 
                     string files = Convert.ToString(rank, 2).PadLeft(8, '0');
 
-                    for (var fileIndex = 0; fileIndex < 8; fileIndex++)
+                    for (var fileIndex = 7; fileIndex >= 0; fileIndex--)
                     {                      
                         var pieceSbyte
                             = (sbyte)((int)(Constants.DisplayBoardPiece)Enum
                             .Parse(typeof(Constants.DisplayBoardPiece), piece)
                             * col)                            ;
 
-                        boardArray[rankIndex, fileIndex] = files[fileIndex] == '1' ? pieceSbyte : emptySquare;
-
-
+                        if (files[fileIndex] == '1') boardArray[rankIndex, fileIndex] = pieceSbyte;
                     }
                 }
-
-                //string  = Convert.ToString(byteArray[20], 2).PadLeft(8, '0');
-                //// produces "00111111"
             }
 
             return boardArray;
