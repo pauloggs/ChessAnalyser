@@ -18,6 +18,17 @@ namespace Interfaces
             "eco"
         ];
 
+        enum DisplayBoardPiece
+        {
+            X = 0,
+            P = 1,
+            N = 2,
+            B = 3,
+            R = 4,
+            Q = 5,
+            K = 6
+        }
+
         static public string DefaultEmptyTagValue { get; } = "None";
 
         public static string GameStartMarker { get; } = "[Event";

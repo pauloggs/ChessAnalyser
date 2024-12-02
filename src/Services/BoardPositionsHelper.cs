@@ -20,13 +20,13 @@ namespace Services
             var startingBoardPosition = new BoardPosition();
 
             // set white pieces
-            startingBoardPosition.PiecePositions[Constants.PieceIndex['P']] = 0b_1111_1101_0000_0000;
+            startingBoardPosition.PiecePositions["WP"] = 0b_1111_1101_0000_0000;
 
             // TODO. Remove test removal
             RemovePieceFromBoardPosition(startingBoardPosition, 'P', 0, 'b', 1);
 
             // set black pieces                 8         7         6         5         4         3         2         1
-            startingBoardPosition.PiecePositions[Constants.PieceIndex['P']+6] = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
+            startingBoardPosition.PiecePositions["BP"] = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
 
             return startingBoardPosition;
         }
@@ -37,13 +37,15 @@ namespace Services
 
             for (var col = 0; col <=1; col++)
             {
+                var pieceKey = col == 0 ? "WP" : "BP";
+
                 for (var rank = 8; rank >= 1; rank--)
                 {
                     pawnBoard.Append($"{rank} |");
 
                     for (var file = 1; file <= 8; file++)
                     {
-                        var bit = GetBit(boardPosition.PiecePositions[Constants.PieceIndex['P']+col*6], ((rank - 1) * 8) + (file - 1)) ? 1 : 0;
+                        var bit = GetBit(boardPosition.PiecePositions[pieceKey], ((rank - 1) * 8) + (file - 1)) ? 1 : 0;
                         pawnBoard.Append(bit);
                     }
 
@@ -62,14 +64,18 @@ namespace Services
         {
             var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
-            boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] &= ~square;
+            var colour = col == 0 ? "W" : "P";
+
+            boardPosition.PiecePositions[colour + piece] &= ~square;
         }
 
         public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
         {
             var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
-            boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] |= square;
+            var colour = col == 0 ? "W" : "P";
+
+            boardPosition.PiecePositions[colour + piece] |= square;
         }
     }
 }

@@ -6,7 +6,7 @@ namespace Interfaces.DTO
     /// </summary>
     public class BoardPosition
 	{
-		public ulong[] PiecePositions { get; set; }
+		public Dictionary<string, ulong> PiecePositions { get; set; }
 
 		public BoardPosition()
 		{
@@ -17,8 +17,24 @@ namespace Interfaces.DTO
 			// 3 / 9	R
 			// 4 / 10	Q
 			// 5 / 11	K
-			PiecePositions = new ulong[12];
-		}
+			//PiecePositions = new ulong[12];
+			PiecePositions = new Dictionary<string, ulong>()
+			{
+				{ "WP", 0 },
+				{ "WN", 0 },
+				{ "WB", 0 },
+				{ "WR", 0 },
+				{ "WQ", 0 },
+				{ "WK", 0 },
+				{ "BP", 0 },
+				{ "BN", 0 },
+				{ "BB", 0 },
+				{ "BR", 0 },
+				{ "BQ", 0 },
+				{ "BK", 0 }
+            };
+
+        }
 	}
 }
 
