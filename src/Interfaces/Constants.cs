@@ -18,7 +18,7 @@ namespace Interfaces
             "eco"
         ];
 
-        enum DisplayBoardPiece
+        public enum DisplayBoardPiece
         {
             X = 0,
             P = 1,

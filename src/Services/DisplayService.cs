@@ -1,10 +1,10 @@
-﻿using System;
-using System.Text;
-using Interfaces.DTO;
-
-namespace Services
+﻿namespace Services
 {
-	public interface IDisplayService
+    using System;
+    using Interfaces;
+    using Interfaces.DTO;
+
+    public interface IDisplayService
 	{
         void DisplayBoardPosition(sbyte[,] boardArray);
 
@@ -23,15 +23,37 @@ namespace Services
 
             foreach (var key in boardPosition.PiecePositions.Keys)
             {
-                var col = key[0];
+                var col = key[0] == 'W' ? 1 : 1;
+
+                var piece = key[1].ToString();
+
+                var emptySquare = (sbyte)0;
 
                 var piecePositions = boardPosition.PiecePositions[key];
 
-                var piecePositionsToString = piecePositions.ToString();
+                byte[] ranks = BitConverter.GetBytes(piecePositions);
 
-                byte[] mybyt = BitConverter.GetBytes(piecePositions);
+                for (var rankIndex = 0; rankIndex < 8; rankIndex++)
+                {
+                    var rank = ranks[rankIndex];
 
-                var b = Encoding.ASCII.GetBytes(piecePositionsToString);
+                    string files = Convert.ToString(rank, 2).PadLeft(8, '0');
+
+                    for (var fileIndex = 0; fileIndex < 8; fileIndex++)
+                    {                      
+                        var pieceSbyte
+                            = (sbyte)((int)(Constants.DisplayBoardPiece)Enum
+                            .Parse(typeof(Constants.DisplayBoardPiece), piece)
+                            * col)                            ;
+
+                        boardArray[rankIndex, fileIndex] = files[fileIndex] == '1' ? pieceSbyte : emptySquare;
+
+
+                    }
+                }
+
+                //string  = Convert.ToString(byteArray[20], 2).PadLeft(8, '0');
+                //// produces "00111111"
             }
 
             return boardArray;
