@@ -22,7 +22,7 @@ namespace Interfaces
 
         public static string GameStartMarker { get; } = "[Event";
 
-        public static Dictionary<char, int> FileLookup { get; } = new Dictionary<char, int>()
+        public static Dictionary<char, int> File { get; } = new Dictionary<char, int>()
         {
             { 'a', 0 },
             { 'b', 1 },

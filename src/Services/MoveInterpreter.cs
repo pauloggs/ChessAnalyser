@@ -26,16 +26,23 @@ namespace Services
 
             var firstChar = rawMove[0];
 
-            if (string.IsNullOrEmpty(rawMove))
+            if (string.IsNullOrEmpty(rawMove) || rawMove.Length < 2)
             {
                 return (piece, -1, -1);
             }
 
-            if (rawMove[rawMove.Length - 1] == '+')
+            var rawMoveLength = rawMove.Length;
+
+            if (rawMove[rawMoveLength - 1] == '+')
             {
-                // remove checks
-                rawMove = rawMove.Remove(rawMove.Length - 1);
+                // remove check
+                rawMove = rawMove.Remove(rawMoveLength - 1);
+                rawMoveLength--;
             }
+
+            var destinationFile = Constants.File[rawMove[rawMoveLength - 2]];
+            var destinationRank = rawMove[rawMoveLength - 1];
+            destinationSquare = destinationRank * 8 + (destinationFile - 1);
 
             if (char.IsLower(firstChar))
             {

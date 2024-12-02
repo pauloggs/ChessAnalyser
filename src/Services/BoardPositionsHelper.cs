@@ -60,14 +60,14 @@ namespace Services
 
         public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
         {
-            var square = (ulong)Math.Pow(2, rank * 8 + Constants.FileLookup[file]);
+            var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
             boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] &= ~square;
         }
 
         public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
         {
-            var square = (ulong)Math.Pow(2, rank * 8 + Constants.FileLookup[file]);
+            var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
             boardPosition.PiecePositions[Constants.PieceIndex[piece] + col * 6] |= square;
         }
