@@ -37,7 +37,6 @@ namespace Services
 
             for (var col = 0; col <=1; col++)
             {
-                // display white pawns
                 for (var rank = 8; rank >= 1; rank--)
                 {
                     pawnBoard.Append($"{rank} |");

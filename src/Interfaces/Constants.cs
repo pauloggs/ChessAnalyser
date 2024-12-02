@@ -46,6 +46,7 @@ namespace Interfaces
 
         public static Dictionary<char, Piece> Pieces = new()
         {
+            { 'X', new Piece(){ Name = "None", Value = 0.0  } },
             { 'P', new Piece(){ Name = "Pawn", Value = 1.0  } },
             { 'N', new Piece(){ Name = "Knight", Value = 3.0  } },
             { 'B', new Piece(){ Name = "Bishop", Value = 3.0  } },
