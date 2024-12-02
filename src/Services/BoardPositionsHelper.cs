@@ -19,14 +19,40 @@ namespace Services
         {
             var startingBoardPosition = new BoardPosition();
 
+            var emptyRank
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
+
             // set white pieces
-            startingBoardPosition.PiecePositions["WP"] = 0b_1111_1101_0000_0000;
+            startingBoardPosition.PiecePositions["WP"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1111_1111_0000_0000;
+            startingBoardPosition.PiecePositions["WN"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0100_0010;
+            startingBoardPosition.PiecePositions["WB"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0010_0100;
+            startingBoardPosition.PiecePositions["WR"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000_0001;
+            startingBoardPosition.PiecePositions["WQ"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_1000;
+            startingBoardPosition.PiecePositions["WK"]
+                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0001_0000;
 
-            // TODO. Remove test removal
-            RemovePieceFromBoardPosition(startingBoardPosition, 'P', 0, 'b', 1);
+            //// TODO. Remove test removal
+            //RemovePieceFromBoardPosition(startingBoardPosition, 'P', 0, 'b', 1);
 
-            // set black pieces                 8         7         6         5         4         3         2         1
-            startingBoardPosition.PiecePositions["BP"] = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
+            // set black pieces 
+            startingBoardPosition.PiecePositions["BP"]
+                //   8         7         6         5         4         3         2         1
+                = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
+            startingBoardPosition.PiecePositions["BN"]
+                = 0b_0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
+            startingBoardPosition.PiecePositions["BB"]
+                = 0b_0010_0100_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
+            startingBoardPosition.PiecePositions["BR"]
+                = 0b_1000_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
+            startingBoardPosition.PiecePositions["BQ"]
+                = 0b_0000_1000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
+            startingBoardPosition.PiecePositions["BK"]
+                = 0b_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 
             return startingBoardPosition;
         }        
