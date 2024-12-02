@@ -38,16 +38,12 @@ namespace Services
 
                 // TODO delete this test display
                 var boardArray = _displayService.GetBoardArrayFromBoardPositions(game.BoardPositions[0]);
-                //_displayService.
-
-                //// TODO. Remove test display
-                //_boardPositionsHelper.DisplayBoardPosition(game.BoardPositions[0]);
+                _displayService.DisplayBoardPosition(boardArray);
             }
         }
 
         public void DisplayBoardPosition(BoardPosition boardPosition)
         {
-
             throw new NotImplementedException();
         }
     }

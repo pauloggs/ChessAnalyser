@@ -20,7 +20,7 @@ namespace Interfaces
 
         public enum DisplayBoardPiece
         {
-            X = 0,
+            _ = 0,
             P = 1,
             N = 2,
             B = 3,
@@ -43,6 +43,18 @@ namespace Interfaces
             { 'f', 5 },
             { 'g', 6 },
             { 'h', 7 }
+        };
+
+        public static Dictionary<int, char> FileIds { get; } = new Dictionary<int, char>()
+        {
+            { 0, 'A' },
+            { 1, 'B' },
+            { 2, 'C' },
+            { 3, 'D' },
+            { 4, 'E' },
+            { 5, 'F' },
+            { 6, 'G' },
+            { 7, 'H' }
         };
 
         public static Dictionary<char, int> PieceIndex = new()

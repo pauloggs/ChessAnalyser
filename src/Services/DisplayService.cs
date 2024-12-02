@@ -15,6 +15,21 @@
     {
         public void DisplayBoardPosition(sbyte[,] boardArray)
         {
+            for (var rankIndex = 7; rankIndex >= 0; rankIndex--)
+            {
+                Console.Write($"{rankIndex + 1}|");
+                for (var fileIndex = 7; fileIndex >= 0; fileIndex--)
+                {
+                    Console.Write($"{(Constants.DisplayBoardPiece)boardArray[rankIndex, fileIndex]}|");
+                }
+                Console.WriteLine();
+            }
+            Console.Write(" |");
+            for (var fileIndex = 7; fileIndex >= 0; fileIndex--)
+            {
+                Console.Write($"{Constants.FileIds[fileIndex]}|");
+            }
+            Console.WriteLine();
         }
 
         public sbyte[,] GetBoardArrayFromBoardPositions(BoardPosition boardPosition)
@@ -42,7 +57,7 @@
                         var pieceSbyte
                             = (sbyte)((int)(Constants.DisplayBoardPiece)Enum
                             .Parse(typeof(Constants.DisplayBoardPiece), piece)
-                            * col)                            ;
+                            * col);
 
                         if (files[fileIndex] == '1') boardArray[rankIndex, fileIndex] = pieceSbyte;
                     }
@@ -50,9 +65,7 @@
             }
 
             return boardArray;
-        }
-
-        
+        }        
     }
 }
 
