@@ -6,31 +6,55 @@ namespace Services
 {
 	public interface IMoveInterpreter
     {
-		(Piece piece, int rank, int file) GetDestinationRankAndFile(string rawMove);
+		(Piece piece, int sourceSquare, int destinationSquare) GetSourceAndDestinationSquares(string rawMove);
 	}
 
+    /// <summary>
+    /// From move Raf8, find out the following
+    /// 1 the piece
+    /// 2 the source square (0-63)
+    /// 3 the destination square (0-63)
+    /// </summary>
 	public class MoveInterpreter : IMoveInterpreter
     { 
-        public (Piece piece, int rank, int file) GetDestinationRankAndFile(string rawMove)
+        public (Piece piece, int sourceSquare, int destinationSquare) GetSourceAndDestinationSquares(string rawMove)
         {
 
-            var rank = 0;
-            var file = 0;
-            var piece = Constants.Pieces['P'];
+            var sourceSquare = 0;
+            var destinationSquare = 0;
+            var piece = Constants.Pieces['X'];
 
             var firstChar = rawMove[0];
+
+            if (string.IsNullOrEmpty(rawMove) || rawMove.Length < 2)
+            {
+                return (piece, -1, -1);
+            }
+
+            var rawMoveLength = rawMove.Length;
+
+            if (rawMove[rawMoveLength - 1] == '+')
+            {
+                // remove check
+                rawMove = rawMove.Remove(rawMoveLength - 1);
+                rawMoveLength--;
+            }
+
+            var destinationFile = Constants.File[rawMove[rawMoveLength - 2]];
+            var destinationRank = rawMove[rawMoveLength - 1];
+            destinationSquare = destinationRank * 8 + (destinationFile - 1);
 
             if (char.IsLower(firstChar))
             {
                 // pawn move
-                rank = rawMove[1];
-                file = GetFile(rawMove);
+                sourceSquare = rawMove[1];
+                destinationSquare = GetFile(rawMove);
             }
             else if (char.IsUpper(firstChar))
             {
                 // piece move
                 piece = Constants.Pieces[firstChar];
-                file = GetFile(rawMove);
+                destinationSquare = GetFile(rawMove);
             }
             else if (firstChar == '0')
             {
@@ -41,7 +65,7 @@ namespace Services
                 throw new Exception($"'{rawMove}' is invalid");
             }
 
-            return (piece, rank, file);
+            return (piece, sourceSquare, destinationSquare);
         }
 
         private int GetFile(string rawMove)

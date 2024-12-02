@@ -26,10 +26,11 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IGameIdGenerator, GameIdGenerator>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
-builder.Services.AddScoped<IBoardPositionGenerator, BoardPositionGenerator>();
+builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();

@@ -20,7 +20,7 @@ namespace Services
 
     public class PgnParser(
         INaming naming,
-        IBoardPositionGenerator boardPositionGenerator,
+        IBoardPositionService boardPositionGenerator,
         IGameIdGenerator gameIdGenerator) : IPgnParser
     {
         private readonly INaming naming = naming;
@@ -83,7 +83,7 @@ namespace Services
 
         public List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns)
         {
-            var games = new List<Game>();
+            List<Game> games = new();
 
             foreach (var rawPgn in rawPgns)
             {
@@ -131,12 +131,12 @@ namespace Services
 
                     games.Add(game);
                 }
-            }                
-            
+            }
+
             return games;
         }
 
-        private void AddGameTage(Dictionary<string, string> tagDictionary, string line)
+        private static void AddGameTage(Dictionary<string, string> tagDictionary, string line)
         {
             var tagSections = line.Split(" ", 2);
 
@@ -188,22 +188,6 @@ namespace Services
             return string.Join("|", tagList);
         }
 
-        public void SetBoardPositions(List<Game> games)
-        {
-            foreach (var game in games)
-            {
-                game.BoardPositions[0] = boardPositionGenerator.GetStartingBoardPosition();
-
-                foreach (var ply in game.Plies)
-                {
-                    var previousBoardPosition = game.BoardPositions[ply.Key - 1];
-
-                    var boardPosition
-                        = boardPositionGenerator.GetBoardPositionFromMove(previousBoardPosition, ply.Value.Move);
-
-                    game.BoardPositions[ply.Key] = boardPosition;
-                }
-            }
-        }
+        public void SetBoardPositions(List<Game> games) => boardPositionGenerator.SetBoardPositions(games);
     }
 }
