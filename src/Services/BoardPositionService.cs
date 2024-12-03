@@ -5,8 +5,6 @@ namespace Services
     public interface IBoardPositionService
     {    
         void SetBoardPositions(List<Game> games);
-
-        void DisplayBoardPosition(BoardPosition boardPosition);
     }
 
     /// <summary>
@@ -16,16 +14,13 @@ namespace Services
     /// </summary>
     public class BoardPositionService : IBoardPositionService
     {
-        private readonly IMoveInterpreter _moveInterpreter;
         private readonly IBoardPositionsHelper _boardPositionsHelper;
         private readonly IDisplayService _displayService;
 
         public BoardPositionService(
-            IMoveInterpreter moveInterpreter,
             IBoardPositionsHelper boardPositionsHelper,
             IDisplayService displayService)
 		{
-            _moveInterpreter = moveInterpreter;
             _boardPositionsHelper = boardPositionsHelper;
             _displayService = displayService;
         }
@@ -36,15 +31,12 @@ namespace Services
             {
                 game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
 
+                // loop through all plies and set board positions
+
                 // TODO delete this test display
                 var boardArray = _displayService.GetBoardArrayFromBoardPositions(game.BoardPositions[0]);
                 _displayService.DisplayBoardPosition(boardArray);
             }
-        }
-
-        public void DisplayBoardPosition(BoardPosition boardPosition)
-        {
-            throw new NotImplementedException();
         }
     }
 }

@@ -8,19 +8,20 @@ namespace Services
 	{
 		BoardPosition GetStartingBoardPosition();
 
+        void SetBoardPositions(Game game);
+
         void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
 
         void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
     }
 
-    public class BoardPositionsHelper : IBoardPositionsHelper
+    public class BoardPositionsHelper(IMoveInterpreter moveInterpreter) : IBoardPositionsHelper
     {
+        private readonly IMoveInterpreter _moveInterpreter = moveInterpreter;
+
         public BoardPosition GetStartingBoardPosition()
         {
             var startingBoardPosition = new BoardPosition();
-
-            var emptyRank
-                = 0b_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 
             // set white pieces
             startingBoardPosition.PiecePositions["WP"]
@@ -42,7 +43,7 @@ namespace Services
             // set black pieces 
             startingBoardPosition.PiecePositions["BP"]
                 //   8         7         6         5         4         3         2         1
-                = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000; // 7th rank
+                = 0b_0000_0000_1111_1111_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
             startingBoardPosition.PiecePositions["BN"]
                 = 0b_0100_0010_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
             startingBoardPosition.PiecePositions["BB"]
@@ -55,8 +56,7 @@ namespace Services
                 = 0b_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 
             return startingBoardPosition;
-        }        
-
+        }   
 
         public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
         {
@@ -74,6 +74,38 @@ namespace Services
             var colour = col == 0 ? "W" : "P";
 
             boardPosition.PiecePositions[colour + piece] |= square;
+        }
+
+        public void SetBoardPositions(Game game)
+        {
+            var numberOfPlies = game.Plies.Keys.Count;
+
+            for (var plyKey = 1; plyKey < numberOfPlies; plyKey++)
+            {
+                var previousBoardPosition = game.BoardPositions[plyKey - 1];                
+                
+                SetCurrentBoardPosition(game, previousBoardPosition, game.Plies[plyKey], plyKey);
+            }
+        }
+
+        private void SetCurrentBoardPosition(
+            Game game,
+            BoardPosition previousBoardPosition,
+            Ply ply,
+            int plyKey)
+        {
+            var newBoardPosition
+                = ExtensionMethods.DeepCopy<BoardPosition>(previousBoardPosition) ?? new BoardPosition();
+
+            game.BoardPositions[plyKey] = newBoardPosition;
+
+            var rawMove = ply.RawMove;
+
+            var colour = ply.Colour;
+
+            var (piece, sourceSquare, destinationSquare)
+                    = _moveInterpreter.GetSourceAndDestinationSquares(previousBoardPosition, rawMove);
+
         }
     }
 }

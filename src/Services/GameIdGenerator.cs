@@ -15,7 +15,7 @@ namespace Services
     {
         public string CheckAndReturnGameId(Dictionary<int, Ply> plies)
         {
-            return string.Join("|", plies.Select(x => x.Value.Move));
+            return string.Join("|", plies.Select(x => x.Value.RawMove));
         }
     }
 }

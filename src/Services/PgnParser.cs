@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Services
@@ -160,7 +161,8 @@ namespace Services
                 var ply = new Ply()
                 {
                     MoveNumber = (plyNumber - 1) / 2 + 1,
-                    Move = plyString
+                    RawMove = plyString,
+                    Colour = plyNumber % 2 == 0 ? 'W' : 'B'
                 };
 
                 plyDictionary[plyNumber] = ply;
