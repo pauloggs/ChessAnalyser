@@ -26,6 +26,8 @@ namespace Analyser.Controllers
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }

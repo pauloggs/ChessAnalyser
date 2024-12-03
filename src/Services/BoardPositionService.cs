@@ -36,6 +36,8 @@ namespace Services
                 // TODO delete this test display
                 var boardArray = _displayService.GetBoardArrayFromBoardPositions(game.BoardPositions[0]);
                 _displayService.DisplayBoardPosition(boardArray);
+
+                _boardPositionsHelper.SetBoardPositions(game);
             }
         }
     }
