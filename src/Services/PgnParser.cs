@@ -158,16 +158,19 @@ namespace Services
 
             foreach (string plyString in plies)
             {
-                var ply = new Ply()
+                if (string.IsNullOrWhiteSpace(plyString))
                 {
-                    MoveNumber = (plyNumber - 1) / 2 + 1,
-                    RawMove = plyString,
-                    Colour = plyNumber % 2 == 0 ? 'W' : 'B'
-                };
+                    var ply = new Ply()
+                    {
+                        MoveNumber = (plyNumber - 1) / 2 + 1,
+                        RawMove = plyString,
+                        Colour = plyNumber % 2 == 0 ? 'W' : 'B'
+                    };
 
-                plyDictionary[plyNumber] = ply;
+                    plyDictionary[plyNumber] = ply;
 
-                plyNumber++;
+                    plyNumber++;
+                }                
             }
         }
 

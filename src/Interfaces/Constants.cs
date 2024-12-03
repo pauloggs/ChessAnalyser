@@ -69,14 +69,14 @@ namespace Interfaces
 
         public static Dictionary<char, Piece> Pieces = new()
         {
-            { 'X', new Piece(){ Name = "None", Value = 0.0  } }, // no move
-            { 'P', new Piece(){ Name = "Pawn", Value = 1.0  } },
-            { 'N', new Piece(){ Name = "Knight", Value = 3.0  } },
-            { 'B', new Piece(){ Name = "Bishop", Value = 3.0  } },
-            { 'R', new Piece(){ Name = "Rook", Value = 5.0  } },
-            { 'Q', new Piece(){ Name = "Queen", Value = 9.0  } },
-            { 'K', new Piece(){ Name = "King", Value = 1000.0  } },
-            { 'O', new Piece(){ Name = "Castling", Value = 0.0  } } // castling move
+            { 'X', new Piece(){ Name = 'X', Value = 0.0  } }, // no move
+            { 'P', new Piece(){ Name = 'P', Value = 1.0  } },
+            { 'N', new Piece(){ Name = 'N', Value = 3.0  } },
+            { 'B', new Piece(){ Name = 'B', Value = 3.0  } },
+            { 'R', new Piece(){ Name = 'R', Value = 5.0  } },
+            { 'Q', new Piece(){ Name = 'Q', Value = 9.0  } },
+            { 'K', new Piece(){ Name = 'K', Value = 1000.0  } },
+            { 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
         };
     }
 }

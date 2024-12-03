@@ -3,7 +3,7 @@ namespace Interfaces.DTO
 {
 	public class Piece
 	{
-		public string Name { get; set; } = "Pawn";
+		public char Name { get; set; } = 'P';
 		public double Value { get; set; }
 	}
 }

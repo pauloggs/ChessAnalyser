@@ -99,13 +99,58 @@ namespace Services
 
             game.BoardPositions[plyKey] = newBoardPosition;
 
-            var rawMove = ply.RawMove;
-
             var colour = ply.Colour;
 
             var (piece, sourceSquare, destinationSquare)
-                    = _moveInterpreter.GetSourceAndDestinationSquares(previousBoardPosition, rawMove);
+                    = _moveInterpreter.GetSourceAndDestinationSquares(
+                        previousBoardPosition,
+                        ply,
+                        colour);
 
+            UpdateCurrentBoardPositionWithMove(
+                newBoardPosition,
+                piece,
+                ply,
+                sourceSquare,
+                destinationSquare,
+                colour
+                );
+        }
+
+        /// <summary>
+        /// Updates the board position with the 
+        /// </summary>
+        /// <param name="currentBoardPosition"></param>
+        /// <param name="piece"></param>
+        /// <param name="sourceSquare"></param>
+        /// <param name="destinationSquare"></param>
+        /// <param name="colour"></param>
+        private void UpdateCurrentBoardPositionWithMove(
+            BoardPosition currentBoardPosition,
+            Piece piece,
+            Ply ply,
+            int sourceSquare,
+            int destinationSquare,
+            char colour)
+        {
+            Console.WriteLine($"BoardPositionHelper > UpdateCurrentBoardPositionWithMove '{ply.RawMove}'");
+
+            if (ply.IsPieceMove)
+            {
+                // handle  pawn and piece moves
+            }
+            else if (ply.IsKingsideCastling)
+            {
+                // handle king-side castling for that particular colour
+            }
+            else if (ply.IsQueensideCastling)
+            {
+                // handle queen-side castling for that particular colour
+            }
+            else
+            {
+                throw new Exception($"Move is invalid {ply.RawMove}");
+            }
         }
     }
 }
