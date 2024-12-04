@@ -76,7 +76,7 @@ namespace Services
         {
             var rawMove = ply.RawMove;
 
-            Console.WriteLine($"MoveInt > GetPiece: '{rawMove}'");
+            Console.WriteLine($"MoveInterpreter > GetPiece: '{rawMove}'");
 
             var firstChar = rawMove[0];
 

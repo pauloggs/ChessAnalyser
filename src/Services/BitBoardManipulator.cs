@@ -1,4 +1,5 @@
-﻿using System.Numerics;
+﻿using System.Collections.Generic;
+using System.Numerics;
 using Interfaces;
 using Interfaces.DTO;
 using Newtonsoft.Json.Linq;
@@ -54,7 +55,11 @@ namespace Services
             int sourceSquare,
             int destinationSquare)
         {
-            var newPiecePositions = piecePositions - (ulong)sourceSquare + (ulong)destinationSquare;
+            ulong newPiecePositions = piecePositions;
+
+            var combinedXorMask = (ulong)(1ul << sourceSquare) + (ulong)(1ul << destinationSquare);
+
+            newPiecePositions ^= combinedXorMask;
 
             return newPiecePositions;
         }
