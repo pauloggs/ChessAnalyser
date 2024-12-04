@@ -206,6 +206,39 @@ namespace Services
                         }
                         break;
                     case 'B':
+
+                        string piecePositionsKey = new(new[] { colour, 'N' });
+                        var bishopBoard = previousBoardPosition.PiecePositions[piecePositionsKey];
+                        var bitstring = Convert.ToString((long)bishopBoard, 2);
+
+                        for (var diagDist = 1; diagDist < 8; diagDist++)
+                        {
+                            for (var dir = 0; dir < 4; dir++)
+                            {
+                                var fileAdj = diagDist * (2 * (dir / 2) - 1);
+                                var rankAdj = diagDist * (2 * (dir % 2) - 1);
+                                var potentialSourceFile = ply.DestinationFile + fileAdj;
+                                var potentialSourceRank = ply.DestinationRank + rankAdj;
+
+                                if (potentialSourceFile >= 0 && potentialSourceFile < 8
+                                && potentialSourceRank >= 0 && potentialSourceRank < 8)
+                                {
+                                    // check if the bishop is here
+                                    var potentialKnightSquare = _bitBoardManipulator.ReadSquare(
+                                        previousBoardPosition,
+                                        'B',
+                                        colour,
+                                        potentialSourceRank,
+                                        potentialSourceFile);
+
+                                    if (potentialKnightSquare == true)
+                                    {
+                                        sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
+                                        break;
+                                    }
+                                }
+                            }                            
+                        }
                         break;
                     case 'R':
                         break;
