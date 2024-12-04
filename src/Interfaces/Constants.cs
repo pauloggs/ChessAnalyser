@@ -78,5 +78,18 @@ namespace Interfaces
             { 'K', new Piece(){ Name = 'K', Value = 1000.0  } },
             { 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
         };
+
+        public static List<(int file, int rank)> RelativeKnightPositions = new()
+        {
+            (-2,-1),
+            (-1,-2),
+            (1,-2),
+            (2,-1),
+
+            (2,1),
+            (1,2),
+            (-1,2),
+            (-2,1)
+        };
     }
 }

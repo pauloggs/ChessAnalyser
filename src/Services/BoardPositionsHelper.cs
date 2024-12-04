@@ -145,11 +145,7 @@ namespace Services
             int destinationSquare,
             char colour)
         {
-            Console.WriteLine($"BoardPositionHelper > UpdateCurrentBoardPositionWithMove '{ply.RawMove}'");
-
             string piecePositionsKey = new(new[] { colour, ply.Piece });
-
-            
 
             // if it's a capture, then remove the piece from the opposite colour bitboard
             // need to find the piece! or just run through them all

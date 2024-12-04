@@ -41,7 +41,6 @@ namespace Services
 
             var sourceSquare = GetSourceSquare(
                 previousBoardPosition,
-                piece,
                 ply,
                 colour);
 
@@ -121,7 +120,6 @@ namespace Services
 
         private int GetSourceSquare(
             BoardPosition previousBoardPosition,
-            Piece piece,
             Ply ply,
             char colour)
         {
@@ -145,8 +143,7 @@ namespace Services
                         'P',
                         colour,
                         ply.DestinationRank + multiplier,
-                        ply.DestinationFile
-                        );
+                        ply.DestinationFile);
 
                     if (pawnSquareMinus1 == true)
                     {
@@ -159,8 +156,7 @@ namespace Services
                             'P',
                             colour,
                             ply.DestinationRank + 2 * multiplier,
-                            ply.DestinationFile
-                            );
+                            ply.DestinationFile);
 
                         if (pawnSquareMinus2 == true)
                         {
@@ -171,6 +167,52 @@ namespace Services
                             throw new Exception($"MoveInterpreter > GetSourceSquare rawMove '{ply.RawMove}' no source square found");
                         }
                     }
+                }
+                else
+                {
+                    // TODO. get source location for a pawn capture
+                }
+            }
+            else if (ply.IsPieceMove)
+            {
+                // must be N, B, R, Q ot K
+                switch (ply.Piece)
+                {
+                    case 'N':
+                        // get the eight possible squares the original N may have come from
+                        //  1. DR -2, DF - 1
+                        foreach (var np in Constants.RelativeKnightPositions)
+                        {
+                            var potentialSourceFile = ply.DestinationFile + np.file;
+                            var potentialSourceRank = ply.DestinationRank + np.rank;
+
+                            if (potentialSourceFile >= 0 && potentialSourceFile < 8
+                                && potentialSourceRank >=0 && potentialSourceRank < 8)
+                            {
+                                // check if the knight is here
+                                var potentialKnightSquare = _bitBoardManipulator.ReadSquare(
+                                    previousBoardPosition,
+                                    'N',
+                                    colour,
+                                    potentialSourceRank,
+                                    potentialSourceFile);
+
+                                if (potentialKnightSquare == true)
+                                {
+                                    sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
+                                    break;
+                                }
+                            }
+                        }
+                        break;
+                    case 'B':
+                        break;
+                    case 'R':
+                        break;
+                    case 'Q':
+                        break;
+                    case 'K':
+                        break;
                 }
             }
 
