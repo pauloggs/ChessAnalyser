@@ -31,11 +31,6 @@ namespace Services
             {
                 game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
 
-                // loop through all plies and set board positions
-
-                // TODO delete this test display
-                _displayService.DisplayBoardPosition(game.BoardPositions[0]);
-
                 _boardPositionsHelper.SetBoardPositions(game);
             }
         }

@@ -15,9 +15,16 @@ namespace Services
         void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
     }
 
-    public class BoardPositionsHelper(IMoveInterpreter moveInterpreter) : IBoardPositionsHelper
+    public class BoardPositionsHelper(
+        IMoveInterpreter moveInterpreter,
+        IDisplayService displayService,
+        IBitBoardManipulator bitBoardManipulator) : IBoardPositionsHelper
     {
         private readonly IMoveInterpreter _moveInterpreter = moveInterpreter;
+
+        private readonly IDisplayService _displayService = displayService;
+
+        private readonly IBitBoardManipulator _bitBoardManipulator = bitBoardManipulator;
 
         public BoardPosition GetStartingBoardPosition()
         {
@@ -80,11 +87,14 @@ namespace Services
         {
             var numberOfPlies = game.Plies.Keys.Count;
 
-            for (var currentPlyKey = 0; currentPlyKey < numberOfPlies; currentPlyKey++)
+            for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
             {
-                var previousBoardPosition = game.BoardPositions[currentPlyKey];
+                // ply 0 is applied to create board 1
+                var currentBoardIndex = plyIndex + 1;
 
-                SetBoardPositionFromPly(game, previousBoardPosition, game.Plies[currentPlyKey], currentPlyKey+1);
+                var previousBoardPosition = game.BoardPositions[plyIndex];
+
+                SetBoardPositionFromPly(game, previousBoardPosition, game.Plies[plyIndex], currentBoardIndex);
             }
         }
 
@@ -94,10 +104,10 @@ namespace Services
             Ply ply,
             int currentBoardIndex)
         {
-            var newBoardPosition
+            var currentBoardPositions
                 = ExtensionMethods.DeepCopy(previousBoardPosition) ?? new BoardPosition();
 
-            game.BoardPositions[currentBoardIndex] = newBoardPosition;
+            game.BoardPositions[currentBoardIndex] = currentBoardPositions;
 
             var colour = ply.Colour;
 
@@ -108,13 +118,15 @@ namespace Services
                         colour);
 
             UpdateCurrentBoardPositionWithMove(
-                newBoardPosition,
+                currentBoardPositions,
                 piece,
                 ply,
                 sourceSquare,
                 destinationSquare,
                 colour
                 );
+
+            _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 
         /// <summary>
@@ -144,10 +156,18 @@ namespace Services
 
             if (ply.IsPieceMove)
             {
-                var piecePositionBytes
-                = BitConverter.GetBytes(currentBoardPosition.PiecePositions[piecePositionsKey])
-                ?? Array.Empty<byte>();
-                // handle  pawn and piece moves
+                //var piecePositionBytes
+                //= BitConverter.GetBytes(currentBoardPosition.PiecePositions[piecePositionsKey])
+                //?? Array.Empty<byte>();
+                //// handle  pawn and piece moves
+
+
+                var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
+
+                var newPiecePositions
+                    = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
+
+                currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
             }
             else if (ply.IsKingsideCastling)
             {
