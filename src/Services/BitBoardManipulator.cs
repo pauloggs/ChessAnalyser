@@ -54,9 +54,7 @@ namespace Services
             int sourceSquare,
             int destinationSquare)
         {
-            var ulongToApply = (ulong)(sourceSquare + destinationSquare);
-
-            var newPiecePositions = piecePositions ^ ulongToApply;
+            var newPiecePositions = piecePositions - (ulong)sourceSquare + (ulong)destinationSquare;
 
             return newPiecePositions;
         }

@@ -191,7 +191,7 @@ namespace Services
 
                 ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
 
-                return (ply.DestinationRank * 8) + (ply.DestinationFile - 1);
+                return (ply.DestinationRank * 8) + ply.DestinationFile;
             }
             else if (ply.IsKingsideCastling || ply.IsQueensideCastling)
             {
