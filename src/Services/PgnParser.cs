@@ -96,7 +96,7 @@ namespace Services
 
                     var rawGameLines = Regex.Split(rawPgnContent, "\r\n|\r|\n");
 
-                    var plyNumber = 1;
+                    var plyNumber = 0;
 
                     var tagDictionary = new Dictionary<string, string>();
 
@@ -158,7 +158,7 @@ namespace Services
 
             foreach (string plyString in plies)
             {
-                if (string.IsNullOrWhiteSpace(plyString))
+                if (!string.IsNullOrWhiteSpace(plyString))
                 {
                     var ply = new Ply()
                     {

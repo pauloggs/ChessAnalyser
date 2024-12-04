@@ -1,30 +1,65 @@
-﻿using Interfaces.DTO;
+﻿using System.Numerics;
+using Interfaces;
+using Interfaces.DTO;
+using Newtonsoft.Json.Linq;
 
 namespace Services
 {
 	public interface IBitBoardManipulator
 	{
-		bool readSquare(
+        bool ReadSquare(
             BoardPosition boardPosition,
             char piece,
             char colour,
-            int square);
-	}
+            int rank,
+            int file);
+
+        ulong PiecePositionsAfterMove(
+            ulong piecePositions,
+            int sourceSquare,
+            int destinationSquare);
+    }
 
     public class BitBoardManipulator : IBitBoardManipulator
     {
-		public BitBoardManipulator()
-		{
-		}
 
-        public bool readSquare(
+        public bool ReadSquare(
             BoardPosition boardPosition,
             char piece,
             char colour,
-            int square)
+            int rank,
+            int file)
         {
-            throw new NotImplementedException();
+            string piecePositionsKey = new(new[] { colour, piece });
+
+            var piecePositionBytes
+                = BitConverter.GetBytes(boardPosition.PiecePositions[piecePositionsKey])
+                ?? Array.Empty<byte>();
+
+            if (piecePositionBytes.Length < 8)
+            {
+                throw new Exception($"Invalid bytes in board position");
+            }
+
+            return GetFileFromRank(piecePositionBytes[rank], file);
         }
-    }
+
+        private static bool GetFileFromRank(byte files, int file)
+        {
+            return (files & (1 << file)) != 0;
+        }
+
+        public ulong PiecePositionsAfterMove(
+            ulong piecePositions,
+            int sourceSquare,
+            int destinationSquare)
+        {
+            var ulongToApply = (ulong)(sourceSquare + destinationSquare);
+
+            var newPiecePositions = piecePositions ^ ulongToApply;
+
+            return newPiecePositions;
+        }
+    }    
 }
 

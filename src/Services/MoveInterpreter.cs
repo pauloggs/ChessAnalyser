@@ -24,9 +24,9 @@ namespace Services
 
         public (Piece piece, int sourceSquare, int destinationSquare)
             GetSourceAndDestinationSquares(
-            BoardPosition previousBoardPosition,
-            Ply ply,
-            char colour)
+                BoardPosition previousBoardPosition,
+                Ply ply,
+                char colour)
         {
             if (string.IsNullOrEmpty(ply.RawMove) || ply.RawMove.Length < 2)
             {
@@ -37,13 +37,15 @@ namespace Services
 
             var piece = GetPiece(ply);
 
+            var destinationSquare = GetDestinationSquare(ply);
+
             var sourceSquare = GetSourceSquare(
                 previousBoardPosition,
                 piece,
                 ply,
                 colour);
 
-            var destinationSquare = GetDestinationSquare(ply);
+            
             
             return (piece, sourceSquare, destinationSquare);
         }
@@ -101,11 +103,13 @@ namespace Services
                 piece = Constants.Pieces['P']; // is a pawn move
                 ply.IsPawnMove = true;
                 ply.IsPieceMove = true;
+                ply.Piece = 'P';
             }
             else if (char.IsUpper(firstChar))
             {
                 piece = Constants.Pieces[firstChar]; // it is a non-pawn piece move
                 ply.IsPieceMove = true;
+                ply.Piece = firstChar;
             }
             else
             {
@@ -115,13 +119,16 @@ namespace Services
             return piece;
         }
 
-        private static int GetSourceSquare(
+        private int GetSourceSquare(
             BoardPosition previousBoardPosition,
             Piece piece,
             Ply ply,
             char colour)
         {
             // example Nc6, fxe5, Raf8, R1f8
+            var sourceSquare = -1;
+
+            var multiplier = colour == 'W' ? -1 : 1;
 
             // if it's a pawn move, then
             //   if it's not a capture
@@ -132,10 +139,42 @@ namespace Services
             {
                 if (!ply.IsCapture)
                 {
+                    // check the rank above (B) or below (W)
+                    var pawnSquareMinus1 = _bitBoardManipulator.ReadSquare(
+                        previousBoardPosition,
+                        'P',
+                        colour,
+                        ply.DestinationRank + multiplier,
+                        ply.DestinationFile
+                        );
 
+                    if (pawnSquareMinus1 == true)
+                    {
+                        sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(ply.DestinationRank + multiplier, ply.DestinationFile);
+                    }
+                    else
+                    {
+                        var pawnSquareMinus2 = _bitBoardManipulator.ReadSquare(
+                            previousBoardPosition,
+                            'P',
+                            colour,
+                            ply.DestinationRank + 2 * multiplier,
+                            ply.DestinationFile
+                            );
+
+                        if (pawnSquareMinus2 == true)
+                        {
+                            sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(ply.DestinationRank + 2 *multiplier, ply.DestinationFile);
+                        }
+                        else
+                        {
+                            throw new Exception($"MoveInterpreter > GetSourceSquare rawMove '{ply.RawMove}' no source square found");
+                        }
+                    }
                 }
             }
-            return 0;
+
+            return sourceSquare;
         }
 
         /// <summary>
@@ -148,11 +187,11 @@ namespace Services
         {          
             if (ply.IsPieceMove)
             {
-                var destinationFile = Constants.File[ply.RawMove[^2]];
+                ply.DestinationFile = Constants.File[ply.RawMove[^2]]; ;
 
-                var destinationRank = ply.RawMove[^1];
+                ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
 
-                return destinationRank * 8 + (destinationFile - 1);
+                return (ply.DestinationRank * 8) + (ply.DestinationFile - 1);
             }
             else if (ply.IsKingsideCastling || ply.IsQueensideCastling)
             {

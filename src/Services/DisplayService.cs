@@ -5,11 +5,13 @@
     using Interfaces.DTO;
 
     public interface IDisplayService
-	{
+    {
         void DisplayBoardPosition(sbyte[,] boardArray);
 
-		sbyte[,] GetBoardArrayFromBoardPositions(BoardPosition boardPosition);
-	}
+        void DisplayBoardPosition(BoardPosition boardPosition);
+
+        sbyte[,] GetBoardArrayFromBoardPositions(BoardPosition boardPosition);
+    }
 
     public class DisplayService : IDisplayService
     {
@@ -32,9 +34,16 @@
             Console.WriteLine();
         }
 
+        public void DisplayBoardPosition(BoardPosition boardPosition)
+        {
+            var boardArray = GetBoardArrayFromBoardPositions(boardPosition);
+
+            DisplayBoardPosition(boardArray);
+        }
+
         public sbyte[,] GetBoardArrayFromBoardPositions(BoardPosition boardPosition)
         {
-            var boardArray = new sbyte[8,8];
+            var boardArray = new sbyte[8, 8];
 
             foreach (var key in boardPosition.PiecePositions.Keys)
             {
@@ -53,7 +62,7 @@
                     string files = Convert.ToString(rank, 2).PadLeft(8, '0');
 
                     for (var fileIndex = 7; fileIndex >= 0; fileIndex--)
-                    {                      
+                    {
                         var pieceSbyte
                             = (sbyte)((int)(Constants.DisplayBoardPiece)Enum
                             .Parse(typeof(Constants.DisplayBoardPiece), piece)
@@ -65,7 +74,6 @@
             }
 
             return boardArray;
-        }        
+        }
     }
 }
-

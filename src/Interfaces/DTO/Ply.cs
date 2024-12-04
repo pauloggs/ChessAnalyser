@@ -12,5 +12,8 @@
         public bool IsEnpassant { get; set; }
         public bool IsCheck { get; set; }
         public bool IsCapture { get; set; }
+        public int DestinationRank { get; set; }
+        public int DestinationFile { get; set; }
+        public char Piece { get; set; }
     }
 }

@@ -80,24 +80,24 @@ namespace Services
         {
             var numberOfPlies = game.Plies.Keys.Count;
 
-            for (var plyKey = 1; plyKey < numberOfPlies; plyKey++)
+            for (var currentPlyKey = 0; currentPlyKey < numberOfPlies; currentPlyKey++)
             {
-                var previousBoardPosition = game.BoardPositions[plyKey - 1];                
-                
-                SetCurrentBoardPosition(game, previousBoardPosition, game.Plies[plyKey], plyKey);
+                var previousBoardPosition = game.BoardPositions[currentPlyKey];
+
+                SetBoardPositionFromPly(game, previousBoardPosition, game.Plies[currentPlyKey], currentPlyKey+1);
             }
         }
 
-        private void SetCurrentBoardPosition(
+        private void SetBoardPositionFromPly(
             Game game,
             BoardPosition previousBoardPosition,
             Ply ply,
-            int plyKey)
+            int currentBoardIndex)
         {
             var newBoardPosition
-                = ExtensionMethods.DeepCopy<BoardPosition>(previousBoardPosition) ?? new BoardPosition();
+                = ExtensionMethods.DeepCopy(previousBoardPosition) ?? new BoardPosition();
 
-            game.BoardPositions[plyKey] = newBoardPosition;
+            game.BoardPositions[currentBoardIndex] = newBoardPosition;
 
             var colour = ply.Colour;
 
@@ -135,8 +135,18 @@ namespace Services
         {
             Console.WriteLine($"BoardPositionHelper > UpdateCurrentBoardPositionWithMove '{ply.RawMove}'");
 
+            string piecePositionsKey = new(new[] { colour, ply.Piece });
+
+            
+
+            // if it's a capture, then remove the piece from the opposite colour bitboard
+            // need to find the piece! or just run through them all
+
             if (ply.IsPieceMove)
             {
+                var piecePositionBytes
+                = BitConverter.GetBytes(currentBoardPosition.PiecePositions[piecePositionsKey])
+                ?? Array.Empty<byte>();
                 // handle  pawn and piece moves
             }
             else if (ply.IsKingsideCastling)
