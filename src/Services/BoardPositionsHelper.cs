@@ -24,8 +24,6 @@ namespace Services
 
         private readonly IDisplayService _displayService = displayService;
 
-        private readonly IBitBoardManipulator _bitBoardManipulator = bitBoardManipulator;
-
         public BoardPosition GetStartingBoardPosition()
         {
             var startingBoardPosition = new BoardPosition();
@@ -158,12 +156,6 @@ namespace Services
 
             if (ply.IsPieceMove)
             {
-                //var piecePositionBytes
-                //= BitConverter.GetBytes(currentBoardPosition.PiecePositions[piecePositionsKey])
-                //?? Array.Empty<byte>();
-                //// handle  pawn and piece moves
-
-
                 var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
 
                 var newPiecePositions

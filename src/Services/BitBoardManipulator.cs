@@ -55,13 +55,7 @@ namespace Services
             int sourceSquare,
             int destinationSquare)
         {
-            ulong newPiecePositions = piecePositions;
-
-            var combinedXorMask = (ulong)(1ul << sourceSquare) + (ulong)(1ul << destinationSquare);
-
-            newPiecePositions ^= combinedXorMask;
-
-            return newPiecePositions;
+            return piecePositions ^= ((ulong)(1ul << sourceSquare) + (ulong)(1ul << destinationSquare));
         }
     }    
 }
