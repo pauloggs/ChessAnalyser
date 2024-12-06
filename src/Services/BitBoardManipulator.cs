@@ -62,9 +62,7 @@ namespace Services
             ulong piecePositions,
             int square)
         {
-            //return piecePositions ^= (ulong)(1ul << square);
             return piecePositions &= ~ (ulong)(1ul << square);
-            //return piecePositions &= ((ulong)(1ul << square));
         }
     }    
 }

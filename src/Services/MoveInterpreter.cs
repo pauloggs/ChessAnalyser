@@ -158,8 +158,6 @@ namespace Services
                 }
                 else
                 {
-                    // TODO. get source location for a pawn capture
-                    // e.g. exd4
                     // find the file before the 'x'
                     string[] rawMoveSplit = ply.RawMove.ToLower().Split('x');
                     var sourceFileKey = rawMoveSplit[0];
@@ -209,7 +207,8 @@ namespace Services
                                     colour);
 
                                 if (sourceSquare >= 0) break;
-                            }                            
+                            }
+                            if (sourceSquare >= 0) break;
                         }
                         break;
                     case 'R':
@@ -231,9 +230,55 @@ namespace Services
 
                                 if (sourceSquare >= 0) break;
                             }
+                            if (sourceSquare >= 0) break;
                         }
                         break;
                     case 'Q':
+                        // loop through diagonals (Bishop code)
+                        for (var diagDist = 1; diagDist < 8; diagDist++)
+                        {
+                            for (var dir = 0; dir < 4; dir++)
+                            {
+                                var fileAdj = diagDist * (2 * (dir / 2) - 1);
+                                var rankAdj = diagDist * (2 * (dir % 2) - 1);
+                                var potentialSourceFile = ply.DestinationFile + fileAdj;
+                                var potentialSourceRank = ply.DestinationRank + rankAdj;
+
+                                sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    'B',
+                                    colour);
+
+                                if (sourceSquare >= 0) break;
+                            }
+                            if (sourceSquare >= 0) break;
+                        }
+                        if (sourceSquare < 0)
+                        {
+                            // loop through orthogonals (Rook code)
+
+                            for (var dir = 0; dir < 4; dir++)
+                            {
+                                int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
+                                int rankAdj = ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                var potentialSourceFile = ply.DestinationFile + fileAdj;
+                                var potentialSourceRank = ply.DestinationRank + rankAdj;
+
+                                sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    'Q',
+                                    colour);
+
+                                if (sourceSquare >= 0) break;
+                            }
+                            if (sourceSquare >= 0) break;
+                        }
+                        
+
                         break;
                     case 'K':
                         break;
