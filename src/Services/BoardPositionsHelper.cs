@@ -150,10 +150,7 @@ namespace Services
             if (ply.IsPieceMove)
             {
                 var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
-                if (ply.Piece == 'N')
-                {
-                    Console.WriteLine("");
-                }
+
                 var newPiecePositions
                     = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
 
@@ -180,10 +177,66 @@ namespace Services
             else if (ply.IsKingsideCastling)
             {
                 // handle king-side castling for that particular colour
+                if (colour == 'W')
+                {
+                    // move the king
+                    var kingPositions = currentBoardPosition.PiecePositions["WK"];
+
+                    currentBoardPosition.PiecePositions["WK"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 4, 6);
+
+                    // then move the rook
+                    var rookPositions = currentBoardPosition.PiecePositions["WR"];
+
+                    currentBoardPosition.PiecePositions["WR"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 7, 5);
+                }
+                else
+                {
+                    // move the king
+                    var kingPositions = currentBoardPosition.PiecePositions["BK"];
+
+                    currentBoardPosition.PiecePositions["BK"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 60, 62);
+
+                    // then move the rook
+                    var rookPositions = currentBoardPosition.PiecePositions["BR"];
+
+                    currentBoardPosition.PiecePositions["BR"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 63, 61);
+                }
             }
             else if (ply.IsQueensideCastling)
             {
-                // handle queen-side castling for that particular colour
+                // handle king-side castling for that particular colour
+                if (colour == 'W')
+                {
+                    // move the king
+                    var kingPositions = currentBoardPosition.PiecePositions["WK"];
+
+                    currentBoardPosition.PiecePositions["WK"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 4, 2);
+
+                    // then move the rook
+                    var rookPositions = currentBoardPosition.PiecePositions["WR"];
+
+                    currentBoardPosition.PiecePositions["WR"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 0, 3);
+                }
+                else
+                {
+                    // move the king
+                    var kingPositions = currentBoardPosition.PiecePositions["BK"];
+
+                    currentBoardPosition.PiecePositions["BK"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 60, 58);
+
+                    // then move the rook
+                    var rookPositions = currentBoardPosition.PiecePositions["BR"];
+
+                    currentBoardPosition.PiecePositions["BR"]
+                        = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 56, 59);
+                }
             }
             else
             {

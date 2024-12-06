@@ -216,8 +216,8 @@ namespace Services
                         {
                             for (var dir = 0; dir < 4; dir++)
                             {
-                                int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
-                                int rankAdj = ((dir+1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                int fileAdj = orthoDist * (dir % 2) * (dir - 2); // %2 x (dir - 2)
+                                int rankAdj = orthoDist * ((dir+1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
                                 var potentialSourceFile = ply.DestinationFile + fileAdj;
                                 var potentialSourceRank = ply.DestinationRank + rankAdj;
 
@@ -248,7 +248,7 @@ namespace Services
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'B',
+                                    'Q',
                                     colour);
 
                                 if (sourceSquare >= 0) break;
@@ -257,8 +257,49 @@ namespace Services
                         }
                         if (sourceSquare < 0)
                         {
-                            // loop through orthogonals (Rook code)
+                            for (var orthoDist = 1; orthoDist < 8; orthoDist++)
+                            {
+                                for (var dir = 0; dir < 4; dir++)
+                                {
+                                    int fileAdj = orthoDist * (dir % 2) * (dir - 2); // %2 x (dir - 2)
+                                    int rankAdj = orthoDist * ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                    var potentialSourceFile = ply.DestinationFile + fileAdj;
+                                    var potentialSourceRank = ply.DestinationRank + rankAdj;
 
+                                    sourceSquare = GetSourceSquare(
+                                        previousBoardPosition,
+                                        potentialSourceRank,
+                                        potentialSourceFile,
+                                        'Q',
+                                        colour);
+
+                                    if (sourceSquare >= 0) break;
+                                }
+                                if (sourceSquare >= 0) break;
+                            }
+                        }
+                        
+
+                        break;
+                    case 'K':
+                        for (var dir = 0; dir < 4; dir++)
+                        {
+                            int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
+                            int rankAdj = ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                            var potentialSourceFile = ply.DestinationFile + fileAdj;
+                            var potentialSourceRank = ply.DestinationRank + rankAdj;
+
+                            sourceSquare = GetSourceSquare(
+                                previousBoardPosition,
+                                potentialSourceRank,
+                                potentialSourceFile,
+                                'K',
+                                colour);
+
+                            if (sourceSquare >= 0) break;
+                        }
+                        if (sourceSquare < 0)
+                        {
                             for (var dir = 0; dir < 4; dir++)
                             {
                                 int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
@@ -270,17 +311,12 @@ namespace Services
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'Q',
+                                    'K',
                                     colour);
 
                                 if (sourceSquare >= 0) break;
                             }
-                            if (sourceSquare >= 0) break;
                         }
-                        
-
-                        break;
-                    case 'K':
                         break;
                 }
             }
