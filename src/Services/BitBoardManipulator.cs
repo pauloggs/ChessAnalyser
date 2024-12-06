@@ -1,12 +1,8 @@
-﻿using System.Collections.Generic;
-using System.Numerics;
-using Interfaces;
-using Interfaces.DTO;
-using Newtonsoft.Json.Linq;
+﻿using Interfaces.DTO;
 
 namespace Services
 {
-	public interface IBitBoardManipulator
+    public interface IBitBoardManipulator
 	{
         bool ReadSquare(
             BoardPosition boardPosition,
@@ -19,6 +15,10 @@ namespace Services
             ulong piecePositions,
             int sourceSquare,
             int destinationSquare);
+
+        ulong RemovePiece(
+            ulong piecePositions,
+            int square);
     }
 
     public class BitBoardManipulator : IBitBoardManipulator
@@ -56,6 +56,15 @@ namespace Services
             int destinationSquare)
         {
             return piecePositions ^= ((ulong)(1ul << sourceSquare) + (ulong)(1ul << destinationSquare));
+        }
+
+        public ulong RemovePiece(
+            ulong piecePositions,
+            int square)
+        {
+            //return piecePositions ^= (ulong)(1ul << square);
+            return piecePositions &= ~ (ulong)(1ul << square);
+            //return piecePositions &= ((ulong)(1ul << square));
         }
     }    
 }

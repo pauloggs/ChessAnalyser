@@ -117,14 +117,13 @@ namespace Services
 
             UpdateCurrentBoardPositionWithMove(
                 currentBoardPositions,
-                piece,
                 ply,
                 sourceSquare,
                 destinationSquare,
                 colour
                 );
 
-            Console.WriteLine($"BoardPositionHelper > SetBoardPositionFromPly: move {ply.MoveNumber}, {colour}, {ply.RawMove}");
+            Console.WriteLine($"\nBoardPositionHelper > SetBoardPositionFromPly: move {ply.MoveNumber}, {colour}, {ply.RawMove}");
             _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 
@@ -138,7 +137,6 @@ namespace Services
         /// <param name="colour"></param>
         private void UpdateCurrentBoardPositionWithMove(
             BoardPosition currentBoardPosition,
-            Piece piece,
             Ply ply,
             int sourceSquare,
             int destinationSquare,
@@ -152,9 +150,30 @@ namespace Services
             if (ply.IsPieceMove)
             {
                 var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
-
+                if (ply.Piece == 'N')
+                {
+                    Console.WriteLine("");
+                }
                 var newPiecePositions
                     = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
+
+                if (ply.IsCapture)
+                {
+                    var oppCol = colour == 'W' ? 'B' : 'W';
+
+                    // update the opposing colour's piece position to remove the piece at the destination square
+                    foreach (var piece in Constants.PieceIndex.Keys)
+                    {
+                        
+                        string oppPiecePositionsKey = new(new[] { oppCol, piece });
+                        currentBoardPosition.PiecePositions[oppPiecePositionsKey]
+                            = bitBoardManipulator.RemovePiece(
+                                currentBoardPosition.PiecePositions[oppPiecePositionsKey],
+                                destinationSquare);
+                    }
+
+                    currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
+                }
 
                 currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
             }

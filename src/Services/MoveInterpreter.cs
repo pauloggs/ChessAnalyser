@@ -42,9 +42,7 @@ namespace Services
             var sourceSquare = GetSourceSquare(
                 previousBoardPosition,
                 ply,
-                colour);
-
-            
+                colour);            
             
             return (piece, sourceSquare, destinationSquare);
         }
@@ -161,6 +159,13 @@ namespace Services
                 else
                 {
                     // TODO. get source location for a pawn capture
+                    // e.g. exd4
+                    // find the file before the 'x'
+                    string[] rawMoveSplit = ply.RawMove.ToLower().Split('x');
+                    var sourceFileKey = rawMoveSplit[0];
+                    var sourceFile = Constants.File[sourceFileKey[0]];
+                    var sourceRank = ply.DestinationRank + multiplier;
+                    sourceSquare = sourceRank * 8 + sourceFile;
                 }
             }
             else if (ply.IsPieceMove)
@@ -180,7 +185,7 @@ namespace Services
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'R',
+                                    'N',
                                     colour);
 
                             if (sourceSquare >= 0) break;

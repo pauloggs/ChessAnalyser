@@ -27,7 +27,7 @@
                 Console.WriteLine();
             }
             Console.Write(" |");
-            for (var fileIndex = 7; fileIndex >= 0; fileIndex--)
+            for (var fileIndex = 0; fileIndex < 8; fileIndex++)
             {
                 Console.Write($"{Constants.FileIds[fileIndex]}|");
             }
