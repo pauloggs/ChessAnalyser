@@ -75,8 +75,6 @@ namespace Services
         {
             var rawMove = ply.RawMove;
 
-            Console.WriteLine($"MoveInterpreter > GetPiece: '{rawMove}'");
-
             var firstChar = rawMove[0];
 
             Piece piece;
@@ -138,35 +136,27 @@ namespace Services
                 if (!ply.IsCapture)
                 {
                     // check the rank above (B) or below (W)
-                    var pawnSquareMinus1 = _bitBoardManipulator.ReadSquare(
-                        previousBoardPosition,
-                        'P',
-                        colour,
-                        ply.DestinationRank + multiplier,
-                        ply.DestinationFile);
+                    sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    ply.DestinationRank + multiplier,
+                                    ply.DestinationFile,
+                                    'P',
+                                    colour);
 
-                    if (pawnSquareMinus1 == true)
+                    if (sourceSquare < 0)
                     {
-                        sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(ply.DestinationRank + multiplier, ply.DestinationFile);
-                    }
-                    else
-                    {
-                        var pawnSquareMinus2 = _bitBoardManipulator.ReadSquare(
-                            previousBoardPosition,
-                            'P',
-                            colour,
-                            ply.DestinationRank + 2 * multiplier,
-                            ply.DestinationFile);
+                        sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    ply.DestinationRank + 2 * multiplier,
+                                    ply.DestinationFile,
+                                    'P',
+                                    colour);
 
-                        if (pawnSquareMinus2 == true)
+                        if (sourceSquare < 0)
                         {
-                            sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(ply.DestinationRank + 2 *multiplier, ply.DestinationFile);
+                            throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {colour}, {ply.RawMove} no source square found");
                         }
-                        else
-                        {
-                            throw new Exception($"MoveInterpreter > GetSourceSquare rawMove '{ply.RawMove}' no source square found");
-                        }
-                    }
+                    };
                 }
                 else
                 {
@@ -186,31 +176,17 @@ namespace Services
                             var potentialSourceFile = ply.DestinationFile + np.file;
                             var potentialSourceRank = ply.DestinationRank + np.rank;
 
-                            if (potentialSourceFile >= 0 && potentialSourceFile < 8
-                                && potentialSourceRank >=0 && potentialSourceRank < 8)
-                            {
-                                // check if the knight is here
-                                var potentialKnightSquare = _bitBoardManipulator.ReadSquare(
+                            sourceSquare = GetSourceSquare(
                                     previousBoardPosition,
-                                    'N',
-                                    colour,
                                     potentialSourceRank,
-                                    potentialSourceFile);
+                                    potentialSourceFile,
+                                    'R',
+                                    colour);
 
-                                if (potentialKnightSquare == true)
-                                {
-                                    sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
-                                    break;
-                                }
-                            }
+                            if (sourceSquare >= 0) break;
                         }
                         break;
                     case 'B':
-
-                        string piecePositionsKey = new(new[] { colour, 'N' });
-                        var bishopBoard = previousBoardPosition.PiecePositions[piecePositionsKey];
-                        var bitstring = Convert.ToString((long)bishopBoard, 2);
-
                         for (var diagDist = 1; diagDist < 8; diagDist++)
                         {
                             for (var dir = 0; dir < 4; dir++)
@@ -220,27 +196,37 @@ namespace Services
                                 var potentialSourceFile = ply.DestinationFile + fileAdj;
                                 var potentialSourceRank = ply.DestinationRank + rankAdj;
 
-                                if (potentialSourceFile >= 0 && potentialSourceFile < 8
-                                && potentialSourceRank >= 0 && potentialSourceRank < 8)
-                                {
-                                    // check if the bishop is here
-                                    var potentialKnightSquare = _bitBoardManipulator.ReadSquare(
-                                        previousBoardPosition,
-                                        'B',
-                                        colour,
-                                        potentialSourceRank,
-                                        potentialSourceFile);
+                                sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    'B',
+                                    colour);
 
-                                    if (potentialKnightSquare == true)
-                                    {
-                                        sourceSquare = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
-                                        break;
-                                    }
-                                }
+                                if (sourceSquare >= 0) break;
                             }                            
                         }
                         break;
                     case 'R':
+                        for (var orthoDist = 1; orthoDist < 8; orthoDist++)
+                        {
+                            for (var dir = 0; dir < 4; dir++)
+                            {
+                                int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
+                                int rankAdj = ((dir+1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                var potentialSourceFile = ply.DestinationFile + fileAdj;
+                                var potentialSourceRank = ply.DestinationRank + rankAdj;
+
+                                sourceSquare = GetSourceSquare(
+                                    previousBoardPosition,
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    'R',
+                                    colour);
+
+                                if (sourceSquare >= 0) break;
+                            }
+                        }
                         break;
                     case 'Q':
                         break;
@@ -277,6 +263,45 @@ namespace Services
             {
                 throw new Exception("Move must be either a piece move or casteling.");
             }
+        }
+
+        /// <summary>
+        /// Check if the specified colour/piece is at the specified rank/file.
+        /// Return the 0-63 square number if present, or -1 if not.
+        /// </summary>
+        /// <param name="previousBoardPosition"></param>
+        /// <param name="potentialSourceRank"></param>
+        /// <param name="potentialSourceFile"></param>
+        /// <param name="piece"></param>
+        /// <param name="colour"></param>
+        /// <returns></returns>
+        private int GetSourceSquare(
+            BoardPosition previousBoardPosition,
+            int potentialSourceRank,
+            int potentialSourceFile,
+            char piece,
+            char colour)
+        {
+            var returnValue = -1;
+
+            if (potentialSourceFile >= 0 && potentialSourceFile < 8
+                 && potentialSourceRank >= 0 && potentialSourceRank < 8)
+            {
+                // check if the piece is here
+                var potentialKnightSquare = _bitBoardManipulator.ReadSquare(
+                    previousBoardPosition,
+                    piece,
+                    colour,
+                    potentialSourceRank,
+                    potentialSourceFile);
+
+                if (potentialKnightSquare == true)
+                {
+                    returnValue = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
+                }
+            }
+
+            return returnValue;
         }
     }
 }

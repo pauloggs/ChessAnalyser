@@ -102,8 +102,6 @@ namespace Services
             Ply ply,
             int currentBoardIndex)
         {
-            Console.WriteLine($"BoardPositionsHelper > SetBoardPositionFromPly: rawMove {ply.RawMove}");
-
             var currentBoardPositions
                 = ExtensionMethods.DeepCopy(previousBoardPosition) ?? new BoardPosition();
 
@@ -126,6 +124,7 @@ namespace Services
                 colour
                 );
 
+            Console.WriteLine($"BoardPositionHelper > SetBoardPositionFromPly: move {ply.MoveNumber}, {colour}, {ply.RawMove}");
             _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 
