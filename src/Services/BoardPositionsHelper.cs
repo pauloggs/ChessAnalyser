@@ -87,6 +87,8 @@ namespace Services
 
             for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
             {
+                if (SetWinner(game, plyIndex)) break;
+
                 // ply 0 is applied to create board 1
                 var currentBoardIndex = plyIndex + 1;
 
@@ -242,6 +244,26 @@ namespace Services
             {
                 throw new Exception($"Move is invalid {ply.RawMove}");
             }
+        }
+
+        private bool SetWinner(Game game, int plyIndex)
+        {
+            var returnValue = false;
+
+            switch (game.Plies[plyIndex].RawMove)
+            {
+                case "0-1":
+                    game.Winner = "W";
+                    return true;
+                case "1-0":
+                    game.Winner = "D";
+                    return true;
+                case "1/2-1/2":
+                    game.Winner = "D";
+                    return true;
+            }
+
+            return returnValue;
         }
     }
 }

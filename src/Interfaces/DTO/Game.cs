@@ -33,11 +33,14 @@
         /// </summary>
         public string? GameId { get; set; }
 
+        public string Winner { get; set; }
+
         public Game()
         {
             Tags = new Dictionary<string, string>();
             Plies = new Dictionary<int, Ply>();
             BoardPositions = new Dictionary<int, BoardPosition>();
+            Winner = "None";
         }
     }
 }

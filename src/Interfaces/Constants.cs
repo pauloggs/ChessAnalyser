@@ -18,6 +18,8 @@ namespace Interfaces
             "eco"
         ];
 
+
+
         public enum DisplayBoardPiece
         {
             _ = 0,
