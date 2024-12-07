@@ -8,6 +8,12 @@ namespace Interfaces.DTO
 	{
 		public Dictionary<string, ulong> PiecePositions { get; set; }
 
+		/// <summary>
+		/// If this board position was the result of a two-square pawn move,
+		/// then the following move can potentially be an en-passant capture.
+		/// </summary>
+		public char? EnPassantTargetFile { get; set; }
+
 		public BoardPosition()
 		{
 			PiecePositions = new Dictionary<string, ulong>()
@@ -24,7 +30,7 @@ namespace Interfaces.DTO
 				{ "BR", 0 },
 				{ "BQ", 0 },
 				{ "BK", 0 }
-            };
+            };		
         }
 	}
 }
