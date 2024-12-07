@@ -162,7 +162,7 @@ namespace Services
                 {
                     var ply = new Ply()
                     {
-                        MoveNumber = (plyNumber - 1) / 2 + 1,
+                        MoveNumber = (plyNumber / 2) + 1,
                         RawMove = plyString,
                         Colour = plyNumber % 2 == 0 ? 'W' : 'B'
                     };

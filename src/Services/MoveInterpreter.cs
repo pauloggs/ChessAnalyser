@@ -168,6 +168,26 @@ namespace Services
             }
             else if (ply.IsPieceMove)
             {
+                // check if there is more information on the source square, e.g. Raf8 indicates the rook comes from the a file
+                
+                var specifiedFile = -1;
+                var specifiedRank = -1;
+
+                // str.Replace(c, string.Empty);
+
+                if (ply.RawMove.ToLower().Replace("x", string.Empty).Length >= 4)
+                {
+                    var sourceRankOrFile = ply.RawMove[1];
+                    if (char.IsNumber(sourceRankOrFile))
+                    {
+                        specifiedRank = (int)sourceRankOrFile;
+                    }
+                    else
+                    {
+                        specifiedFile = Constants.File[sourceRankOrFile];
+                    }
+                }
+
                 // must be N, B, R, Q ot K
                 switch (ply.Piece)
                 {
@@ -186,7 +206,12 @@ namespace Services
                                     'N',
                                     colour);
 
-                            if (sourceSquare >= 0) break;
+
+                            if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                potentialSourceRank,
+                                potentialSourceFile,
+                                specifiedRank,
+                                specifiedFile) == true) break;
                         }
                         break;
                     case 'B':
@@ -206,7 +231,11 @@ namespace Services
                                     'B',
                                     colour);
 
-                                if (sourceSquare >= 0) break;
+                                if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    specifiedRank,
+                                    specifiedFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -216,8 +245,8 @@ namespace Services
                         {
                             for (var dir = 0; dir < 4; dir++)
                             {
-                                int fileAdj = orthoDist * (dir % 2) * (dir - 2); // %2 x (dir - 2)
-                                int rankAdj = orthoDist * ((dir+1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                int fileAdj = orthoDist * (dir % 2) * (dir - 2); // (dir%2)*(dir-2)
+                                int rankAdj = orthoDist * ((dir + 1) % 2) * (dir - 1); // ((dir+1)%2)*(dir-1)
                                 var potentialSourceFile = ply.DestinationFile + fileAdj;
                                 var potentialSourceRank = ply.DestinationRank + rankAdj;
 
@@ -228,7 +257,11 @@ namespace Services
                                     'R',
                                     colour);
 
-                                if (sourceSquare >= 0) break;
+                                if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    specifiedRank,
+                                    specifiedFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -251,7 +284,11 @@ namespace Services
                                     'Q',
                                     colour);
 
-                                if (sourceSquare >= 0) break;
+                                if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    specifiedRank,
+                                    specifiedFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -261,8 +298,8 @@ namespace Services
                             {
                                 for (var dir = 0; dir < 4; dir++)
                                 {
-                                    int fileAdj = orthoDist * (dir % 2) * (dir - 2); // %2 x (dir - 2)
-                                    int rankAdj = orthoDist * ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                    int fileAdj = orthoDist * (dir % 2) * (dir - 2); // (dir%2)*(dir-2)
+                                    int rankAdj = orthoDist * ((dir + 1) % 2) * (dir - 1); // ((dir+1)%2)*(dir-1)
                                     var potentialSourceFile = ply.DestinationFile + fileAdj;
                                     var potentialSourceRank = ply.DestinationRank + rankAdj;
 
@@ -273,7 +310,11 @@ namespace Services
                                         'Q',
                                         colour);
 
-                                    if (sourceSquare >= 0) break;
+                                    if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                        potentialSourceRank,
+                                        potentialSourceFile,
+                                        specifiedRank,
+                                        specifiedFile) == true) break;
                                 }
                                 if (sourceSquare >= 0) break;
                             }
@@ -296,14 +337,18 @@ namespace Services
                                 'K',
                                 colour);
 
-                            if (sourceSquare >= 0) break;
+                            if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                potentialSourceRank,
+                                potentialSourceFile,
+                                specifiedRank,
+                                specifiedFile) == true) break;
                         }
                         if (sourceSquare < 0)
                         {
                             for (var dir = 0; dir < 4; dir++)
                             {
-                                int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
-                                int rankAdj = ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                                int fileAdj = (dir % 2) * (dir - 2); // (dir%2)*(dir-2)
+                                int rankAdj = ((dir + 1) % 2) * (dir - 1); // ((dir+1)%2)*(dir-1)
                                 var potentialSourceFile = ply.DestinationFile + fileAdj;
                                 var potentialSourceRank = ply.DestinationRank + rankAdj;
 
@@ -314,7 +359,11 @@ namespace Services
                                     'K',
                                     colour);
 
-                                if (sourceSquare >= 0) break;
+                                if (sourceSquare >= 0 && PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                    potentialSourceRank,
+                                    potentialSourceFile,
+                                    specifiedRank,
+                                    specifiedFile) == true) break;
                             }
                         }
                         break;
@@ -388,6 +437,22 @@ namespace Services
             }
 
             return returnValue;
+        }
+
+        private bool PotentialRankOrFileMatchesSpecifiedRankOrFile(
+            int potentialRank,
+            int potentialFile,
+            int specifiedRank,
+            int specifiedFile)
+        {
+            if (specifiedRank < 0 && specifiedFile < 0) return true; // matches if nothing specified
+
+            if (potentialRank == specifiedRank
+                || potentialFile == specifiedFile) return true;
+
+            return false;
+
+            //return true;
         }
     }
 }
