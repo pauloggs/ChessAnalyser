@@ -219,8 +219,8 @@ namespace Services
                         {
                             for (var dir = 0; dir < 4; dir++)
                             {
-                                var fileAdj = diagDist * (2 * (dir / 2) - 1);
-                                var rankAdj = diagDist * (2 * (dir % 2) - 1);
+                                var fileAdj = diagDist * (2 * (dir / 2) - 1); // (dir/2)*2 - 1
+                                var rankAdj = diagDist * (2 * (dir % 2) - 1); // (dir%2)*2 - 1
                                 var potentialSourceFile = ply.DestinationFile + fileAdj;
                                 var potentialSourceRank = ply.DestinationRank + rankAdj;
 
@@ -325,8 +325,8 @@ namespace Services
                     case 'K':
                         for (var dir = 0; dir < 4; dir++)
                         {
-                            int fileAdj = (dir % 2) * (dir - 2); // %2 x (dir - 2)
-                            int rankAdj = ((dir + 1) % 2) * (dir - 2); // (dir+1)%2 x (dir-2)
+                            var fileAdj = (2 * (dir / 2) - 1); // (dir/2)*2 - 1
+                            var rankAdj = (2 * (dir % 2) - 1); // (dir%2)*2 - 1
                             var potentialSourceFile = ply.DestinationFile + fileAdj;
                             var potentialSourceRank = ply.DestinationRank + rankAdj;
 
