@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using Services.Helpers;
 using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
@@ -7,13 +8,6 @@ namespace Services
 {
     public interface IPgnParser
     {
-        /// <summary>
-        /// Gets raw games from the provided PGN file.
-        /// </summary>
-        /// <param name="rawPgn"></param>
-        /// <returns></returns>
-        List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn);
-
         List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns);
 
         void SetBoardPositions(List<Game> games);
@@ -39,33 +33,6 @@ namespace Services
             return gameTags;
         }
 
-        public List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
-        {
-            var rawGames = new List<RawGame>();
-
-            if (!rawPgn.Contents.Contains(Constants.GameStartMarker)) { return rawGames; }
-
-            var pgnFileName = rawPgn.Name;
-
-            string[] tokens = rawPgn.Contents.Split(new[] { Constants.GameStartMarker }, StringSplitOptions.None);
-            
-            foreach (string token in tokens)
-            {
-                if (token.Length > 0)
-                {                  
-                    var gameContents = (Constants.GameStartMarker + token).Trim();
-
-                    rawGames.Add(new RawGame()
-                    {
-                        ParentPgnFileName = pgnFileName,
-                        Contents = gameContents
-                    });
-                }
-            }
-            
-            return rawGames;
-        }
-
         private static string GetTag(string tag, string gameContents)
         {
             var startLocationOfTag = gameContents.IndexOf(tag);
@@ -84,12 +51,16 @@ namespace Services
 
         public List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns)
         {
-            List<Game> games = new();
+            List<Game> games = [];
 
+            // Loop through each raw PGN file and extract games
             foreach (var rawPgn in rawPgns)
             {
-                var rawGames = GetRawGamesFromPgnFile(rawPgn);
+                //var rawGames = GetRawGamesFromPgnFile(rawPgn);
 
+                var rawGames = PgnParserHelper.GetRawGamesFromPgnFile(rawPgn);
+
+                // Loop through each raw game in the PGN file
                 foreach (var rawGame in rawGames)
                 {
                     var rawPgnContent = rawGame.Contents;
@@ -102,6 +73,7 @@ namespace Services
 
                     var plyDictionary = new Dictionary<int, Ply>();
 
+                    // Loop through each line in the raw game
                     foreach (var rawline in rawGameLines)
                     {
                         string line = rawline.Trim();
