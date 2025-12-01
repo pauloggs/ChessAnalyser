@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using System.Text.RegularExpressions;
 
 namespace Services.Helpers
 {
@@ -45,6 +46,47 @@ namespace Services.Helpers
             }
 
             return rawGames;
-        }        
+        }
+
+        /// <summary>
+        /// Converts a PGN (Portable Game Notation) game into a <see cref="Game"/> object.
+        /// </summary>
+        /// <remarks>This method processes the contents of the provided <see cref="PgnGame"/> to extract
+        /// metadata tags and move information. The resulting <see cref="Game"/> object includes a dictionary of tags
+        /// and a dictionary of plies, which represent the moves in the game.</remarks>
+        /// <param name="pgnGame">The PGN game to convert, represented as a <see cref="PgnGame"/> object.</param>
+        /// <returns>A <see cref="Game"/> object containing the parsed tags and plies from the PGN game.</returns>
+        public static Game GetGameFromPgnGame(PgnGame pgnGame)
+        {
+            var pgnGameContent = pgnGame.Contents;
+            var pgnGameLines = Regex.Split(pgnGameContent, "\r\n|\r|\n");
+            var plyNumber = 0;
+            var tagDictionary = new Dictionary<string, string>();
+            var plyDictionary = new Dictionary<int, Ply>();
+
+            // Loop through each line in the raw game
+            foreach (var pgnGameLine in pgnGameLines)
+            {
+                string line = pgnGameLine.Trim();
+                if (string.IsNullOrWhiteSpace(line)) continue;
+                if (line.StartsWith("["))
+                {
+                    TagHelper.AddGameTag(tagDictionary, line);
+                }
+                else
+                {
+                    PlyHelper.AddPlies(plyDictionary, line, ref plyNumber);
+                }
+            }
+            var gameName = GameNameHelper.GetGameName(tagDictionary);
+            var game = new Game()
+            {
+                Name = gameName,
+                Tags = tagDictionary,
+                Plies = plyDictionary
+            };
+
+            return game;
+        }      
     }
 }

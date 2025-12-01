@@ -7,7 +7,7 @@ namespace ServicesHelpersTests
         public GameIdGeneratorTests() { }
 
         [Fact]
-        public void CheckAndReturnGameId_ShouldReturnCorrectId()
+        public void GetGameId_ShouldReturnCorrectId()
         {
             // Arrange
             var plies = new Dictionary<int, Interfaces.DTO.Ply>
@@ -19,22 +19,22 @@ namespace ServicesHelpersTests
             };
 
             // Act
-            var gameId = Services.Helpers.GameIdGenerator.CheckAndReturnGameId(plies);
+            var gameId = Services.Helpers.GameIdGenerator.GetGameId(plies);
 
             // Assert
-            var expectedGameId = "e4|e5|Nf3|Nc6";
+            var expectedGameId = "060a07a58215100f6eae66201314110af4dcb579aeb7a23ff765cbd78c708d8e";
             gameId.Should().Be(expectedGameId);
         }
 
         [Fact]
-        public void CheckAndReturnGameId_ShouldReturnEmptyString_ForNoPlies()
+        public void GetGameId_ShouldReturnEmptyString_ForNoPlies()
         {             
             // Arrange
             var plies = new Dictionary<int, Interfaces.DTO.Ply>();
             // Act
-            var gameId = Services.Helpers.GameIdGenerator.CheckAndReturnGameId(plies);
+            var gameId = Services.Helpers.GameIdGenerator.GetGameId(plies);
             // Assert
-            var expectedGameId = "";
+            var expectedGameId = "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855";
             gameId.Should().Be(expectedGameId);
         }
     }
