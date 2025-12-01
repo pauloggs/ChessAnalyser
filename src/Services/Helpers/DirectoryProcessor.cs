@@ -12,7 +12,7 @@ namespace Services.Helpers
         /// the provided collection.</remarks>
         /// <param name="targetDirectory">The path of the directory to process. Must be a valid directory path.</param>
         /// <param name="rawPgnFiles">A collection to which the loaded files will be added. Cannot be <see langword="null"/>.</param>
-        public static void ProcessDirectory(string targetDirectory, List<RawPgn> rawPgnFiles)
+        public static void ProcessDirectory(string targetDirectory, List<PgnFile> rawPgnFiles)
         {
             // Process the list of files found in the directory.
             string[] fileEntries = Directory.GetFiles(targetDirectory);

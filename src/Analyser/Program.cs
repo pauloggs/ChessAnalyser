@@ -30,7 +30,6 @@ builder.Services.AddScoped<IBitBoardManipulator, BitBoardManipulator>();
 builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
-builder.Services.AddScoped<IGameIdGenerator, GameIdGenerator>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<INaming, Naming>();

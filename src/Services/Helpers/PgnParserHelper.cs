@@ -6,23 +6,23 @@ namespace Services.Helpers
     public static class PgnParserHelper
     {
         /// <summary>
-        /// Extracts a list of raw chess games from the contents of a PGN (Portable Game Notation) file.
+        /// Extracts a list of separate PGN games from the contents of a PGN (Portable Game Notation) file.
         /// </summary>
         /// <remarks>This method identifies individual games in the PGN file by splitting the file's
         /// contents using a predefined game start marker. Each extracted game includes the original game start marker
         /// and is associated with the name of the PGN file it was extracted from.</remarks>
-        /// <param name="rawPgn">The PGN file represented as a <see cref="RawPgn"/> object, containing the file name and its contents.</param>
-        /// <returns>A list of <see cref="RawGame"/> objects, where each object represents a single raw chess game extracted from
+        /// <param name="pgnFile">The PGN file represented as a <see cref="PgnFile"/> object, containing the file name and its contents.</param>
+        /// <returns>A list of <see cref="PgnGame"/> objects, where each object represents a single raw chess game extracted from
         /// the PGN file.  If no games are found, an empty list is returned.</returns>
-        public static List<RawGame> GetRawGamesFromPgnFile(RawPgn rawPgn)
+        public static List<PgnGame> GetPgnGamesFromPgnFile(PgnFile pgnFile)
         {
-            var rawGames = new List<RawGame>();
+            var rawGames = new List<PgnGame>();
 
-            if (!rawPgn.Contents.Contains(Constants.GameStartMarker)) { return rawGames; }
+            if (!pgnFile.Contents.Contains(Constants.GameStartMarker)) { return rawGames; }
 
-            var pgnFileName = rawPgn.Name;
+            var pgnFileName = pgnFile.Name;
 
-            string[] tokens = rawPgn.Contents.Split([Constants.GameStartMarker], StringSplitOptions.None);
+            string[] tokens = pgnFile.Contents.Split([Constants.GameStartMarker], StringSplitOptions.None);
 
             // Exit if there are no 'start of game' markers
             if (tokens.Length == 0) { return rawGames; }
@@ -36,7 +36,7 @@ namespace Services.Helpers
                     // Re-add the GameStartMarker
                     var gameContents = (Constants.GameStartMarker + token).Trim();
 
-                    rawGames.Add(new RawGame()
+                    rawGames.Add(new PgnGame()
                     {
                         ParentPgnFileName = pgnFileName,
                         Contents = gameContents

@@ -9,14 +9,14 @@ namespace Services
         /// Given the provided path, load all PGN files from that location and return a 
         /// List of RawPgn files.
         /// </summary>
-        List<RawPgn> LoadPgnFiles(string path);
+        List<PgnFile> LoadPgnFiles(string path);
     }
 
     public class FileHandler : IFileHandler
     {
-        public List<RawPgn> LoadPgnFiles(string path)
+        public List<PgnFile> LoadPgnFiles(string path)
         {
-            var rawPgnFiles = new List<RawPgn>();
+            var rawPgnFiles = new List<PgnFile>();
 
             if (File.Exists(path))
             {

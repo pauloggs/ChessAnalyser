@@ -7,102 +7,127 @@ namespace Services
 {
     public interface IPgnParser
     {
-        List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns);
+        /// <summary>
+        /// Extracts a collection of chess games from a list of PGN (Portable Game Notation) files.
+        /// </summary>
+        /// <param name="pgnGames">A list of <see cref="PgnFile"/> objects representing the raw PGN files to process.</param>
+        /// <returns>A list of <see cref="Game"/> objects representing the chess games parsed from the provided PGN files.  The
+        /// list will be empty if no games are found.</returns>
+        List<Game> GetGamesFromPgnFiles(List<PgnFile> pgnGames);
 
+        /// <summary>
+        /// Updates the board positions based on the provided list of games.
+        /// </summary>
+        /// <remarks>Each game in the list is used to determine the new state of the board positions.
+        /// Ensure that the list contains valid game objects.</remarks>
+        /// <param name="games">A list of <see cref="Game"/> objects representing the games to use for updating the board positions. Cannot
+        /// be null.</param>
         void SetBoardPositions(List<Game> games);
     }
 
     public class PgnParser(
         INaming naming,
-        IBoardPositionService boardPositionGenerator,
-        IGameIdGenerator gameIdGenerator) : IPgnParser
+        IBoardPositionService boardPositionGenerator) : IPgnParser
     {
-        private readonly INaming naming = naming;
+        private readonly INaming naming = naming;  
 
-        public Dictionary<string, string> GetGameTags(string rawGameContent)
+        public List<Game> GetGamesFromPgnFiles(List<PgnFile> pgnFiles)
         {
-            var gameTags = new Dictionary<string, string>();
-
-            foreach (var tag in Constants.GameTagIdentifiers)
-
-            {
-                gameTags[tag] = GetTag(tag, rawGameContent);
-            }
-
-            return gameTags;
-        }
-
-        private static string GetTag(string tag, string gameContents)
-        {
-            var startLocationOfTag = gameContents.IndexOf(tag);
-            if (startLocationOfTag == -1) { return tag; }
-
-            var contentsStartingWithTag = gameContents.Substring(startLocationOfTag + tag.Length);
-
-            var endOfTagLocation = contentsStartingWithTag.IndexOf("]");
-
-            var tagValue = contentsStartingWithTag.Substring(0, endOfTagLocation).Replace("\"", "").Trim();
-
-            if (string.IsNullOrWhiteSpace(tagValue)) tagValue = Constants.DefaultEmptyTagValue;
-
-            return tagValue;
-        }     
-
-        public List<Game> GetGamesFromRawPgns(List<RawPgn> rawPgns)
-        {
+            List<PgnGame> pgnGames = [];
             List<Game> games = [];
 
-            // Loop through each raw PGN file and extract games
-            foreach (var rawPgn in rawPgns)
+            // Get the PgnGame objects from the PGN files
+            foreach (var pgnFile in pgnFiles)
             {
-                
-                var rawGames = PgnParserHelper.GetRawGamesFromPgnFile(rawPgn);
-
-                // Loop through each raw game in the PGN file
-                foreach (var rawGame in rawGames)
-                {
-                    var rawPgnContent = rawGame.Contents;
-
-                    var rawGameLines = Regex.Split(rawPgnContent, "\r\n|\r|\n");
-
-                    var plyNumber = 0;
-
-                    var tagDictionary = new Dictionary<string, string>();
-
-                    var plyDictionary = new Dictionary<int, Ply>();
-
-                    // Loop through each line in the raw game
-                    foreach (var rawline in rawGameLines)
-                    {
-                        string line = rawline.Trim();
-
-                        if (string.IsNullOrWhiteSpace(line)) continue;
-
-                        if (line.StartsWith("["))
-                        {
-                            AddGameTage(tagDictionary, line);
-                        }
-                        else
-                        {
-                            AddPlies(plyDictionary, line, ref plyNumber);
-                        }
-                    }
-
-                    var gameId = gameIdGenerator.CheckAndReturnGameId(plyDictionary);
-
-                    var gameName = GetGameName(tagDictionary);
-
-                    var game = new Game() 
-                    {
-                        Name = gameName,
-                        Tags = tagDictionary,
-                        Plies = plyDictionary,
-                        GameId = gameId
-                    };
-
-                    games.Add(game);
-                }
+                var extractedPgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile);
+                pgnGames.AddRange(extractedPgnGames);
             }
+
+            // Parse each PgnGame into a Game object
+            foreach (var pgnGame in pgnGames)
+            {
+                var pgnGameContent = pgnGame.Contents;
+                var pgnGameLines = Regex.Split(pgnGameContent, "\r\n|\r|\n");
+                var plyNumber = 0;
+                var tagDictionary = new Dictionary<string, string>();
+                var plyDictionary = new Dictionary<int, Ply>();
+                // Loop through each line in the raw game
+                foreach (var pgnGameLine in pgnGameLines)
+                {
+                    string line = pgnGameLine.Trim();
+                    if (string.IsNullOrWhiteSpace(line)) continue;
+                    if (line.StartsWith("["))
+                    {
+                        AddGameTage(tagDictionary, line);
+                    }
+                    else
+                    {
+                        AddPlies(plyDictionary, line, ref plyNumber);
+                    }
+                }
+                var gameId = GameIdGenerator.CheckAndReturnGameId(plyDictionary);
+                var gameName = GetGameName(tagDictionary);
+                var game = new Game() 
+                {
+                    Name = gameName,
+                    Tags = tagDictionary,
+                    Plies = plyDictionary,
+                    GameId = gameId
+                };
+                games.Add(game);
+            }
+
+            //// Loop through each PGN file and extract games
+            //foreach (var rawPgn in pgnFiles)
+            //{
+            //    // Extract PGN games from the PGN file
+            //    var pgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(rawPgn);
+
+            //    // Loop through each PGN game in the PGN file
+            //    foreach (var pgnGame in pgnGames)
+            //    {
+            //        var pgnGameContent = pgnGame.Contents;
+
+            //        var pgnGameLines = Regex.Split(pgnGameContent, "\r\n|\r|\n");
+
+            //        var plyNumber = 0;
+
+            //        var tagDictionary = new Dictionary<string, string>();
+
+            //        var plyDictionary = new Dictionary<int, Ply>();
+
+            //        // Loop through each line in the raw game
+            //        foreach (var pgnGameLine in pgnGameLines)
+            //        {
+            //            string line = pgnGameLine.Trim();
+
+            //            if (string.IsNullOrWhiteSpace(line)) continue;
+
+            //            if (line.StartsWith("["))
+            //            {
+            //                AddGameTage(tagDictionary, line);
+            //            }
+            //            else
+            //            {
+            //                AddPlies(plyDictionary, line, ref plyNumber);
+            //            }
+            //        }
+
+            //        var gameId = gameIdGenerator.CheckAndReturnGameId(plyDictionary);
+
+            //        var gameName = GetGameName(tagDictionary);
+
+            //        var game = new Game() 
+            //        {
+            //            Name = gameName,
+            //            Tags = tagDictionary,
+            //            Plies = plyDictionary,
+            //            GameId = gameId
+            //        };
+
+            //        games.Add(game);
+            //    }
+            //}
 
             return games;
         }

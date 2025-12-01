@@ -24,9 +24,11 @@
 
         public async Task LoadGamesToDatabase(string filePath)
         {
-            var rawPgns = fileHandler.LoadPgnFiles(filePath);
+            // Load PGN files from the provided path
+            var pgnFiles = fileHandler.LoadPgnFiles(filePath);
 
-            var games = pgnParser.GetGamesFromRawPgns(rawPgns);
+            // Parse PGN files into individual games
+            var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
 
             var unprocessedGames = persistenceService.GetUnprocessedGames(games);
 
