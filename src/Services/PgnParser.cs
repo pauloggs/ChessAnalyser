@@ -55,8 +55,7 @@ namespace Services
             // Loop through each raw PGN file and extract games
             foreach (var rawPgn in rawPgns)
             {
-                //var rawGames = GetRawGamesFromPgnFile(rawPgn);
-
+                
                 var rawGames = PgnParserHelper.GetRawGamesFromPgnFile(rawPgn);
 
                 // Loop through each raw game in the PGN file
