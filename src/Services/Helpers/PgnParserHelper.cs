@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using Microsoft.IdentityModel.Tokens;
 
 namespace Services.Helpers
 {
@@ -13,13 +14,15 @@ namespace Services.Helpers
 
             var pgnFileName = rawPgn.Name;
 
-            string[] tokens = rawPgn.Contents.Split(new[] { Constants.GameStartMarker }, StringSplitOptions.None);
+            string[] tokens = rawPgn.Contents.Split([Constants.GameStartMarker], StringSplitOptions.None);
 
             foreach (string token in tokens)
             {
                 if (token.Length > 0)
                 {
                     var gameContents = (Constants.GameStartMarker + token).Trim();
+
+                    if (gameContents.IsNullOrEmpty()) { continue; }
 
                     rawGames.Add(new RawGame()
                     {
@@ -31,5 +34,7 @@ namespace Services.Helpers
 
             return rawGames;
         }
+
+        
     }
 }

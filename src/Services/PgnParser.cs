@@ -1,7 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
 using Services.Helpers;
-using System.Security.Cryptography;
 using System.Text.RegularExpressions;
 
 namespace Services
