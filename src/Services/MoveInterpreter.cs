@@ -75,15 +75,20 @@ namespace Services
 
             var firstChar = rawMove[0];
 
-            Piece piece;
+            Piece piece = new Piece();
 
             if (rawMove.ToLower().Contains('x'))
             {
                 ply.IsCapture = true;
             }
-
-
-            if (rawMove == "O-O-O")
+            if (rawMove.Contains('='))
+            {
+                ply.IsPawnMove = true;
+                ply.IsPromotion = true;
+                var promotionPiece = (rawMove.Substring(rawMove.IndexOf('=') + 1))[0];
+                piece = Constants.Pieces[promotionPiece];
+            }
+            else if (rawMove == "O-O-O")
             {
                 piece = Constants.Pieces['C']; // is a castling move
                 ply.IsQueensideCastling = true;
@@ -383,7 +388,14 @@ namespace Services
         {          
             if (ply.IsPieceMove)
             {
-                ply.DestinationFile = Constants.File[ply.RawMove[^2]]; ;
+                try
+                {
+                    ply.DestinationFile = Constants.File[ply.RawMove[^2]];
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
 
                 ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
 
