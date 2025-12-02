@@ -39,7 +39,7 @@ namespace ServicesHelpersTests
             var ply = new Ply { RawMove = "e4" };
             int currentBoardIndex = 1;
 
-            var moveInterpretation = (Piece: new Piece(), sourceSquare: 0, destinationSquare: 1);
+            var moveInterpretation = (Piece: new Piece(name: 'X', value: 0.0), sourceSquare: 0, destinationSquare: 1);
 
             // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
             moveInterpreterMock.Setup(
@@ -90,7 +90,7 @@ namespace ServicesHelpersTests
 
             int currentBoardIndex = 0;
 
-            var moveInterpretation = (Piece: new Piece(), sourceSquare: 0, destinationSquare: 1);
+            var moveInterpretation = (Piece: new Piece(name: 'X', value: 0.0), sourceSquare: 0, destinationSquare: 1);
 
             // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
             moveInterpreterMock.Setup(

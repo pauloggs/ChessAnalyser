@@ -30,18 +30,26 @@ namespace Services.Helpers
 
             var firstChar = rawMove[0];
 
-            Piece piece = new();
+            Piece piece;
 
             if (rawMove.ToLower().Contains('x'))
             {
                 ply.IsCapture = true;
             }
+
             if (rawMove.Contains('='))
             {
                 ply.IsPawnMove = true;
                 ply.IsPromotion = true;
                 var promotionPiece = (rawMove.Substring(rawMove.IndexOf('=') + 1))[0];
-                piece = Constants.Pieces[promotionPiece];
+                try
+                {
+                    piece = Constants.Pieces[promotionPiece];
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to retrieve Piece from key: '{promotionPiece}'", ex);
+                }
             }
             else if (rawMove == "O-O-O")
             {
@@ -62,7 +70,14 @@ namespace Services.Helpers
             }
             else if (char.IsUpper(firstChar))
             {
-                piece = Constants.Pieces[firstChar]; // it is a non-pawn piece move
+                try
+                {
+                    piece = Constants.Pieces[firstChar];
+                }
+                catch (Exception ex)
+                {
+                    throw new Exception($"Unable to retrieve Piece from key: '{firstChar}'", ex);
+                }
                 ply.IsPieceMove = true;
                 ply.Piece = firstChar;
             }

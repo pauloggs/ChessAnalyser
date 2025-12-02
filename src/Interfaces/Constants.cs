@@ -73,7 +73,7 @@ namespace Interfaces
         /// <summary>
         /// Defines a mapping from piece characters to their corresponding indices.
         /// </summary>
-        public static Dictionary<char, int> PieceIndex = new()
+        public static readonly Dictionary<char, int> PieceIndex = new()
         {
             { 'P', 0},
             { 'N', 1},
@@ -86,16 +86,25 @@ namespace Interfaces
         /// <summary>
         /// Defines a mapping from piece characters to their corresponding Piece objects, which include name and value.
         /// </summary>
-        public static Dictionary<char, Piece> Pieces = new()
+        public static readonly Dictionary<char, Piece> Pieces = new()
         {
-            { 'X', new Piece(){ Name = 'X', Value = 0.0  } }, // no move
-            { 'P', new Piece(){ Name = 'P', Value = 1.0  } },
-            { 'N', new Piece(){ Name = 'N', Value = 3.0  } },
-            { 'B', new Piece(){ Name = 'B', Value = 3.0  } },
-            { 'R', new Piece(){ Name = 'R', Value = 5.0  } },
-            { 'Q', new Piece(){ Name = 'Q', Value = 9.0  } },
-            { 'K', new Piece(){ Name = 'K', Value = 1000.0  } },
-            { 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
+            { 'X', new Piece(name: 'X', value: 0.0)}, // no move
+            { 'P', new Piece(name: 'P', value: 1.0) },
+            { 'N', new Piece(name: 'N', value: 3.0) },
+            { 'B', new Piece(name: 'B', value: 3.0) },
+            { 'R', new Piece(name: 'R', value: 5.0) },
+            { 'Q', new Piece(name: 'Q', value: 9.0) },
+            { 'K', new Piece(name: 'K', value: 1000.0) },
+            { 'C', new Piece(name: 'C', value: 0.0) } // castling move
+
+            //{ 'X', new Piece(){ Name = 'X', Value = 0.0  } }, // no move
+            //{ 'P', new Piece(){ Name = 'P', Value = 1.0  } },
+            //{ 'N', new Piece(){ Name = 'N', Value = 3.0  } },
+            //{ 'B', new Piece(){ Name = 'B', Value = 3.0  } },
+            //{ 'R', new Piece(){ Name = 'R', Value = 5.0  } },
+            //{ 'Q', new Piece(){ Name = 'Q', Value = 9.0  } },
+            //{ 'K', new Piece(){ Name = 'K', Value = 1000.0  } },
+            //{ 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
         };
 
         /// <summary>
