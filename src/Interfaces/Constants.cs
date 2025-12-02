@@ -4,6 +4,9 @@ namespace Interfaces
 {
     public static class Constants
     {
+        /// <summary>
+        /// A list of standard PGN game tag identifiers, such as 'event', 'site', 'date', etc.
+        /// </summary>
         public static List<string> GameTagIdentifiers { get; } =
         [
             "event",
@@ -18,8 +21,9 @@ namespace Interfaces
             "eco"
         ];
 
-
-
+        /// <summary>
+        /// An enumeration to represent pieces on a display board.
+        /// </summary>
         public enum DisplayBoardPiece
         {
             _ = 0,
@@ -31,10 +35,14 @@ namespace Interfaces
             K = 6
         }
 
-        static public string DefaultEmptyTagValue { get; } = "None";
-
+        /// <summary>
+        /// Defines the marker that indicates the start of a new game in a PGN file.
+        /// </summary>
         public static string GameStartMarker { get; } = "[Event";
 
+        /// <summary>
+        /// Defines a mapping from file characters ('a' to 'h') to their corresponding zero-based indices (0 to 7).
+        /// </summary>
         public static Dictionary<char, int> File { get; } = new Dictionary<char, int>()
         {
             { 'a', 0 },
@@ -47,6 +55,9 @@ namespace Interfaces
             { 'h', 7 }
         };
 
+        /// <summary>
+        /// Defines a mapping from zero-based file indices (0 to 7) to their corresponding file characters ('A' to 'H').
+        /// </summary>
         public static Dictionary<int, char> FileIds { get; } = new Dictionary<int, char>()
         {
             { 0, 'A' },
@@ -59,6 +70,9 @@ namespace Interfaces
             { 7, 'H' }
         };
 
+        /// <summary>
+        /// Defines a mapping from piece characters to their corresponding indices.
+        /// </summary>
         public static Dictionary<char, int> PieceIndex = new()
         {
             { 'P', 0},
@@ -67,8 +81,11 @@ namespace Interfaces
             { 'R', 3},
             { 'Q', 4},
             { 'K', 5}
-         };        
+         };
 
+        /// <summary>
+        /// Defines a mapping from piece characters to their corresponding Piece objects, which include name and value.
+        /// </summary>
         public static Dictionary<char, Piece> Pieces = new()
         {
             { 'X', new Piece(){ Name = 'X', Value = 0.0  } }, // no move
@@ -81,8 +98,11 @@ namespace Interfaces
             { 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
         };
 
-        public static List<(int file, int rank)> RelativeKnightPositions = new()
-        {
+        /// <summary>
+        /// Defines the relative positions a knight can move to from its current position.
+        /// </summary>
+        public static readonly List<(int file, int rank)> RelativeKnightPositions =
+        [
             (-2,-1),
             (-1,-2),
             (1,-2),
@@ -92,6 +112,16 @@ namespace Interfaces
             (1,2),
             (-1,2),
             (-2,1)
+        ];
+
+        /// <summary>
+        /// Defines the mapping of game end conditions from PGN result strings to internal representations.
+        /// </summary>
+        public static readonly Dictionary<string, string> GameEndConditions = new()
+        {
+            { "0-1", "W" },
+            { "1-0", "D" },
+            { "1/2-1/2", "D" }
         };
     }
 }

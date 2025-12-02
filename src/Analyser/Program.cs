@@ -1,6 +1,7 @@
 using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
+using Services.Helpers;
 using System.Configuration;
 using System.Reflection;
 
@@ -31,6 +32,7 @@ builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
+builder.Services.AddScoped<IBoardPositionUpdater, BoardPositionUpdater>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();

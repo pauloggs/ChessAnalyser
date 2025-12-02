@@ -1,9 +1,14 @@
 ﻿using Interfaces.DTO;
+using Services.Helpers;
 
 namespace Services
 {
     public interface IBoardPositionService
-    {  
+    {
+        /// <summary>
+        /// Set the board positions for all the games provided.
+        /// </summary>
+        /// <param name="games"></param>
         void SetBoardPositions(List<Game> games);
     }
 
@@ -31,9 +36,28 @@ namespace Services
             {
                 game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
 
-                _boardPositionsHelper.SetBoardPositions(game);
+                // moved here from the helper
+                var numberOfPlies = game.Plies.Keys.Count;
 
+                // loop through all the plies of this game, and set the board positions for each ply
+                for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
+                {
+                    // check for game result
+                    if (_boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
+                    // ply 0 is applied to create board 1
+                    var currentBoardIndex = plyIndex + 1;
+
+                    // get the previous board position
+                    var previousBoardPosition = game.BoardPositions[plyIndex];
+
+                    // set the current board position from the previous one and the current ply
+                    _boardPositionsHelper.SetBoardPositionFromPly(
+                        game, 
+                        previousBoardPosition, 
+                        game.Plies[plyIndex], 
+                        currentBoardIndex);
+                }
             }
         }
     }
