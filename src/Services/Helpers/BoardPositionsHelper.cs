@@ -134,19 +134,24 @@ namespace Services.Helpers
             Ply ply,
             int currentBoardIndex)
         {
+            // Deep copy the previous board position to create the current board position
             var currentBoardPositions
                 = previousBoardPosition.DeepCopy() ?? new BoardPosition();
 
+            // Assign the current board position to the game at the current index
             game.BoardPositions[currentBoardIndex] = currentBoardPositions;
 
+            // Determine the colour of the player making the move
             var colour = ply.Colour;
 
+            // Get the piece, source square, and destination square for the move
             var (piece, sourceSquare, destinationSquare)
                     = _moveInterpreter.GetSourceAndDestinationSquares(
                         previousBoardPosition,
                         ply,
                         colour);
 
+            // Update the current board position with the move
             boardPositionUpdater.UpdateCurrentBoardPositionWithMove(
                 currentBoardPositions,
                 ply,
@@ -155,7 +160,6 @@ namespace Services.Helpers
                 colour
                 );
 
-            Console.WriteLine($"\nBoardPositionHelper > SetBoardPositionFromPly: move {ply.MoveNumber}, {colour}, {ply.RawMove}");
             _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 

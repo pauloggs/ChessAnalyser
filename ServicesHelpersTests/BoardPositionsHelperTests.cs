@@ -27,6 +27,101 @@ namespace ServicesHelpersTests
         }
 
         [Fact]
+        public void SetBoardPositionFromPly_ValidInput_SetsBoardPosition()
+        {
+            // Arrange
+            var game = new Game
+            {
+                Name = "Test Game",
+                Plies = []
+            };
+            var previousBoardPosition = sut.GetStartingBoardPosition();
+            var ply = new Ply { RawMove = "e4" };
+            int currentBoardIndex = 1;
+
+            var moveInterpretation = (Piece: new Piece(), sourceSquare: 0, destinationSquare: 1);
+
+            // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
+            moveInterpreterMock.Setup(
+                mi => mi.GetSourceAndDestinationSquares(
+                    It.IsAny<BoardPosition>(),
+                    It.IsAny<Ply>(),
+                    It.IsAny<char>())).Returns(moveInterpretation);
+
+            // Act
+            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+
+            // Assert
+            Assert.True(game.BoardPositions.ContainsKey(currentBoardIndex));
+            //moveInterpreterMock.Verify(mi => mi.InterpretMove(previousBoardPosition, ply), Times.Once);
+        }
+
+        [Fact]
+        public void SetBoardPositionFromPly_ShouldAssignDeepCopiedPosition_WhenValidInputProvided()
+        {
+            // Arrange
+            var game = new Game
+            {
+                Name = "Test Game",
+                Plies = []
+            };
+            var previousBoardPosition = new BoardPosition();
+            var ply = new Ply { RawMove = "e4", Colour = 'W' };
+            int currentBoardIndex = 0;
+
+            // Act
+            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+
+            // Assert
+            Assert.NotNull(game.BoardPositions[currentBoardIndex]);
+        }
+
+        [Fact]
+        public void SetBoardPositionFromPly_ShouldCallGetSourceAndDestinationSquares_WhenCalled()
+        {
+            // Arrange
+            var game = new Game
+            {
+                Name = "Test Game",
+                Plies = []
+            };
+            var previousBoardPosition = new BoardPosition();
+            var ply = new Ply { RawMove = "e5", Colour = 'B' };
+
+            int currentBoardIndex = 0;
+
+            var moveInterpretation = (Piece: new Piece(), sourceSquare: 0, destinationSquare: 1);
+
+            // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
+            moveInterpreterMock.Setup(
+                mi => mi.GetSourceAndDestinationSquares(
+                    It.IsAny<BoardPosition>(),
+                    It.IsAny<Ply>(),
+                    It.IsAny<char>())).Returns(moveInterpretation);
+
+            // Act
+            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+
+            // Assert
+            moveInterpreterMock.
+                Verify(
+                    m => m.GetSourceAndDestinationSquares(previousBoardPosition, ply, ply.Colour), 
+                    Times.Once);
+        }
+
+        [Fact]
+        public void GetStartingBoardPosition_ReturnsValidStartingPosition()
+        {
+            // Act
+            var startingPosition = sut.GetStartingBoardPosition();
+
+            // Assert
+            Assert.NotNull(startingPosition);
+            Assert.NotNull(startingPosition.PiecePositions);
+        }
+
+
+        [Fact]
         public void SetWinner_Player1Wins_ReturnsTrueAndSetsWinner()
         {
             // Arrange

@@ -5,19 +5,19 @@ namespace Services
 {
 	public interface IMoveInterpreter
     {
+        /// <summary>
+        /// From move Raf8, find out the following
+        /// 1 the piece
+        /// 2 the source square (0-63)
+        /// 3 the destination square (0-63)
+        /// </summary>
         (Piece piece, int sourceSquare, int destinationSquare)
             GetSourceAndDestinationSquares(
             BoardPosition previousBoardPosition,
             Ply ply,
             char colour);
-	}   
-
-    /// <summary>
-    /// From move Raf8, find out the following
-    /// 1 the piece
-    /// 2 the source square (0-63)
-    /// 3 the destination square (0-63)
-    /// </summary>
+	}
+    
 	public class MoveInterpreter(IBitBoardManipulator bitBoardManipulator) : IMoveInterpreter
     {
         private readonly IBitBoardManipulator _bitBoardManipulator = bitBoardManipulator;
