@@ -64,11 +64,12 @@ namespace Services.Helpers
             var tagDictionary = new Dictionary<string, string>();
             var plyDictionary = new Dictionary<int, Ply>();
 
-            // Loop through each line in the raw game
+            // Loop through each line in the PGN game
             foreach (var pgnGameLine in pgnGameLines)
             {
                 string line = pgnGameLine.Trim();
                 if (string.IsNullOrWhiteSpace(line)) continue;
+
                 if (line.StartsWith("["))
                 {
                     TagHelper.AddGameTag(tagDictionary, line);
