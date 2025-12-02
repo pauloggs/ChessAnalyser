@@ -28,7 +28,7 @@
             var pgnFiles = fileHandler.LoadPgnFiles(filePath);
 
             // Parse PGN files into individual games
-            var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
+            List<Interfaces.DTO.Game> games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
 
             // Filter out games that are already processed and persisted
             var unprocessedGames = await persistenceService.GetUnprocessedGames(games);

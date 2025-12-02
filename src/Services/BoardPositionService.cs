@@ -3,7 +3,7 @@
 namespace Services
 {
     public interface IBoardPositionService
-    {    
+    {  
         void SetBoardPositions(List<Game> games);
     }
 
@@ -32,6 +32,8 @@ namespace Services
                 game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
 
                 _boardPositionsHelper.SetBoardPositions(game);
+
+
             }
         }
     }

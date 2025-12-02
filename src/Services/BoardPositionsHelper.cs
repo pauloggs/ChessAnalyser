@@ -6,6 +6,11 @@ namespace Services
 {
 	public interface IBoardPositionsHelper
 	{
+        /// <summary>
+        /// Gets the starting board position, with all pieces in their starting positions.
+        /// This is a bitboard representation.
+        /// </summary>
+        /// <returns></returns>
 		BoardPosition GetStartingBoardPosition();
 
         void SetBoardPositions(Game game);
@@ -23,7 +28,7 @@ namespace Services
         private readonly IMoveInterpreter _moveInterpreter = moveInterpreter;
 
         private readonly IDisplayService _displayService = displayService;
-
+       
         public BoardPosition GetStartingBoardPosition()
         {
             var startingBoardPosition = new BoardPosition();
@@ -87,13 +92,16 @@ namespace Services
 
             for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
             {
+                // check for game result
                 if (SetWinner(game, plyIndex)) break;
 
                 // ply 0 is applied to create board 1
                 var currentBoardIndex = plyIndex + 1;
 
+                // get the previous board position
                 var previousBoardPosition = game.BoardPositions[plyIndex];
 
+                // set the current board position from the previous one and the current ply
                 SetBoardPositionFromPly(game, previousBoardPosition, game.Plies[plyIndex], currentBoardIndex);
             }
         }

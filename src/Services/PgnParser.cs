@@ -64,6 +64,8 @@ namespace Services
             // Generate GameId for each game
             foreach (var game in games)
             {
+                // GameId is generated from a hash of the moves (plies) in the game.
+                // This is making the assumption that the moves uniquely identify a game.
                 game.GameId = GameIdGenerator.GetGameId(game.Plies);
             }
 
