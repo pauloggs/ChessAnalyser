@@ -120,7 +120,6 @@ namespace ServicesHelpersTests
             Assert.NotNull(startingPosition.PiecePositions);
         }
 
-
         [Fact]
         public void SetWinner_Player1Wins_ReturnsTrueAndSetsWinner()
         {
