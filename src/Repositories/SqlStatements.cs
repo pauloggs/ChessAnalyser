@@ -20,6 +20,14 @@
             SELECT CAST(scope_identity() AS int);
         END;
         """;
+
+        public static string GetGameIds =>
+        """
+            SELECT 
+        	    [GameId]
+            FROM
+        	    [Chess].[dbo].[Game];
+        """;
     }
 }
 

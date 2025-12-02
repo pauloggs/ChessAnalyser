@@ -37,7 +37,7 @@
         /// <summary>
         /// GameMoves is generated from a concatenation of all the moves in the game.
         /// </summary>
-        public string? GameId { get; set; }
+        public string GameId { get; set; }
 
         public string Winner { get; set; }
 
@@ -47,6 +47,7 @@
             Plies = [];
             BoardPositions = [];
             Winner = "None";
+            GameId = string.Empty;
         }
     }
 }

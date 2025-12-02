@@ -31,7 +31,13 @@
             var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
 
             // Filter out games that are already processed and persisted
-            var unprocessedGames = persistenceService.GetUnprocessedGames(games);
+            var unprocessedGames = await persistenceService.GetUnprocessedGames(games);
+
+            if (unprocessedGames == null || unprocessedGames.Count == 0)
+            {
+                Console.WriteLine("No new games to process.");
+                return;
+            }
 
             // Generate board positions for each unprocessed game
             boardPositionService.SetBoardPositions(unprocessedGames);
