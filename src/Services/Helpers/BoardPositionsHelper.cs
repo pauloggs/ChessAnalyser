@@ -26,27 +26,32 @@ namespace Services.Helpers
             Ply ply,
             int currentBoardIndex);
 
-        /// <summary>
-        /// Removes a piece from the board position at the specified file and rank.
-        /// </summary>
-        /// <param name="boardPosition"></param>
-        /// <param name="piece"></param>
-        /// <param name="col"></param>
-        /// <param name="file"></param>
-        /// <param name="rank"></param>
-        void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
+        ///// <summary>
+        ///// Removes a piece from the board position at the specified file and rank.
+        ///// </summary>
+        ///// <param name="boardPosition"></param>
+        ///// <param name="piece"></param>
+        ///// <param name="col"></param>
+        ///// <param name="file"></param>
+        ///// <param name="rank"></param>
+        //void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
+
+        ///// <summary>
+        ///// Adds a piece to the board position at the specified file and rank.
+        ///// </summary>
+        ///// <param name="boardPosition"></param>
+        ///// <param name="piece"></param>
+        ///// <param name="col"></param>
+        ///// <param name="file"></param>
+        ///// <param name="rank"></param>
+        //void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
 
         /// <summary>
-        /// Adds a piece to the board position at the specified file and rank.
+        /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
         /// </summary>
-        /// <param name="boardPosition"></param>
-        /// <param name="piece"></param>
-        /// <param name="col"></param>
-        /// <param name="file"></param>
-        /// <param name="rank"></param>
-        void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
-
-
+        /// <param name="game"></param>
+        /// <param name="plyIndex"></param>
+        /// <returns></returns>
         bool SetWinner(Game game, int plyIndex);
     }
 
@@ -98,31 +103,30 @@ namespace Services.Helpers
 
             return startingBoardPosition;
         }   
-
        
-        public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        {
-            // calculate the square bitboard
-            var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
+        //public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
+        //{
+        //    // calculate the square bitboard
+        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
-            // determine the colour
-            var colour = col == 0 ? "W" : "P";
+        //    // determine the colour
+        //    var colour = col == 0 ? "W" : "P";
 
-            // remove the piece from the bitboard
-            boardPosition.PiecePositions[colour + piece] &= ~square;
-        }
+        //    // remove the piece from the bitboard
+        //    boardPosition.PiecePositions[colour + piece] &= ~square;
+        //}
 
-        public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        {
-            // calculate the square bitboard
-            var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
+        //public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
+        //{
+        //    // calculate the square bitboard
+        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
 
-            // determine the colour
-            var colour = col == 0 ? "W" : "P";
+        //    // determine the colour
+        //    var colour = col == 0 ? "W" : "P";
 
-            // add the piece to the bitboard
-            boardPosition.PiecePositions[colour + piece] |= square;
-        }
+        //    // add the piece to the bitboard
+        //    boardPosition.PiecePositions[colour + piece] |= square;
+        //}
 
         public void SetBoardPositionFromPly(
             Game game,
@@ -155,14 +159,20 @@ namespace Services.Helpers
             _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 
-        /// <summary>
-        /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
-        /// </summary>
-        /// <param name="game"></param>
-        /// <param name="plyIndex"></param>
-        /// <returns></returns>
         public bool SetWinner(Game game, int plyIndex)
         {
+            // Throw exception if there are no plies
+            if (game == null || game.Plies == null || game.Plies.Count == 0)
+            {
+                throw new ArgumentNullException(nameof(game), "Plies must have entries.");
+            }
+
+            // Throw exception if plyIndex is out of range
+            if (plyIndex < 0 || plyIndex >= game.Plies.Count)
+            {
+                throw new ArgumentOutOfRangeException(nameof(plyIndex), "Ply index is out of range.");
+            }
+
             if (Constants.GameEndConditions.TryGetValue(game.Plies[plyIndex].RawMove, out var winner))
             {
                 game.Winner = winner;

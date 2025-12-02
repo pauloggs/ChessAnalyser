@@ -119,8 +119,8 @@ namespace Interfaces
         /// </summary>
         public static readonly Dictionary<string, string> GameEndConditions = new()
         {
-            { "0-1", "W" },
-            { "1-0", "D" },
+            { "1-0", "W" },
+            { "0-1", "B" },
             { "1/2-1/2", "D" }
         };
     }
