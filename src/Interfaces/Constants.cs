@@ -82,30 +82,23 @@ namespace Interfaces
             { 'Q', 4},
             { 'K', 5}
          };
+                
+        private static readonly Dictionary<char, Piece> _pieces = new()
+        {
+            { 'X', new Piece('X', 0.0) }, // no move
+            { 'P', new Piece('P', 1.0) },
+            { 'N', new Piece('N', 3.0) },
+            { 'B', new Piece('B', 3.0) },
+            { 'R', new Piece('R', 5.0) },
+            { 'Q', new Piece('Q', 9.0) },
+            { 'K', new Piece('K', 1000.0) },
+            { 'C', new Piece('C', 0.0) } // castling move
+        };
 
         /// <summary>
         /// Defines a mapping from piece characters to their corresponding Piece objects, which include name and value.
         /// </summary>
-        public static readonly Dictionary<char, Piece> Pieces = new()
-        {
-            { 'X', new Piece(name: 'X', value: 0.0)}, // no move
-            { 'P', new Piece(name: 'P', value: 1.0) },
-            { 'N', new Piece(name: 'N', value: 3.0) },
-            { 'B', new Piece(name: 'B', value: 3.0) },
-            { 'R', new Piece(name: 'R', value: 5.0) },
-            { 'Q', new Piece(name: 'Q', value: 9.0) },
-            { 'K', new Piece(name: 'K', value: 1000.0) },
-            { 'C', new Piece(name: 'C', value: 0.0) } // castling move
-
-            //{ 'X', new Piece(){ Name = 'X', Value = 0.0  } }, // no move
-            //{ 'P', new Piece(){ Name = 'P', Value = 1.0  } },
-            //{ 'N', new Piece(){ Name = 'N', Value = 3.0  } },
-            //{ 'B', new Piece(){ Name = 'B', Value = 3.0  } },
-            //{ 'R', new Piece(){ Name = 'R', Value = 5.0  } },
-            //{ 'Q', new Piece(){ Name = 'Q', Value = 9.0  } },
-            //{ 'K', new Piece(){ Name = 'K', Value = 1000.0  } },
-            //{ 'C', new Piece(){ Name = 'C', Value = 0.0  } } // castling move
-        };
+        public static IReadOnlyDictionary<char, Piece> Pieces => _pieces;
 
         /// <summary>
         /// Defines the relative positions a knight can move to from its current position.
@@ -122,15 +115,17 @@ namespace Interfaces
             (-1,2),
             (-2,1)
         ];
-
-        /// <summary>
-        /// Defines the mapping of game end conditions from PGN result strings to internal representations.
-        /// </summary>
-        public static readonly Dictionary<string, string> GameEndConditions = new()
+        
+        private static readonly Dictionary<string, string> _gameEndConditions = new()
         {
             { "1-0", "W" },
             { "0-1", "B" },
             { "1/2-1/2", "D" }
         };
+
+        /// <summary>
+        /// Defines the mapping of game end conditions from PGN result strings to internal representations.
+        /// </summary>
+        public static IReadOnlyDictionary<string, string> GameEndConditions => _gameEndConditions;
     }
 }

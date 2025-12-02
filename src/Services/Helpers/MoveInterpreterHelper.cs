@@ -42,14 +42,7 @@ namespace Services.Helpers
                 ply.IsPawnMove = true;
                 ply.IsPromotion = true;
                 var promotionPiece = (rawMove.Substring(rawMove.IndexOf('=') + 1))[0];
-                try
-                {
-                    piece = Constants.Pieces[promotionPiece];
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Unable to retrieve Piece from key: '{promotionPiece}'", ex);
-                }
+                piece = PieceRetriever.GetSafePiece(promotionPiece); // get the promotion piece safely
             }
             else if (rawMove == "O-O-O")
             {
@@ -70,14 +63,7 @@ namespace Services.Helpers
             }
             else if (char.IsUpper(firstChar))
             {
-                try
-                {
-                    piece = Constants.Pieces[firstChar];
-                }
-                catch (Exception ex)
-                {
-                    throw new Exception($"Unable to retrieve Piece from key: '{firstChar}'", ex);
-                }
+                piece = PieceRetriever.GetSafePiece(firstChar); // get the piece safely
                 ply.IsPieceMove = true;
                 ply.Piece = firstChar;
             }

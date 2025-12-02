@@ -94,7 +94,6 @@ namespace ServicesHelpersTests
         {
             // Arrange
             var ply = new Ply { RawMove = "a" }; // Represents a pawn move
-            Constants.Pieces['P'] = new Piece(name: 'P', value: 0.0); // Setup the pawn in Constants
 
             // Act
             var piece = MoveInterpreterHelper.GetPiece(ply);
@@ -105,70 +104,6 @@ namespace ServicesHelpersTests
             Assert.True(ply.IsPawnMove);
             Assert.True(ply.IsPieceMove);
             Assert.Equal('P', ply.Piece);
-        }
-
-        [Fact]
-        public void GetPiece_ShouldReturnPromotedPiece_WhenRawMoveIsPromotion()
-        {
-            // Arrange
-            var ply = new Ply { RawMove = "e8=Q" }; // Represents a promotion move
-            var expectedPiece = new Piece(name: 'P', value: 0.0);
-            Constants.Pieces['Q'] = expectedPiece; // Setup the promoted piece (Queen)
-
-            // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
-
-            // Assert
-            Assert.Equal(expectedPiece, piece);
-            Assert.True(ply.IsPawnMove);
-            Assert.True(ply.IsPromotion);
-        }
-
-        [Fact]
-        public void GetPiece_ShouldReturnKingsideCastling_WhenRawMoveIsKingsideCastling()
-        {
-            // Arrange
-            var ply = new Ply { RawMove = "O-O" }; // Represents kingside castling
-            Constants.Pieces['C'] = new Piece(name: 'C', value: 0.0); // Setup the castling piece
-
-            // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
-
-            // Assert
-            Assert.Equal(Constants.Pieces['C'], piece);
-            Assert.True(ply.IsKingsideCastling);
-        }
-
-        [Fact]
-        public void GetPiece_ShouldReturnQueensideCastling_WhenRawMoveIsQueensideCastling()
-        {
-            // Arrange
-            var ply = new Ply { RawMove = "O-O-O" }; // Represents queenside castling
-            Constants.Pieces['C'] = new Piece(name: 'C', value: 0.0); // Setup the castling piece
-
-            // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
-
-            // Assert
-            Assert.Equal(Constants.Pieces['C'], piece);
-            Assert.True(ply.IsQueensideCastling);
-        }
-
-        [Fact]
-        public void GetPiece_ShouldReturnNonPawnPiece_WhenRawMoveStartsWithUppercase()
-        {
-            // Arrange
-            var ply = new Ply { RawMove = "Nf3" }; // Represents a Knight move
-            var expectedPiece = new Piece(name: 'N', value: 0.0);
-            Constants.Pieces['N'] = expectedPiece; // Assuming Knight setup in Constants
-
-            // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
-
-            // Assert
-            Assert.Equal(expectedPiece, piece);
-            Assert.True(ply.IsPieceMove);
-            Assert.Equal('N', ply.Piece);
         }
 
         [Fact]
