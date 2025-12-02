@@ -20,10 +20,13 @@ namespace Services.Helpers
         /// the next ply number.</param>
         public static void AddPlies(Dictionary<int, Ply> plyDictionary, string line, ref int plyNumber)
         {
+            // Remove move numbers (e.g., "1.", "2.", etc.) from the line
             Regex moveNumbersRegex = new Regex(@"\d+\.");
 
+            // Clean the line by removing move numbers
             line = moveNumbersRegex.Replace(line, "");
 
+            // Split the line into individual moves based on spaces
             var plies = line.Split(" ");
 
             foreach (string plyString in plies)
@@ -32,14 +35,14 @@ namespace Services.Helpers
                 {
                     var ply = new Ply()
                     {
-                        MoveNumber = (plyNumber / 2) + 1,
-                        RawMove = plyString,
-                        Colour = plyNumber % 2 == 0 ? 'W' : 'B'
+                        MoveNumber = (plyNumber / 2) + 1, // Integer division to get the move number.
+                        RawMove = plyString, // Store the raw move string. This will be parsed later.
+                        Colour = plyNumber % 2 == 0 ? 'W' : 'B' // Even ply numbers are White's moves.
                     };
 
-                    plyDictionary[plyNumber] = ply;
+                    plyDictionary[plyNumber] = ply; // Add the ply to the dictionary.
 
-                    plyNumber++;
+                    plyNumber++; // Increment the ply number for the next move.
                 }
             }
         }

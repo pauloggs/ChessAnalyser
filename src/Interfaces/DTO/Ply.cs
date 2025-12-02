@@ -1,5 +1,8 @@
 ﻿namespace Interfaces.DTO
 {
+    /// <summary>
+    /// Holds information about a single ply (half-move) in a chess game.
+    /// </summary>
     public class Ply
     {
         public int MoveNumber { get; set; }

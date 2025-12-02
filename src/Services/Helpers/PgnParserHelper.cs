@@ -64,7 +64,7 @@ namespace Services.Helpers
             var tagDictionary = new Dictionary<string, string>();
             var plyDictionary = new Dictionary<int, Ply>();
 
-            // Loop through each line in the PGN game
+            // Loop through each line in the PGN game and process it as either a tag or a move
             foreach (var pgnGameLine in pgnGameLines)
             {
                 string line = pgnGameLine.Trim();
@@ -72,14 +72,18 @@ namespace Services.Helpers
 
                 if (line.StartsWith("["))
                 {
+                    // This is a tag line
                     TagHelper.AddGameTag(tagDictionary, line);
                 }
                 else
                 {
+                    // This is a move line
                     PlyHelper.AddPlies(plyDictionary, line, ref plyNumber);
                 }
             }
+
             var gameName = GameNameHelper.GetGameName(tagDictionary);
+
             var game = new Game()
             {
                 Name = gameName,

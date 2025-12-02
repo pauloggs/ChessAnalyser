@@ -33,6 +33,15 @@ namespace Services
     {
         private readonly INaming naming = naming;  
 
+        /// <summary>
+        /// Extracts and parses a collection of chess games from a list of PGN files.
+        /// </summary>
+        /// <remarks>This method processes each PGN file to extract individual games, converts them into
+        /// <see cref="Game"/> objects,  and assigns a unique identifier to each game based on its moves. The method
+        /// assumes that the input PGN files  are valid and contain parsable chess game data.</remarks>
+        /// <param name="pgnFiles">A list of <see cref="PgnFile"/> objects representing the PGN files to process.</param>
+        /// <returns>A list of <see cref="Game"/> objects parsed from the provided PGN files. Each game includes a unique
+        /// identifier.</returns>
         public List<Game> GetGamesFromPgnFiles(List<PgnFile> pgnFiles)
         {
             List<PgnGame> pgnGames = [];

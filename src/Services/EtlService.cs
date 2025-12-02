@@ -30,10 +30,13 @@
             // Parse PGN files into individual games
             var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
 
+            // Filter out games that are already processed and persisted
             var unprocessedGames = persistenceService.GetUnprocessedGames(games);
 
+            // Generate board positions for each unprocessed game
             boardPositionService.SetBoardPositions(unprocessedGames);
 
+            // Insert unprocessed games into the database
             await persistenceService.InsertGames(unprocessedGames);
         }
     }
