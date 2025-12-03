@@ -1,11 +1,23 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using Moq;
 using Services.Helpers;
 
 namespace ServicesHelpersTests
 {
     public class MoveInterpreterHelperTests
     {
+        private Mock<ISourceSquareHelper> sourceSquareHelperMock;
+        private Mock<IDestinationSquareHelper> destinationSquareHelperMock;
+        private IMoveInterpreterHelper sut;
+
+        public MoveInterpreterHelperTests()
+        {
+            sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
+            destinationSquareHelperMock = new Mock<IDestinationSquareHelper>();
+            sut = new MoveInterpreterHelper(sourceSquareHelperMock.Object, destinationSquareHelperMock.Object);
+        }
+
         [Theory]
         [InlineData("e4+", "e4")]
         [InlineData("Nf3+", "Nf3")]
@@ -20,7 +32,7 @@ namespace ServicesHelpersTests
             };
 
             // Act
-            MoveInterpreterHelper.RemoveCheck(ply);
+            sut.RemoveCheck(ply);
 
             // Assert
             Assert.Equal(newRawMove, ply.RawMove);
@@ -40,7 +52,7 @@ namespace ServicesHelpersTests
                 IsCheck = false
             };
 
-            MoveInterpreterHelper.RemoveCheck(ply);
+            sut.RemoveCheck(ply);
 
             // Assert
             Assert.Equal(rawMove, ply.RawMove);
@@ -58,12 +70,12 @@ namespace ServicesHelpersTests
             var plyQueensideCastling = new Ply { RawMove = "O-O-O" };
 
             // Act
-            var piecePawn = MoveInterpreterHelper.GetPiece(plyPawn);
-            var pieceKnight = MoveInterpreterHelper.GetPiece(plyKnight);
-            var pieceCapture = MoveInterpreterHelper.GetPiece(plyCapture);
-            var piecePromotion = MoveInterpreterHelper.GetPiece(plyPromotion);
-            var pieceKingsideCastling = MoveInterpreterHelper.GetPiece(plyKingsideCastling);
-            var pieceQueensideCastling = MoveInterpreterHelper.GetPiece(plyQueensideCastling);
+            var piecePawn = sut.GetPiece(plyPawn);
+            var pieceKnight = sut.GetPiece(plyKnight);
+            var pieceCapture = sut.GetPiece(plyCapture);
+            var piecePromotion = sut.GetPiece(plyPromotion);
+            var pieceKingsideCastling = sut.GetPiece(plyKingsideCastling);
+            var pieceQueensideCastling = sut.GetPiece(plyQueensideCastling);
 
             // Assert
             Assert.Equal('P', piecePawn.Name);
@@ -86,7 +98,7 @@ namespace ServicesHelpersTests
             var plyInvalid = new Ply { RawMove = "InvalidMove" };
 
             // Act & Assert
-            Assert.Throws<Exception>(() => MoveInterpreterHelper.GetPiece(plyInvalid));
+            Assert.Throws<Exception>(() => sut.GetPiece(plyInvalid));
         }
 
         [Fact]
@@ -96,7 +108,7 @@ namespace ServicesHelpersTests
             var ply = new Ply { RawMove = "a" }; // Represents a pawn move
 
             // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
+            var piece = sut.GetPiece(ply);
 
             // Assert
             Assert.NotNull(piece);
@@ -113,7 +125,7 @@ namespace ServicesHelpersTests
             var ply = new Ply { RawMove = "InvalidMove" }; // Invalid move
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => MoveInterpreterHelper.GetPiece(ply));
+            var exception = Assert.Throws<Exception>(() => sut.GetPiece(ply));
             Assert.Equal("Unable to retrieve Piece from key: 'I'", exception.Message);
         }
 
@@ -124,7 +136,7 @@ namespace ServicesHelpersTests
             var ply = new Ply { RawMove = "Z4" }; // Invalid character not defined
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => MoveInterpreterHelper.GetPiece(ply));
+            var exception = Assert.Throws<Exception>(() => sut.GetPiece(ply));
             Assert.Contains("Unable to retrieve Piece from key:", exception.Message);
         }
 
@@ -134,7 +146,7 @@ namespace ServicesHelpersTests
             // Arrange
             var ply = new Ply { RawMove = "e4" }; // Pawn move
             // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
+            var piece = sut.GetPiece(ply);
             // Assert
             Assert.Equal('P', piece.Name);
             Assert.True(ply.IsPawnMove);
@@ -149,7 +161,7 @@ namespace ServicesHelpersTests
             // Arrange
             var ply = new Ply { RawMove = "Nf3" }; // Knight move
             // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
+            var piece = sut.GetPiece(ply);
             // Assert
             Assert.Equal('N', piece.Name);
             Assert.False(ply.IsPawnMove);
@@ -163,7 +175,7 @@ namespace ServicesHelpersTests
             // Arrange
             var ply = new Ply { RawMove = "Bxe5" }; // Bishop capture move
             // Act
-            var piece = MoveInterpreterHelper.GetPiece(ply);
+            var piece = sut.GetPiece(ply);
             // Assert
             Assert.Equal('B', piece.Name);
             Assert.True(ply.IsCapture);
