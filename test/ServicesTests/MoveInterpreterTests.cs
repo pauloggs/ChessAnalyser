@@ -24,10 +24,9 @@ namespace ServicesTests
             BoardPosition previousBoardPosition = new BoardPosition();
 
             Ply ply = null;
-            Colour colour = Colour.W;
 
             // Act & Assert
-            Assert.Throws<ArgumentNullException>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour));
+            Assert.Throws<ArgumentNullException>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply));
         }
 
         [Fact]
@@ -39,7 +38,7 @@ namespace ServicesTests
             Colour colour = Colour.W;
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour));
+            var exception = Assert.Throws<Exception>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply));
             Assert.Contains("invalid move", exception.Message);
         }
 
@@ -50,6 +49,7 @@ namespace ServicesTests
             BoardPosition previousBoardPosition = new BoardPosition();
             Ply ply = new Ply { RawMove = "Nf3" };
             Colour colour = Colour.W;
+            ply.Colour = colour;
             var expectedPiece = new Piece('N', 3.0);
             int expectedSourceSquare = 57; // Example source square
             int expectedDestinationSquare = 21; // Example destination square
@@ -59,7 +59,7 @@ namespace ServicesTests
             moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply, colour)).Returns(expectedSourceSquare);
 
             // Act
-            var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour);
+            var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply);
 
             // Assert
             Assert.Equal(expectedPiece, piece);
@@ -78,6 +78,7 @@ namespace ServicesTests
             BoardPosition previousBoardPosition = new BoardPosition();
             Ply ply = new Ply { RawMove = "e4+" }; // Move with check indicator
             Colour colour = Colour.W;
+            ply.Colour = colour;    
             var expectedPiece = new Piece('P', 1.0);
             int expectedSourceSquare = 52; // Example source square
             int expectedDestinationSquare = 36; // Example destination square
@@ -87,7 +88,7 @@ namespace ServicesTests
             moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply, colour)).Returns(expectedSourceSquare);
 
             // Act
-            var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour);
+            var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply);
 
             // Assert
             Assert.Equal(expectedPiece, piece);

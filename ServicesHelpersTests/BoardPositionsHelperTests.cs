@@ -47,8 +47,7 @@ namespace ServicesHelpersTests
             moveInterpreterMock.Setup(
                 mi => mi.GetSourceAndDestinationSquares(
                     It.IsAny<BoardPosition>(),
-                    It.IsAny<Ply>(),
-                    It.IsAny<Colour>())).Returns(moveInterpretation);
+                    It.IsAny<Ply>())).Returns(moveInterpretation);
 
             // Act
             sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
@@ -98,8 +97,7 @@ namespace ServicesHelpersTests
             moveInterpreterMock.Setup(
                 mi => mi.GetSourceAndDestinationSquares(
                     It.IsAny<BoardPosition>(),
-                    It.IsAny<Ply>(),
-                    It.IsAny<Colour>())).Returns(moveInterpretation);
+                    It.IsAny<Ply>())).Returns(moveInterpretation);
 
             // Act
             sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
@@ -107,7 +105,7 @@ namespace ServicesHelpersTests
             // Assert
             moveInterpreterMock.
                 Verify(
-                    m => m.GetSourceAndDestinationSquares(previousBoardPosition, ply, ply.Colour), 
+                    m => m.GetSourceAndDestinationSquares(previousBoardPosition, ply), 
                     Times.Once);
         }
 

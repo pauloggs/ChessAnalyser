@@ -1,7 +1,5 @@
-﻿using Interfaces;
-using Interfaces.DTO;
+﻿using Interfaces.DTO;
 using Services.Helpers;
-using static Interfaces.Constants;
 
 namespace Services
 {
@@ -16,8 +14,7 @@ namespace Services
         (Piece piece, int sourceSquare, int destinationSquare)
             GetSourceAndDestinationSquares(
             BoardPosition previousBoardPosition,
-            Ply ply,
-            Colour colour);
+            Ply ply);
 	}
     
 	public class MoveInterpreter(IMoveInterpreterHelper moveInterpreterHelper) : IMoveInterpreter
@@ -25,8 +22,7 @@ namespace Services
         public (Piece piece, int sourceSquare, int destinationSquare)
             GetSourceAndDestinationSquares(
                 BoardPosition previousBoardPosition,
-                Ply ply,
-                Colour colour)
+                Ply ply)
         {
             if (ply == null)
             {
@@ -36,7 +32,7 @@ namespace Services
             // basic validation
             if (string.IsNullOrEmpty(ply.RawMove) || ply.RawMove.Length < 2)
             {
-                throw new Exception($"MoveInterpreter > GetSourceAndDestinationSquares: {ply.MoveNumber}, {colour}, {ply.RawMove} invalid move");
+                throw new Exception($"MoveInterpreter > GetSourceAndDestinationSquares: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} invalid move");
             }
 
             // remove any '+' at the end of the move
@@ -52,7 +48,7 @@ namespace Services
             var sourceSquare = moveInterpreterHelper.GetSourceSquare(
                 previousBoardPosition,
                 ply,
-                colour);
+                ply.Colour);
 
             // return the piece, source square and destination square
             return (piece, sourceSquare, destinationSquare);

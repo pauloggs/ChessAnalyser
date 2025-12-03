@@ -10,8 +10,7 @@ namespace Services.Helpers
             BoardPosition currentBoardPosition,
             Ply ply,
             int sourceSquare,
-            int destinationSquare,
-            Colour colour);
+            int destinationSquare);
     }
 
     public class BoardPositionUpdater (IBitBoardManipulator bitBoardManipulator) : IBoardPositionUpdater
@@ -20,11 +19,10 @@ namespace Services.Helpers
             BoardPosition currentBoardPosition,
             Ply ply,
             int sourceSquare,
-            int destinationSquare,
-            Colour colour)
+            int destinationSquare)
         {
             //string piecePositionsKey = new([colour, ply.Piece]);
-            string piecePositionsKey = colour.ToString() + ply.Piece;
+            string piecePositionsKey = ply.Colour.ToString() + ply.Piece;
 
             // if it's a capture, then remove the piece from the opposite colour bitboard
             // need to find the piece! or just run through them all
@@ -38,7 +36,7 @@ namespace Services.Helpers
 
                 if (ply.IsCapture)
                 {
-                    var oppCol = colour == Colour.W ? 'B' : 'W';
+                    var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
 
                     // update the opposing colour's piece position to remove the piece at the destination square
                     foreach (var piece in Constants.PieceIndex.Keys)
@@ -59,7 +57,7 @@ namespace Services.Helpers
             else if (ply.IsKingsideCastling)
             {
                 // handle king-side castling for that particular colour
-                if (colour == Colour.W)
+                if (ply.Colour == Colour.W)
                 {
                     // move the king
                     var kingPositions = currentBoardPosition.PiecePositions["WK"];
@@ -91,7 +89,7 @@ namespace Services.Helpers
             else if (ply.IsQueensideCastling)
             {
                 // handle king-side castling for that particular colour
-                if (colour == Colour.W)
+                if (ply.Colour == Colour.W)
                 {
                     // move the king
                     var kingPositions = currentBoardPosition.PiecePositions["WK"];
