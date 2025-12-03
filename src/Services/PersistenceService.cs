@@ -1,5 +1,6 @@
 ﻿using Interfaces.DTO;
 using Repositories;
+using System.Threading.Tasks;
 
 namespace Services
 {
@@ -11,7 +12,7 @@ namespace Services
         /// </summary>
         /// <param name="games"></param>
         /// <returns></returns>
-		List<Game> GetUnprocessedGames(List<Game> games);
+		Task<List<Game>> GetUnprocessedGames(List<Game> games);
 
         /// <summary>
         /// Inserts each of the <see cref="Game"/>s into the database.
@@ -25,13 +26,30 @@ namespace Services
     {
         private readonly IChessRepository chessRepository = chessRepository;
 
-
-        public List<Game> GetUnprocessedGames(List<Game> games)
+        /// <summary>
+        /// Filters out any <see cref="Game"/>s that have already been processed.
+        /// </summary>
+        /// <param name="games"></param>
+        /// <returns></returns>
+        public async Task<List<Game>> GetUnprocessedGames(List<Game> games)
         {
-            // TODO. Implement a call to the ChessRepository to see if the game has already been processed.
+            var processedGameIds = await chessRepository.GetProcessedGameIds();
+
+            if (processedGameIds == null || processedGameIds.Count == 0)
+            {
+                return games;
+            }
+
+            games = games.Where(g => !processedGameIds.Contains(g.GameId)).ToList();
+
             return games;
         }
 
+        /// <summary>
+        /// Inserts each of the <see cref="Game"/>s into the database.
+        /// </summary>
+        /// <param name="games"></param>
+        /// <returns></returns>
         public async Task InsertGames(List<Game> games)
         {
             foreach (var game in games)

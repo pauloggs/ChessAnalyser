@@ -3,11 +3,17 @@
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations.Schema;
 
+    /// <summary>
+    /// Holds information about a complete chess game.
+    /// </summary>
     [Table("Game")]
     public class Game
     {
         public int Id { get; set; }
 
+        /// <summary>
+        /// The name of the game, typically derived from the Event tag in PGN.
+        /// </summary>
         public required string Name { get; set; }
 
         /// <summary>
@@ -31,13 +37,17 @@
         /// <summary>
         /// GameMoves is generated from a concatenation of all the moves in the game.
         /// </summary>
-        public string? GameId { get; set; }
+        public string GameId { get; set; }
+
+        public string Winner { get; set; }
 
         public Game()
         {
-            Tags = new Dictionary<string, string>();
-            Plies = new Dictionary<int, Ply>();
-            BoardPositions = new Dictionary<int, BoardPosition>();
+            Tags = [];
+            Plies = [];
+            BoardPositions = [];
+            Winner = "None";
+            GameId = string.Empty;
         }
     }
 }

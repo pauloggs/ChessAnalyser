@@ -1,5 +1,4 @@
-﻿using System.Runtime.InteropServices;
-using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Mvc;
 using Repositories;
 using Services;
 
@@ -20,12 +19,15 @@ namespace Analyser.Controllers
         {
             try
             {
-
+                Console.Write("\f\u001bc\x1b[3J");
+                Console.WriteLine($"Controller > LoadGames");
                 await etlService.LoadGamesToDatabase(filePath);
                 return Ok();
             }
             catch (Exception ex)
             {
+                Console.WriteLine(ex.Message);
+                Console.WriteLine(ex.StackTrace);
                 return StatusCode(StatusCodes.Status500InternalServerError, ex.Message);
             }
         }

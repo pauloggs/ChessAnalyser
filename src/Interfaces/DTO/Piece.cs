@@ -3,8 +3,17 @@ namespace Interfaces.DTO
 {
 	public class Piece
 	{
-		public string Name { get; set; } = "Pawn";
-		public double Value { get; set; }
-	}
+		//public char Name { get; set; } = 'P';
+		//public double Value { get; set; }
+
+        public char Name { get; }
+        public double Value { get; }
+
+        public Piece(char name, double value)
+        {
+            Name = name;
+            Value = value;
+        }
+    }
 }
 

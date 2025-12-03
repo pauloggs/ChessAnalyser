@@ -20,21 +20,29 @@
 
         private readonly IPgnParser pgnParser = pgnParser;
 
-        private readonly IBoardPositionService boardPositionGenerator = boardPositionGenerator;
+        private readonly IBoardPositionService boardPositionService = boardPositionGenerator;
 
         public async Task LoadGamesToDatabase(string filePath)
         {
-            var rawPgns = fileHandler.LoadPgnFiles(filePath);
+            // Load PGN files from the provided path
+            var pgnFiles = fileHandler.LoadPgnFiles(filePath);
 
-            var games = pgnParser.GetGamesFromRawPgns(rawPgns);
+            // Parse PGN files into individual games
+            List<Interfaces.DTO.Game> games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
 
-            var unprocessedGames = persistenceService.GetUnprocessedGames(games);
+            // Filter out games that are already processed and persisted
+            var unprocessedGames = await persistenceService.GetUnprocessedGames(games);
 
-            // TODO. process each Game to the board positions - BoardPositionGenerator
-            // needs to include a bit of feedback - i.e. visual display of the board! Best way to check
-            boardPositionGenerator.SetBoardPositions(games);
+            if (unprocessedGames == null || unprocessedGames.Count == 0)
+            {
+                Console.WriteLine("No new games to process.");
+                return;
+            }
 
-            // write each Game to the database PersistenceService
+            // Generate board positions for each unprocessed game
+            boardPositionService.SetBoardPositions(unprocessedGames);
+
+            // Insert unprocessed games into the database
             await persistenceService.InsertGames(unprocessedGames);
         }
     }
