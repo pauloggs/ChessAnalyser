@@ -43,7 +43,7 @@ namespace Services.Helpers
 
                 if (potentialKnightSquare == true)
                 {
-                    returnValue = ExtensionMethods.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
+                    returnValue = SquareHelper.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
                 }
             }
 

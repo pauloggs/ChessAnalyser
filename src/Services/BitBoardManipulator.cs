@@ -31,6 +31,7 @@ namespace Services
             int rank,
             int file)
         {
+            // Construct the key to access the piece positions
             string piecePositionsKey = new(new[] { colour, piece });
 
             var piecePositionBytes
