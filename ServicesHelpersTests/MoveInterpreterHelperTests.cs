@@ -127,5 +127,49 @@ namespace ServicesHelpersTests
             var exception = Assert.Throws<Exception>(() => MoveInterpreterHelper.GetPiece(ply));
             Assert.Contains("Unable to retrieve Piece from key:", exception.Message);
         }
+
+        [Fact]
+        public void GetPiece_ShouldIdentifyPawnMoveCorrectly()
+        {
+            // Arrange
+            var ply = new Ply { RawMove = "e4" }; // Pawn move
+            // Act
+            var piece = MoveInterpreterHelper.GetPiece(ply);
+            // Assert
+            Assert.Equal('P', piece.Name);
+            Assert.True(ply.IsPawnMove);
+            Assert.True(ply.IsPieceMove);
+            Assert.Equal('P', ply.Piece);
+        }
+
+
+        [Fact]
+        public void GetPiece_ShouldIdentifyKnightMoveCorrectly()
+        {
+            // Arrange
+            var ply = new Ply { RawMove = "Nf3" }; // Knight move
+            // Act
+            var piece = MoveInterpreterHelper.GetPiece(ply);
+            // Assert
+            Assert.Equal('N', piece.Name);
+            Assert.False(ply.IsPawnMove);
+            Assert.True(ply.IsPieceMove);
+            Assert.Equal('N', ply.Piece);
+        }
+
+        [Fact]
+        public void GetPiece_ShouldIdentifyCaptureMoveCorrectly()
+        {
+            // Arrange
+            var ply = new Ply { RawMove = "Bxe5" }; // Bishop capture move
+            // Act
+            var piece = MoveInterpreterHelper.GetPiece(ply);
+            // Assert
+            Assert.Equal('B', piece.Name);
+            Assert.True(ply.IsCapture);
+            Assert.True(ply.IsPieceMove);
+            Assert.Equal('B', ply.Piece);
+        }
     }
+
 }

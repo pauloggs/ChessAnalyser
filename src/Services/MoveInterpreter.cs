@@ -29,10 +29,15 @@ namespace Services
                 Ply ply,
                 char colour)
         {
+            if (ply == null)
+            {
+                throw new ArgumentNullException(nameof(ply));
+            }
+
             // basic validation
             if (string.IsNullOrEmpty(ply.RawMove) || ply.RawMove.Length < 2)
             {
-                return (new Piece(name: 'X', value: 0.0), -1, -1);
+                throw new Exception($"MoveInterpreter > GetSourceAndDestinationSquares: {ply.MoveNumber}, {colour}, {ply.RawMove} invalid move");
             }
 
             // remove any '+' at the end of the move
