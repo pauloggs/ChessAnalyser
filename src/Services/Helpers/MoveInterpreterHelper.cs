@@ -118,6 +118,20 @@ namespace Services.Helpers
 
             var rankDirection = ply.Colour == Colour.W ? -1 : 1;
 
+            //// TODO. Planned refactoring:
+            //if (ply.IsPawnMove)
+            //{
+            //    // sourceSquare = pawnMoveInterpreter.GetSourceSquare();
+            //}
+            //else if (ply.IsPieceMove)
+            //{
+            //    // sourceSquare = pieceMoveInterpreter.GetSourceSquare();
+            //}
+            //else
+            //{
+            //    throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} not a pawn or piece move");
+            //}
+
             // if it's a pawn move, then
             //   if it's not a capture
             //      if it's a white move
@@ -170,30 +184,8 @@ namespace Services.Helpers
             }
             else if (ply.IsPieceMove)
             {
-                // check if there is more information on the source square, e.g. Raf8 indicates the rook comes from the a file
-
-                // These variables hold any potential rank/file that is specified to differentiate between two possible source squares
-                //var sourceFile = -1;
-                //var sourceRank = -1;
-
-                // str.Replace(c, string.Empty);
-
-
                 // Example Rhxh4, an example of a move where we need to differentiate between two rooks that can move to h4
                 (int sourceRank, int sourceFile) = sourceSquareHelper.GetSourceRankAndOrFile(ply.RawMove);
-
-                //if (ply.RawMove.ToLower().Replace("x", string.Empty).Length >= 4)
-                //{
-                //    var sourceRankOrFile = ply.RawMove[1];
-                //    if (char.IsNumber(sourceRankOrFile))
-                //    {
-                //        sourceRank = (int)sourceRankOrFile;
-                //    }
-                //    else
-                //    {
-                //        sourceFile = Constants.File[sourceRankOrFile];
-                //    }
-                //}
 
                 // must be N, B, R, Q ot K
                 switch (ply.Piece)
