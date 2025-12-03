@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
@@ -37,7 +38,7 @@ namespace Services.Helpers
         int GetSourceSquare(
             BoardPosition previousBoardPosition,
             Ply ply,
-            char colour);
+            Colour colour);
     }
 
     public class MoveInterpreterHelper(
@@ -112,12 +113,12 @@ namespace Services.Helpers
         public int GetSourceSquare(
             BoardPosition previousBoardPosition,
             Ply ply,
-            char colour)
+            Colour colour)
         {
             // example Nc6, fxe5, Raf8, R1f8
             var sourceSquare = -1;
 
-            var rankDirection = colour == 'W' ? -1 : 1;
+            var rankDirection = colour == Colour.W ? -1 : 1;
 
             // if it's a pawn move, then
             //   if it's not a capture

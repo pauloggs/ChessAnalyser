@@ -2,6 +2,7 @@
 using Moq;
 using Services;
 using Services.Helpers;
+using static Interfaces.Constants;
 
 namespace ServicesTests
 {
@@ -23,7 +24,7 @@ namespace ServicesTests
             BoardPosition previousBoardPosition = new BoardPosition();
 
             Ply ply = null;
-            char colour = 'W';
+            Colour colour = Colour.W;
 
             // Act & Assert
             Assert.Throws<ArgumentNullException>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour));
@@ -35,7 +36,7 @@ namespace ServicesTests
             // Arrange
             BoardPosition previousBoardPosition = new BoardPosition();
             Ply ply = new Ply { RawMove = "e" }; // Invalid move (less than 2 characters)
-            char colour = 'W';
+            Colour colour = Colour.W;
 
             // Act & Assert
             var exception = Assert.Throws<Exception>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply, colour));
@@ -48,7 +49,7 @@ namespace ServicesTests
             // Arrange
             BoardPosition previousBoardPosition = new BoardPosition();
             Ply ply = new Ply { RawMove = "Nf3" };
-            char colour = 'W';
+            Colour colour = Colour.W;
             var expectedPiece = new Piece('N', 3.0);
             int expectedSourceSquare = 57; // Example source square
             int expectedDestinationSquare = 21; // Example destination square
@@ -70,14 +71,13 @@ namespace ServicesTests
             moveInterpreterHelperMock.Verify(m => m.GetSourceSquare(previousBoardPosition, ply, colour), Times.Once);
         }
 
-
         [Fact]
         public void GetSourceAndDestinationSquares_ShouldHandleCheckRemovalCorrectly()
         {
             // Arrange
             BoardPosition previousBoardPosition = new BoardPosition();
             Ply ply = new Ply { RawMove = "e4+" }; // Move with check indicator
-            char colour = 'W';
+            Colour colour = Colour.W;
             var expectedPiece = new Piece('P', 1.0);
             int expectedSourceSquare = 52; // Example source square
             int expectedDestinationSquare = 36; // Example destination square

@@ -2,6 +2,8 @@
 using Moq;
 using Services;
 using Services.Helpers;
+using System.Drawing;
+using static Interfaces.Constants;
 
 namespace ServicesHelpersTests
 {  
@@ -46,7 +48,7 @@ namespace ServicesHelpersTests
                 mi => mi.GetSourceAndDestinationSquares(
                     It.IsAny<BoardPosition>(),
                     It.IsAny<Ply>(),
-                    It.IsAny<char>())).Returns(moveInterpretation);
+                    It.IsAny<Colour>())).Returns(moveInterpretation);
 
             // Act
             sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
@@ -66,7 +68,7 @@ namespace ServicesHelpersTests
                 Plies = []
             };
             var previousBoardPosition = new BoardPosition();
-            var ply = new Ply { RawMove = "e4", Colour = 'W' };
+            var ply = new Ply { RawMove = "e4", Colour = Colour.W };
             int currentBoardIndex = 0;
 
             // Act
@@ -86,7 +88,7 @@ namespace ServicesHelpersTests
                 Plies = []
             };
             var previousBoardPosition = new BoardPosition();
-            var ply = new Ply { RawMove = "e5", Colour = 'B' };
+            var ply = new Ply { RawMove = "e5", Colour = Colour.B };
 
             int currentBoardIndex = 0;
 
@@ -97,7 +99,7 @@ namespace ServicesHelpersTests
                 mi => mi.GetSourceAndDestinationSquares(
                     It.IsAny<BoardPosition>(),
                     It.IsAny<Ply>(),
-                    It.IsAny<char>())).Returns(moveInterpretation);
+                    It.IsAny<Colour>())).Returns(moveInterpretation);
 
             // Act
             sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);

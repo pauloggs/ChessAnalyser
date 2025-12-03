@@ -1,4 +1,5 @@
 ﻿using Interfaces.DTO;
+using static Interfaces.Constants;
 
 namespace Services
 {
@@ -7,7 +8,7 @@ namespace Services
         bool ReadSquare(
             BoardPosition boardPosition,
             char piece,
-            char colour,
+            Colour colour,
             int rank,
             int file);
 
@@ -27,12 +28,14 @@ namespace Services
         public bool ReadSquare(
             BoardPosition boardPosition,
             char piece,
-            char colour,
+            Colour colour,
             int rank,
             int file)
         {
             // Construct the key to access the piece positions
-            string piecePositionsKey = new(new[] { colour, piece });
+            //string piecePositionsKey = new(new[] { colour, piece });
+
+            string piecePositionsKey = colour.ToString() + piece;
 
             var piecePositionBytes
                 = BitConverter.GetBytes(boardPosition.PiecePositions[piecePositionsKey])

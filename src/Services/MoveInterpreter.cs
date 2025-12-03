@@ -1,6 +1,7 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
 using Services.Helpers;
+using static Interfaces.Constants;
 
 namespace Services
 {
@@ -16,7 +17,7 @@ namespace Services
             GetSourceAndDestinationSquares(
             BoardPosition previousBoardPosition,
             Ply ply,
-            char colour);
+            Colour colour);
 	}
     
 	public class MoveInterpreter(IMoveInterpreterHelper moveInterpreterHelper) : IMoveInterpreter
@@ -25,7 +26,7 @@ namespace Services
             GetSourceAndDestinationSquares(
                 BoardPosition previousBoardPosition,
                 Ply ply,
-                char colour)
+                Colour colour)
         {
             if (ply == null)
             {

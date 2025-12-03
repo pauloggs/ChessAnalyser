@@ -1,4 +1,6 @@
-﻿namespace Interfaces.DTO
+﻿using static Interfaces.Constants;
+
+namespace Interfaces.DTO
 {
     /// <summary>
     /// Holds information about a single ply (half-move) in a chess game.
@@ -18,7 +20,7 @@
         /// <summary>
         /// The colour of the player making the move ('W' for White, 'B' for Black).
         /// </summary>
-        public char Colour { get; set; }
+        public Colour Colour { get; set; }
 
         /// <summary>
         /// Whether the move involves a piece (as opposed to a pawn move or castling).

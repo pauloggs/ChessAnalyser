@@ -1,5 +1,6 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
@@ -20,12 +21,17 @@ namespace Services.Helpers
             int potentialSourceRank,
             int potentialSourceFile,
             char piece,
-            char colour);
+            Colour colour);
     }
 
     public class SourceSquareHelper(IBitBoardManipulator bitBoardManipulator) : ISourceSquareHelper
     {
-        int ISourceSquareHelper.GetSourceSquare(BoardPosition previousBoardPosition, int potentialSourceRank, int potentialSourceFile, char piece, char colour)
+        public int GetSourceSquare(
+            BoardPosition previousBoardPosition, 
+            int potentialSourceRank, 
+            int potentialSourceFile, 
+            char piece, 
+            Colour colour)
         {
             // default to not found
             var returnValue = -1;

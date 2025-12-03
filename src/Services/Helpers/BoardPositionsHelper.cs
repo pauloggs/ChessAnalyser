@@ -26,26 +26,6 @@ namespace Services.Helpers
             Ply ply,
             int currentBoardIndex);
 
-        ///// <summary>
-        ///// Removes a piece from the board position at the specified file and rank.
-        ///// </summary>
-        ///// <param name="boardPosition"></param>
-        ///// <param name="piece"></param>
-        ///// <param name="col"></param>
-        ///// <param name="file"></param>
-        ///// <param name="rank"></param>
-        //void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
-
-        ///// <summary>
-        ///// Adds a piece to the board position at the specified file and rank.
-        ///// </summary>
-        ///// <param name="boardPosition"></param>
-        ///// <param name="piece"></param>
-        ///// <param name="col"></param>
-        ///// <param name="file"></param>
-        ///// <param name="rank"></param>
-        //void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
-
         /// <summary>
         /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
         /// </summary>
@@ -103,30 +83,7 @@ namespace Services.Helpers
 
             return startingBoardPosition;
         }   
-       
-        //public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        //{
-        //    // calculate the square bitboard
-        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
-
-        //    // determine the colour
-        //    var colour = col == 0 ? "W" : "P";
-
-        //    // remove the piece from the bitboard
-        //    boardPosition.PiecePositions[colour + piece] &= ~square;
-        //}
-
-        //public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        //{
-        //    // calculate the square bitboard
-        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
-
-        //    // determine the colour
-        //    var colour = col == 0 ? "W" : "P";
-
-        //    // add the piece to the bitboard
-        //    boardPosition.PiecePositions[colour + piece] |= square;
-        //}
+      
 
         public void SetBoardPositionFromPly(
             Game game,

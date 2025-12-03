@@ -5,6 +5,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
+using static Interfaces.Constants;
 
 namespace ServicesHelpersTests
 {
@@ -22,22 +23,22 @@ namespace ServicesHelpersTests
             // Assert
             Assert.Equal(6, plyDictionary.Count);
             Assert.Equal("e4", plyDictionary[0].RawMove);
-            Assert.Equal('W', plyDictionary[0].Colour);
+            Assert.Equal(Colour.W, plyDictionary[0].Colour);
             Assert.Equal(1, plyDictionary[0].MoveNumber);
             Assert.Equal("e5", plyDictionary[1].RawMove);
-            Assert.Equal('B', plyDictionary[1].Colour);
+            Assert.Equal(Colour.B, plyDictionary[1].Colour);
             Assert.Equal(1, plyDictionary[1].MoveNumber);
             Assert.Equal("Nf3", plyDictionary[2].RawMove);
-            Assert.Equal('W', plyDictionary[2].Colour);
+            Assert.Equal(Colour.W, plyDictionary[2].Colour);
             Assert.Equal(2, plyDictionary[2].MoveNumber);
             Assert.Equal("Nc6", plyDictionary[3].RawMove);
-            Assert.Equal('B', plyDictionary[3].Colour);
+            Assert.Equal(Colour.B, plyDictionary[3].Colour);
             Assert.Equal(2, plyDictionary[3].MoveNumber);
             Assert.Equal("Bb5", plyDictionary[4].RawMove);
-            Assert.Equal('W', plyDictionary[4].Colour);
+            Assert.Equal(Colour.W, plyDictionary[4].Colour);
             Assert.Equal(3, plyDictionary[4].MoveNumber);
             Assert.Equal("a6", plyDictionary[5].RawMove);
-            Assert.Equal('B', plyDictionary[5].Colour);
+            Assert.Equal(Colour.B, plyDictionary[5].Colour);
             Assert.Equal(3, plyDictionary[5].MoveNumber);
         }
 
