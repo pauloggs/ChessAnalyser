@@ -2,6 +2,14 @@
 {
     public static class RankAndFileHelper
     {
+        /// <summary>
+        /// Check if the potential rank or file matches the specified rank or file.
+        /// </summary>
+        /// <param name="potentialRank"></param>
+        /// <param name="potentialFile"></param>
+        /// <param name="specifiedRank"></param>
+        /// <param name="specifiedFile"></param>
+        /// <returns></returns>
         public static bool PotentialRankOrFileMatchesSpecifiedRankOrFile(
             int potentialRank,
             int potentialFile,

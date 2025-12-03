@@ -106,30 +106,7 @@ namespace Services.Helpers
        
         public int GetDestinationSquare(Ply ply)
         {
-            if (ply.IsPieceMove)
-            {
-                try
-                {
-                    ply.DestinationFile = Constants.File[ply.RawMove[^2]];
-                }
-                catch (Exception)
-                {
-                    throw;
-                }
-
-                ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
-
-                return (ply.DestinationRank * 8) + ply.DestinationFile;
-            }
-            else if (ply.IsKingsideCastling || ply.IsQueensideCastling)
-            {
-                // Can't get single destination square for a castling move - this is handled elsewhere
-                return -1;
-            }
-            else
-            {
-                throw new Exception("Move must be either a piece move or casteling.");
-            }
+            return destinationSquareHelper.GetDestinationSquare(ply);
         }
 
         public int GetSourceSquare(
