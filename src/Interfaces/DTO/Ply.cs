@@ -7,6 +7,11 @@ namespace Interfaces.DTO
     /// </summary>
     public class Ply
     {
+        public Ply()
+        {
+            Piece = new Piece('P', 1); // Default to a pawn piece
+        }
+
         /// <summary>
         /// The move number in the game (1-based index).
         /// </summary>
@@ -75,6 +80,6 @@ namespace Interfaces.DTO
         /// <summary>
         /// The piece involved in the move (e.g., 'P' for pawn, 'N' for knight).
         /// </summary>
-        public char Piece { get; set; }
+        public Piece Piece { get; set; }
     }
 }

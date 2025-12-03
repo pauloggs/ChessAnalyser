@@ -22,7 +22,7 @@ namespace Services.Helpers
             int destinationSquare)
         {
             //string piecePositionsKey = new([colour, ply.Piece]);
-            string piecePositionsKey = ply.Colour.ToString() + ply.Piece;
+            string piecePositionsKey = ply.Colour.ToString() + ply.Piece.Name;
 
             // if it's a capture, then remove the piece from the opposite colour bitboard
             // need to find the piece! or just run through them all

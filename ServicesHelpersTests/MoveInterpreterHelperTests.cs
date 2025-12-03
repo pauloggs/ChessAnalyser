@@ -28,7 +28,8 @@ namespace ServicesHelpersTests
             var ply = new Interfaces.DTO.Ply
             {
                 RawMove = rawMove,
-                IsCheck = false
+                IsCheck = false,
+                Piece = new Piece(name: 'P', value: 1)
             };
 
             // Act
@@ -46,10 +47,11 @@ namespace ServicesHelpersTests
         public void RemoveCheck_ShouldNotModifyMoveWithoutCheckIndicator(string rawMove)
         {
             // Arrange
-            var ply = new Interfaces.DTO.Ply
+            var ply = new Ply
             {
                 RawMove = rawMove,
-                IsCheck = false
+                IsCheck = false,
+                Piece = new Piece(name: 'P', value: 1)
             };
 
             sut.RemoveCheck(ply);
@@ -115,7 +117,7 @@ namespace ServicesHelpersTests
             Assert.Equal(Constants.Pieces['P'], piece);
             Assert.True(ply.IsPawnMove);
             Assert.True(ply.IsPieceMove);
-            Assert.Equal('P', ply.Piece);
+            Assert.Equal('P', ply.Piece.Name);
         }
 
         [Fact]
@@ -151,7 +153,7 @@ namespace ServicesHelpersTests
             Assert.Equal('P', piece.Name);
             Assert.True(ply.IsPawnMove);
             Assert.True(ply.IsPieceMove);
-            Assert.Equal('P', ply.Piece);
+            Assert.Equal('P', ply.Piece.Name);
         }
 
 
@@ -166,7 +168,7 @@ namespace ServicesHelpersTests
             Assert.Equal('N', piece.Name);
             Assert.False(ply.IsPawnMove);
             Assert.True(ply.IsPieceMove);
-            Assert.Equal('N', ply.Piece);
+            Assert.Equal('N', ply.Piece.Name);
         }
 
         [Fact]
@@ -180,7 +182,7 @@ namespace ServicesHelpersTests
             Assert.Equal('B', piece.Name);
             Assert.True(ply.IsCapture);
             Assert.True(ply.IsPieceMove);
-            Assert.Equal('B', ply.Piece);
+            Assert.Equal('B', ply.Piece.Name);
         }
     }
 

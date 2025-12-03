@@ -20,7 +20,7 @@ namespace Services.Helpers
             BoardPosition previousBoardPosition,
             int potentialSourceRank,
             int potentialSourceFile,
-            char piece,
+            Piece piece,
             Colour colour);
 
         /// <summary>
@@ -36,7 +36,7 @@ namespace Services.Helpers
             BoardPosition previousBoardPosition, 
             int potentialSourceRank, 
             int potentialSourceFile, 
-            char piece, 
+            Piece piece, 
             Colour colour)
         {
             // default to not found

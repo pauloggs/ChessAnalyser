@@ -11,7 +11,7 @@ namespace Services
         /// </summary>
         bool ReadSquare(
             BoardPosition boardPosition,
-            char piece,
+            Piece piece,
             Colour colour,
             int rank,
             int file);
@@ -30,7 +30,7 @@ namespace Services
     {
         public bool ReadSquare(
             BoardPosition boardPosition,
-            char piece,
+            Piece piece,
             Colour colour,
             int rank,
             int file)
@@ -43,7 +43,7 @@ namespace Services
             // Construct the key to access the piece positions
             // string piecePositionsKey = new(new[] { colour, piece });
 
-            string piecePositionsKey = colour.ToString() + piece;
+            string piecePositionsKey = colour.ToString() + piece.Name;
 
             var piecePositionBytes
                 = BitConverter.GetBytes(boardPosition.PiecePositions[piecePositionsKey])

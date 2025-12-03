@@ -1,9 +1,5 @@
-﻿using Interfaces.DTO;
-using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using System.Threading.Tasks;
+﻿using Interfaces;
+using Interfaces.DTO;
 using static Interfaces.Constants;
 
 namespace Services.Helpers
@@ -15,7 +11,9 @@ namespace Services.Helpers
             Ply ply);
     }
 
-    public class PawnMoveInterpreter(ISourceSquareHelper sourceSquareHelper) : IPawnMoveInterpreter
+    public class PawnMoveInterpreter(
+        ISourceSquareHelper sourceSquareHelper,
+        IBitBoardManipulator bitBoardManipulator) : IPawnMoveInterpreter
     {
         public int GetSourceSquare(BoardPosition previousBoardPosition, Ply ply)
         {
@@ -23,15 +21,28 @@ namespace Services.Helpers
 
             if (!ply.IsCapture)
             {
-                // one or two square pawn move on the same file
+                // check one square then two squares up/down the file for a source pawn
+                for (var rankOffset = 1; rankOffset <= 2; rankOffset++)
+                {
+                    var potentialSourceRank = ply.DestinationRank + (rankDirection * rankOffset);
+                    var potentialSourceFile = ply.DestinationFile;
 
-                // check the rank above (B) or below (W), to see if the pawn came from there
-                var sourceSquare = sourceSquareHelper.GetSourceSquare(
-                                previousBoardPosition,
-                                ply.DestinationRank + rankDirection,
-                                ply.DestinationFile,
-                                'P',
-                                ply.Colour);
+                    var sourcePawnFoundAtSquare = bitBoardManipulator.ReadSquare(
+                        previousBoardPosition,
+                        ply.Piece,
+                        ply.Colour,
+                        potentialSourceRank,
+                        potentialSourceFile);
+
+                    if (sourcePawnFoundAtSquare)
+                    {
+                        return SquareHelper.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
+
+                    }
+                }
+
+                // if still not found, throw exception
+                throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} no source square found");
             }
             else if (ply.IsCapture)
             {

@@ -88,13 +88,13 @@ namespace Services.Helpers
                 piece = Constants.Pieces['P']; // is a pawn move
                 ply.IsPawnMove = true;
                 ply.IsPieceMove = true;
-                ply.Piece = 'P';
+                ply.Piece = Constants.Pieces['P'];
             }
             else if (char.IsUpper(firstChar))
             {
                 piece = PieceRetriever.GetSafePiece(firstChar); // get the piece safely
                 ply.IsPieceMove = true;
-                ply.Piece = firstChar;
+                ply.Piece = Constants.Pieces[firstChar];
             }
             else
             {
@@ -151,7 +151,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     ply.DestinationRank + rankDirection,
                                     ply.DestinationFile,
-                                    'P',
+                                    ply.Piece,
                                     ply.Colour);
 
                     // check two ranks above (B) or below (W) if not found
@@ -161,7 +161,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     ply.DestinationRank + 2 * rankDirection,
                                     ply.DestinationFile,
-                                    'P',
+                                    ply.Piece,
                                     ply.Colour);
 
                         // if still not found, throw an exception
@@ -188,7 +188,7 @@ namespace Services.Helpers
                 (int sourceRank, int sourceFile) = sourceSquareHelper.GetSourceRankAndOrFile(ply.RawMove);
 
                 // must be N, B, R, Q ot K
-                switch (ply.Piece)
+                switch (ply.Piece.Name)
                 {
                     case 'N':
                         // get the eight possible squares the original N may have come from
@@ -202,7 +202,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'N',
+                                    ply.Piece,
                                     ply.Colour);
 
 
@@ -227,7 +227,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'B',
+                                    ply.Piece,
                                     ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
@@ -253,7 +253,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'R',
+                                    ply.Piece,
                                     ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
@@ -280,7 +280,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'Q',
+                                    ply.Piece,
                                     ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
@@ -306,7 +306,7 @@ namespace Services.Helpers
                                         previousBoardPosition,
                                         potentialSourceRank,
                                         potentialSourceFile,
-                                        'Q',
+                                        ply.Piece,
                                         ply.Colour);
 
                                     if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
@@ -333,7 +333,7 @@ namespace Services.Helpers
                                 previousBoardPosition,
                                 potentialSourceRank,
                                 potentialSourceFile,
-                                'K',
+                                ply.Piece,
                                 ply.Colour);
 
                             if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
@@ -355,7 +355,7 @@ namespace Services.Helpers
                                     previousBoardPosition,
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    'K',
+                                    ply.Piece   ,
                                     ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(

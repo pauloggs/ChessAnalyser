@@ -52,7 +52,7 @@ namespace ServicesHelpersTests
             var previousBoardPosition = new BoardPosition();
             int potentialSourceRank = 0;
             int potentialSourceFile = 0;
-            char piece = 'N';
+            Piece piece = Constants.Pieces['N'];
             Colour colour = Colour.W;
             bitBoardManipulator
                 .Setup(m => m.ReadSquare(previousBoardPosition, piece, colour, potentialSourceRank, potentialSourceFile))
@@ -72,7 +72,7 @@ namespace ServicesHelpersTests
             var previousBoardPosition = new BoardPosition();
             int potentialSourceRank = 0;
             int potentialSourceFile = 0;
-            char piece = 'N';
+            Piece piece = Constants.Pieces['N'];
             Colour colour = Colour.W;
             bitBoardManipulator
                 .Setup(m => m.ReadSquare(previousBoardPosition, piece, colour, potentialSourceRank, potentialSourceFile))
@@ -93,7 +93,7 @@ namespace ServicesHelpersTests
             var previousBoardPosition = new BoardPosition();
             int potentialSourceRank = 8; // Invalid rank
             int potentialSourceFile = 0;
-            char piece = 'N';
+            Piece piece = Constants.Pieces['N'];
             Colour colour = Colour.W;
 
             // Act
@@ -110,7 +110,7 @@ namespace ServicesHelpersTests
             var previousBoardPosition = new BoardPosition();
             int potentialSourceRank = 0;
             int potentialSourceFile = -1; // Invalid file
-            char piece = 'N';
+            Piece piece = Constants.Pieces['N'];
             Colour colour = Colour.W;
 
             // Act
