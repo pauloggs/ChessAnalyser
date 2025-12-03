@@ -148,5 +148,7 @@ namespace Interfaces
         /// Defines the mapping of game end conditions from PGN result strings to internal representations.
         /// </summary>
         public static IReadOnlyDictionary<string, string> GameEndConditions => _gameEndConditions;
+
+        public static int MoveNotFound { get; } = -1;
     }
 }

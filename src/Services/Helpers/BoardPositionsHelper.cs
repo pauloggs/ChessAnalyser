@@ -41,7 +41,7 @@ namespace Services.Helpers
         IBoardPositionUpdater boardPositionUpdater,
         IBitBoardManipulator bitBoardManipulator) : IBoardPositionsHelper
     {
-        private readonly IMoveInterpreter _moveInterpreter = moveInterpreter;
+        private readonly IMoveInterpreter moveInterpreter = moveInterpreter;
 
         private readonly IDisplayService _displayService = displayService;
        
@@ -99,7 +99,7 @@ namespace Services.Helpers
 
             // Get the piece, source square, and destination square for the move
             var (piece, sourceSquare, destinationSquare)
-                    = _moveInterpreter.GetSourceAndDestinationSquares(
+                    = moveInterpreter.GetSourceAndDestinationSquares(
                         previousBoardPosition,
                         ply);
 

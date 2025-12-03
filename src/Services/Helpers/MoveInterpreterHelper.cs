@@ -37,8 +37,7 @@ namespace Services.Helpers
         /// <returns></returns>
         int GetSourceSquare(
             BoardPosition previousBoardPosition,
-            Ply ply,
-            Colour colour);
+            Ply ply);
     }
 
     public class MoveInterpreterHelper(
@@ -112,13 +111,12 @@ namespace Services.Helpers
 
         public int GetSourceSquare(
             BoardPosition previousBoardPosition,
-            Ply ply,
-            Colour colour)
+            Ply ply)
         {
             // example Nc6, fxe5, Raf8, R1f8
             var sourceSquare = -1;
 
-            var rankDirection = colour == Colour.W ? -1 : 1;
+            var rankDirection = ply.Colour == Colour.W ? -1 : 1;
 
             // if it's a pawn move, then
             //   if it's not a capture
@@ -127,32 +125,35 @@ namespace Services.Helpers
             //          else if the same file & (rank -2)'s square = 1, then use this
             if (ply.IsPawnMove)
             {
+                // try to find where the pawn came from
+
                 if (!ply.IsCapture)
                 {
                     // If it is not a capture, then the pawn must come from the same file,
                     // so we just need to check one or two ranks backward or forward depending on colour
 
-                    // check the rank above (B) or below (W), for a 1-space pawn move
+                    // check the rank above (B) or below (W), to see if the pawn came from there
                     sourceSquare = sourceSquareHelper.GetSourceSquare(
                                     previousBoardPosition,
                                     ply.DestinationRank + rankDirection,
                                     ply.DestinationFile,
                                     'P',
-                                    colour);
+                                    ply.Colour);
 
-                    // if not found, check for a 2-space pawn move - i.e. from starting position
-                    if (sourceSquare < 0)
+                    // check two ranks above (B) or below (W) if not found
+                    if (sourceSquare == MoveNotFound)
                     {
                         sourceSquare = sourceSquareHelper.GetSourceSquare(
                                     previousBoardPosition,
                                     ply.DestinationRank + 2 * rankDirection,
                                     ply.DestinationFile,
                                     'P',
-                                    colour);
+                                    ply.Colour);
 
-                        if (sourceSquare < 0)
+                        // if still not found, throw an exception
+                        if (sourceSquare == MoveNotFound)
                         {
-                            throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {colour}, {ply.RawMove} no source square found");
+                            throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} no source square found");
                         }
                     }
                     ;
@@ -171,23 +172,28 @@ namespace Services.Helpers
             {
                 // check if there is more information on the source square, e.g. Raf8 indicates the rook comes from the a file
 
-                var specifiedFile = -1;
-                var specifiedRank = -1;
+                // These variables hold any potential rank/file that is specified to differentiate between two possible source squares
+                //var sourceFile = -1;
+                //var sourceRank = -1;
 
                 // str.Replace(c, string.Empty);
 
-                if (ply.RawMove.ToLower().Replace("x", string.Empty).Length >= 4)
-                {
-                    var sourceRankOrFile = ply.RawMove[1];
-                    if (char.IsNumber(sourceRankOrFile))
-                    {
-                        specifiedRank = (int)sourceRankOrFile;
-                    }
-                    else
-                    {
-                        specifiedFile = Constants.File[sourceRankOrFile];
-                    }
-                }
+
+                // Example Rhxh4, an example of a move where we need to differentiate between two rooks that can move to h4
+                (int sourceRank, int sourceFile) = sourceSquareHelper.GetSourceRankAndOrFile(ply.RawMove);
+
+                //if (ply.RawMove.ToLower().Replace("x", string.Empty).Length >= 4)
+                //{
+                //    var sourceRankOrFile = ply.RawMove[1];
+                //    if (char.IsNumber(sourceRankOrFile))
+                //    {
+                //        sourceRank = (int)sourceRankOrFile;
+                //    }
+                //    else
+                //    {
+                //        sourceFile = Constants.File[sourceRankOrFile];
+                //    }
+                //}
 
                 // must be N, B, R, Q ot K
                 switch (ply.Piece)
@@ -205,14 +211,14 @@ namespace Services.Helpers
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     'N',
-                                    colour);
+                                    ply.Colour);
 
 
                             if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
-                                specifiedRank,
-                                specifiedFile) == true) break;
+                                sourceRank,
+                                sourceFile) == true) break;
                         }
                         break;
                     case 'B':
@@ -230,13 +236,13 @@ namespace Services.Helpers
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     'B',
-                                    colour);
+                                    ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    specifiedRank,
-                                    specifiedFile) == true) break;
+                                    sourceRank,
+                                    sourceFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -256,13 +262,13 @@ namespace Services.Helpers
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     'R',
-                                    colour);
+                                    ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    specifiedRank,
-                                    specifiedFile) == true) break;
+                                    sourceRank,
+                                    sourceFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -283,13 +289,13 @@ namespace Services.Helpers
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     'Q',
-                                    colour);
+                                    ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    specifiedRank,
-                                    specifiedFile) == true) break;
+                                    sourceRank,
+                                    sourceFile) == true) break;
                             }
                             if (sourceSquare >= 0) break;
                         }
@@ -309,13 +315,13 @@ namespace Services.Helpers
                                         potentialSourceRank,
                                         potentialSourceFile,
                                         'Q',
-                                        colour);
+                                        ply.Colour);
 
                                     if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                         potentialSourceRank,
                                         potentialSourceFile,
-                                        specifiedRank,
-                                        specifiedFile) == true) break;
+                                        sourceRank,
+                                        sourceFile) == true) break;
                                 }
                                 if (sourceSquare >= 0) break;
                             }
@@ -336,13 +342,13 @@ namespace Services.Helpers
                                 potentialSourceRank,
                                 potentialSourceFile,
                                 'K',
-                                colour);
+                                ply.Colour);
 
                             if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
-                                specifiedRank,
-                                specifiedFile) == true) break;
+                                sourceRank,
+                                sourceFile) == true) break;
                         }
                         if (sourceSquare < 0)
                         {
@@ -358,13 +364,13 @@ namespace Services.Helpers
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     'K',
-                                    colour);
+                                    ply.Colour);
 
                                 if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                     potentialSourceRank,
                                     potentialSourceFile,
-                                    specifiedRank,
-                                    specifiedFile) == true) break;
+                                    sourceRank,
+                                    sourceFile) == true) break;
                             }
                         }
                         break;

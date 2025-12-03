@@ -56,7 +56,7 @@ namespace ServicesTests
             moveInterpreterHelperMock.Setup(m => m.RemoveCheck(ply)).Verifiable();
             moveInterpreterHelperMock.Setup(m => m.GetPiece(ply)).Returns(expectedPiece);
             moveInterpreterHelperMock.Setup(m => m.GetDestinationSquare(ply)).Returns(expectedDestinationSquare);
-            moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply, colour)).Returns(expectedSourceSquare);
+            moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply)).Returns(expectedSourceSquare);
 
             // Act
             var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply);
@@ -68,7 +68,7 @@ namespace ServicesTests
             moveInterpreterHelperMock.Verify(m => m.RemoveCheck(ply), Times.Once);
             moveInterpreterHelperMock.Verify(m => m.GetPiece(ply), Times.Once);
             moveInterpreterHelperMock.Verify(m => m.GetDestinationSquare(ply), Times.Once);
-            moveInterpreterHelperMock.Verify(m => m.GetSourceSquare(previousBoardPosition, ply, colour), Times.Once);
+            moveInterpreterHelperMock.Verify(m => m.GetSourceSquare(previousBoardPosition, ply), Times.Once);
         }
 
         [Fact]
@@ -85,7 +85,7 @@ namespace ServicesTests
             moveInterpreterHelperMock.Setup(m => m.RemoveCheck(ply)).Verifiable();
             moveInterpreterHelperMock.Setup(m => m.GetPiece(ply)).Returns(expectedPiece);
             moveInterpreterHelperMock.Setup(m => m.GetDestinationSquare(ply)).Returns(expectedDestinationSquare);
-            moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply, colour)).Returns(expectedSourceSquare);
+            moveInterpreterHelperMock.Setup(m => m.GetSourceSquare(previousBoardPosition, ply)).Returns(expectedSourceSquare);
 
             // Act
             var (piece, sourceSquare, destinationSquare) = sut.GetSourceAndDestinationSquares(previousBoardPosition, ply);

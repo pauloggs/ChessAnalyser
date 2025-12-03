@@ -47,8 +47,7 @@ namespace Services
             // get the source square
             var sourceSquare = moveInterpreterHelper.GetSourceSquare(
                 previousBoardPosition,
-                ply,
-                ply.Colour);
+                ply);
 
             // return the piece, source square and destination square
             return (piece, sourceSquare, destinationSquare);
