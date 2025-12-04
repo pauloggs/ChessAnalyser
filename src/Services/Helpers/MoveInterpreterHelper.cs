@@ -1,52 +1,15 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
-using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
-    public interface IMoveInterpreterHelper
+    public static class MoveInterpreterHelper
     {
         /// <summary>
         /// Removes the check indicator '+' from the raw move string of the given ply.
         /// </summary>
         /// <param name="ply"></param>
-        void RemoveCheck(Ply ply);
-
-        /// <summary>
-        /// Gets the piece involved in the given ply based on its raw move string.
-        /// </summary>
-        /// <param name="ply"></param>
-        /// <returns></returns>
-        /// <exception cref="Exception"></exception>
-        Piece GetPiece(Ply ply);
-
-        /// <summary>
-        /// Get the destination square (0-63) from the last two characters of
-        /// the move, for example Nf6 takes 'f' and '6' to determine file and
-        /// rank, and from these determine the destination square.
-        /// If it is not a piece move (i.e. is castling), return -1.
-        /// </summary>
-        int GetDestinationSquare(Ply ply);
-
-        /// <summary>
-        /// Gets the source square (0-63) for the given ply based on the previous board position and the colour of the moving piece.
-        /// </summary>
-        /// <param name="previousBoardPosition"></param>
-        /// <param name="ply"></param>
-        /// <param name="colour"></param>
-        /// <returns></returns>
-        int GetSourceSquare(
-            BoardPosition previousBoardPosition,
-            Ply ply);
-    }
-
-    public class MoveInterpreterHelper(
-        ISourceSquareHelper sourceSquareHelper,
-        IDestinationSquareHelper destinationSquareHelper,
-        IPawnMoveInterpreter pawnMoveInterpreter,
-        IPieceMoveInterpreter pieceMoveInterpreter) : IMoveInterpreterHelper
-    {        
-        public void RemoveCheck(Ply ply)
+        public static void RemoveCheck(Ply ply)
         {
             if (ply.RawMove[^1] == '+')
             {
@@ -55,7 +18,13 @@ namespace Services.Helpers
             }
         }
 
-        public Piece GetPiece(Ply ply)
+        /// <summary>
+        /// Gets the piece involved in the given ply based on its raw move string.
+        /// </summary>
+        /// <param name="ply"></param>
+        /// <returns></returns>
+        /// <exception cref="Exception"></exception>
+        public static Piece GetPiece(Ply ply)
         {
             var rawMove = ply.RawMove;
 
@@ -90,13 +59,13 @@ namespace Services.Helpers
                 piece = Constants.Pieces['P']; // is a pawn move
                 ply.IsPawnMove = true;
                 ply.IsPieceMove = true;
-                ply.Piece = Constants.Pieces['P'];
+                ply.Piece = 'P';
             }
             else if (char.IsUpper(firstChar))
             {
                 piece = PieceRetriever.GetSafePiece(firstChar); // get the piece safely
                 ply.IsPieceMove = true;
-                ply.Piece = Constants.Pieces[firstChar];
+                ply.Piece = firstChar;
             }
             else
             {
@@ -105,33 +74,39 @@ namespace Services.Helpers
 
             return piece;
         }
-       
-        public int GetDestinationSquare(Ply ply)
+
+        /// <summary>
+        /// Get the destination square (0-63) from the last two characters of
+        /// the move, for example Nf6 takes 'f' and '6' to determine file and
+        /// rank, and from these determine the destination square.
+        /// If it is not a piece move (i.e. is castling), return -1.
+        /// </summary>
+        public static int GetDestinationSquare(Ply ply)
         {
-            return destinationSquareHelper.GetDestinationSquare(ply);
-        }
-
-        public int GetSourceSquare(
-            BoardPosition previousBoardPosition,
-            Ply ply)
-        {
-            var sourceSquare = Constants.MoveNotFound;
-
-            if (ply.IsPawnMove)
+            if (ply.IsPieceMove)
             {
-                sourceSquare = pawnMoveInterpreter.GetSourceSquare(
-                        previousBoardPosition,
-                        ply);
+                try
+                {
+                    ply.DestinationFile = Constants.File[ply.RawMove[^2]];
+                }
+                catch (Exception)
+                {
+                    throw;
+                }
+
+                ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
+
+                return (ply.DestinationRank * 8) + ply.DestinationFile;
             }
-            else if (ply.IsPieceMove)
+            else if (ply.IsKingsideCastling || ply.IsQueensideCastling)
             {
-                sourceSquare = pieceMoveInterpreter.GetSourceSquare(
-                        previousBoardPosition,
-                        ply);
+                // Can't get single destination square for a castling move - this is handled elsewhere
+                return -1;
             }
-
-            return sourceSquare;
+            else
+            {
+                throw new Exception("Move must be either a piece move or casteling.");
+            }
         }
-
     }
 }

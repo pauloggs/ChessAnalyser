@@ -1,6 +1,5 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
-using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
@@ -10,7 +9,8 @@ namespace Services.Helpers
             BoardPosition currentBoardPosition,
             Ply ply,
             int sourceSquare,
-            int destinationSquare);
+            int destinationSquare,
+            char colour);
     }
 
     public class BoardPositionUpdater (IBitBoardManipulator bitBoardManipulator) : IBoardPositionUpdater
@@ -19,10 +19,10 @@ namespace Services.Helpers
             BoardPosition currentBoardPosition,
             Ply ply,
             int sourceSquare,
-            int destinationSquare)
+            int destinationSquare,
+            char colour)
         {
-            //string piecePositionsKey = new([colour, ply.Piece]);
-            string piecePositionsKey = ply.Colour.ToString() + ply.Piece.Name;
+            string piecePositionsKey = new([colour, ply.Piece]);
 
             // if it's a capture, then remove the piece from the opposite colour bitboard
             // need to find the piece! or just run through them all
@@ -36,7 +36,7 @@ namespace Services.Helpers
 
                 if (ply.IsCapture)
                 {
-                    var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+                    var oppCol = colour == 'W' ? 'B' : 'W';
 
                     // update the opposing colour's piece position to remove the piece at the destination square
                     foreach (var piece in Constants.PieceIndex.Keys)
@@ -57,7 +57,7 @@ namespace Services.Helpers
             else if (ply.IsKingsideCastling)
             {
                 // handle king-side castling for that particular colour
-                if (ply.Colour == Colour.W)
+                if (colour == 'W')
                 {
                     // move the king
                     var kingPositions = currentBoardPosition.PiecePositions["WK"];
@@ -89,7 +89,7 @@ namespace Services.Helpers
             else if (ply.IsQueensideCastling)
             {
                 // handle king-side castling for that particular colour
-                if (ply.Colour == Colour.W)
+                if (colour == 'W')
                 {
                     // move the king
                     var kingPositions = currentBoardPosition.PiecePositions["WK"];

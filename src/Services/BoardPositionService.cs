@@ -19,15 +19,15 @@ namespace Services
     /// </summary>
     public class BoardPositionService : IBoardPositionService
     {
-        private readonly IBoardPositionsHelper boardPositionsHelper;
-        private readonly IDisplayService displayService;
+        private readonly IBoardPositionsHelper _boardPositionsHelper;
+        private readonly IDisplayService _displayService;
 
         public BoardPositionService(
             IBoardPositionsHelper boardPositionsHelper,
             IDisplayService displayService)
 		{
-            this.boardPositionsHelper = boardPositionsHelper;
-            this.displayService = displayService;
+            _boardPositionsHelper = boardPositionsHelper;
+            _displayService = displayService;
         }
 
         public void SetBoardPositions(List<Game> games)
@@ -45,14 +45,23 @@ namespace Services
                     // check for game result, 1-0, 0-1, 1/2-1/2, and set the winner (White,Black or None) if found
                     if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
-                    // ply 0 is applied to create the first board position, so current board index is ply index + 1
+                // moved here from the helper
+                var numberOfPlies = game.Plies.Keys.Count;
+
+                // loop through all the plies of this game, and set the board positions for each ply
+                for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
+                {
+                    // check for game result
+                    if (_boardPositionsHelper.SetWinner(game, plyIndex)) break;
+
+                    // ply 0 is applied to create board 1
                     var currentBoardIndex = plyIndex + 1;
 
-                    // get the previous board position, which is needed to calculate the current one
+                    // get the previous board position
                     var previousBoardPosition = game.BoardPositions[plyIndex];
 
                     // set the current board position from the previous one and the current ply
-                    boardPositionsHelper.SetBoardPositionFromPly(
+                    _boardPositionsHelper.SetBoardPositionFromPly(
                         game, 
                         previousBoardPosition, 
                         game.Plies[plyIndex], 
