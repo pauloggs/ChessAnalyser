@@ -1,5 +1,6 @@
 ﻿namespace Services.Helpers
 {
+
     public static class SquareHelper
     {
         /// <summary>

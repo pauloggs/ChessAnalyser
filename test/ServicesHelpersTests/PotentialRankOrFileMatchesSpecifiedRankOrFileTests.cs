@@ -1,7 +1,16 @@
-﻿namespace ServicesHelpersTests
+﻿using Services.Helpers;
+
+namespace ServicesHelpersTests
 {
     public class PotentialRankOrFileMatchesSpecifiedRankOrFileTests
     {
+        private readonly IRankAndFileHelper sut;
+
+        public PotentialRankOrFileMatchesSpecifiedRankOrFileTests()
+        {
+            sut = new RankAndFileHelper();
+        }
+
         [Fact]
         public void PotentialRankOrFileMatchesSpecifiedRankOrFile_ShouldReturnTrue_WhenNeitherSpecified()
         {
@@ -12,7 +21,7 @@
             int specifiedFile = -1;
 
             // Act
-            var result = Services.Helpers.RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+            var result = sut.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                 potentialRank,
                 potentialFile,
                 specifiedRank,
@@ -31,7 +40,7 @@
             int specifiedFile = -1;
 
             // Act
-            var result = Services.Helpers.RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+            var result = sut.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                 potentialRank,
                 potentialFile,
                 specifiedRank,
@@ -51,7 +60,7 @@
             int specifiedFile = 6;
 
             // Act
-            var result = Services.Helpers.RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+            var result = sut.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                 potentialRank,
                 potentialFile,
                 specifiedRank,

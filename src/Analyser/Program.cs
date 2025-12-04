@@ -39,6 +39,8 @@ builder.Services.AddScoped<ISourceSquareHelper, SourceSquareHelper>();
 builder.Services.AddScoped<IDestinationSquareHelper, DestinationSquareHelper>();
 builder.Services.AddScoped<IPawnMoveInterpreter, PawnMoveInterpreter>();
 builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
+builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
+builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();

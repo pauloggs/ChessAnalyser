@@ -1,6 +1,15 @@
 ﻿namespace Services.Helpers
 {
-    public static class RankAndFileHelper
+    public interface IRankAndFileHelper
+    {
+        bool PotentialRankOrFileMatchesSpecifiedRankOrFile(
+            int potentialRank,
+            int potentialFile,
+            int specifiedRank,
+            int specifiedFile);
+    }
+
+    public class RankAndFileHelper : IRankAndFileHelper
     {
         /// <summary>
         /// Check if the potential rank or file matches the specified rank or file.
@@ -10,7 +19,7 @@
         /// <param name="specifiedRank"></param>
         /// <param name="specifiedFile"></param>
         /// <returns></returns>
-        public static bool PotentialRankOrFileMatchesSpecifiedRankOrFile(
+        public bool PotentialRankOrFileMatchesSpecifiedRankOrFile(
             int potentialRank,
             int potentialFile,
             int specifiedRank,

@@ -8,7 +8,10 @@ namespace Services.Helpers
         int GetSourceSquare(BoardPosition previousBoardPosition, Ply ply);
     }
 
-    public class PieceMoveInterpreter(ISourceSquareHelper sourceSquareHelper) : IPieceMoveInterpreter
+    public class PieceMoveInterpreter(
+        ISourceSquareHelper sourceSquareHelper,
+        IRankAndFileHelper rankAndFileHelper,
+        IPieceSourceFinderService pieceSourceFinderService) : IPieceMoveInterpreter
     {
         public int GetSourceSquare(BoardPosition previousBoardPosition, Ply ply)
         {
@@ -21,27 +24,11 @@ namespace Services.Helpers
             switch (ply.Piece.Name)
             {
                 case 'N':
-                    // get the eight possible squares the original N may have come from
-                    //  1. DR -2, DF - 1
-                    foreach (var np in Constants.RelativeKnightPositions)
-                    {
-                        var potentialSourceFile = ply.DestinationFile + np.file;
-                        var potentialSourceRank = ply.DestinationRank + np.rank;
-
-                        sourceSquare = sourceSquareHelper.GetSourceSquare(
-                                previousBoardPosition,
-                                potentialSourceRank,
-                                potentialSourceFile,
-                                ply.Piece,
-                                ply.Colour);
-
-
-                        if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
-                            potentialSourceRank,
-                            potentialSourceFile,
-                            sourceRank,
-                            sourceFile) == true) break;
-                    }
+                    sourceSquare = pieceSourceFinderService.FindKnightSource(
+                        previousBoardPosition,
+                        ply,
+                        sourceRank,
+                        sourceFile);
                     break;
                 case 'B':
                     for (var diagDist = 1; diagDist < 8; diagDist++)
@@ -60,7 +47,7 @@ namespace Services.Helpers
                                 ply.Piece,
                                 ply.Colour);
 
-                            if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                            if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
                                 sourceRank,
@@ -86,7 +73,7 @@ namespace Services.Helpers
                                 ply.Piece,
                                 ply.Colour);
 
-                            if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                            if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
                                 sourceRank,
@@ -113,7 +100,7 @@ namespace Services.Helpers
                                 ply.Piece,
                                 ply.Colour);
 
-                            if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                            if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
                                 sourceRank,
@@ -139,7 +126,7 @@ namespace Services.Helpers
                                     ply.Piece,
                                     ply.Colour);
 
-                                if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                                if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                     potentialSourceRank,
                                     potentialSourceFile,
                                     sourceRank,
@@ -166,7 +153,7 @@ namespace Services.Helpers
                             ply.Piece,
                             ply.Colour);
 
-                        if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                        if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                             potentialSourceRank,
                             potentialSourceFile,
                             sourceRank,
@@ -188,7 +175,7 @@ namespace Services.Helpers
                                 ply.Piece,
                                 ply.Colour);
 
-                            if (sourceSquare >= 0 && RankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                            if (sourceSquare >= 0 && rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                                 potentialSourceRank,
                                 potentialSourceFile,
                                 sourceRank,
