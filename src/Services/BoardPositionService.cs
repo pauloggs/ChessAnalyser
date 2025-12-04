@@ -34,7 +34,16 @@ namespace Services
         {
             foreach (var game in games)
             {
-                game.BoardPositions[0] = _boardPositionsHelper.GetStartingBoardPosition();
+                game.BoardPositions[0] = boardPositionsHelper.GetStartingBoardPosition();
+
+                // moved here from the helper
+                var numberOfPlies = game.Plies.Keys.Count;
+
+                // loop through all the plies of this game, and set the board positions for each ply
+                for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
+                {
+                    // check for game result, 1-0, 0-1, 1/2-1/2, and set the winner (White,Black or None) if found
+                    if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
                 // moved here from the helper
                 var numberOfPlies = game.Plies.Keys.Count;

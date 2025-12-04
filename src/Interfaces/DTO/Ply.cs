@@ -1,4 +1,6 @@
-﻿namespace Interfaces.DTO
+﻿using static Interfaces.Constants;
+
+namespace Interfaces.DTO
 {
     /// <summary>
     /// Holds information about a single ply (half-move) in a chess game.
