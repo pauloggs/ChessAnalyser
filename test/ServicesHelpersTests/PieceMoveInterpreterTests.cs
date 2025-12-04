@@ -17,7 +17,7 @@ namespace ServicesHelpersTests
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper);
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             int expectedSourceSquareIndex = 30; // g4
             int expectedSourceRank = 3;
@@ -79,7 +79,7 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
             var previousBoardPosition = new BoardPosition();
 
             var ply = new Ply
@@ -133,7 +133,7 @@ namespace ServicesHelpersTests
 
 
             // Instantiate the SUT (PieceMoveInterpreter) with the ISourceSquareHelper MOCK
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             // Scenario: Nbd2 (Knight from 'b' file to d2). Source square B1 (R0, F1)
             int expectedSourceSquareIndex = 1;
@@ -191,7 +191,7 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             // Expected Source Square: B1 (Rank 0, File 1, Index 1)
             int expectedSourceSquareIndex = 1;
@@ -248,7 +248,7 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             var ply = new Ply
             {
@@ -288,7 +288,7 @@ namespace ServicesHelpersTests
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper);
-            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, rankAndFileHelper, pieceSourceFinderService);
+            var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             var previousBoardPosition = new BoardPosition();
 
