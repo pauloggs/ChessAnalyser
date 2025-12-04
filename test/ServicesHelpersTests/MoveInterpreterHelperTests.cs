@@ -9,13 +9,18 @@ namespace ServicesHelpersTests
     {
         private Mock<ISourceSquareHelper> sourceSquareHelperMock;
         private Mock<IDestinationSquareHelper> destinationSquareHelperMock;
+        private Mock<IPawnMoveInterpreter> pawnMoveInterpreter;
         private IMoveInterpreterHelper sut;
 
         public MoveInterpreterHelperTests()
         {
             sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             destinationSquareHelperMock = new Mock<IDestinationSquareHelper>();
-            sut = new MoveInterpreterHelper(sourceSquareHelperMock.Object, destinationSquareHelperMock.Object);
+            pawnMoveInterpreter = new Mock<IPawnMoveInterpreter>();
+            sut = new MoveInterpreterHelper(
+                sourceSquareHelperMock.Object, 
+                destinationSquareHelperMock.Object,
+                pawnMoveInterpreter.Object);
         }
 
         [Theory]

@@ -42,7 +42,8 @@ namespace Services.Helpers
 
     public class MoveInterpreterHelper(
         ISourceSquareHelper sourceSquareHelper,
-        IDestinationSquareHelper destinationSquareHelper) : IMoveInterpreterHelper
+        IDestinationSquareHelper destinationSquareHelper,
+        IPawnMoveInterpreter pawnMoveInterpreter) : IMoveInterpreterHelper
     {        
         public void RemoveCheck(Ply ply)
         {
@@ -139,48 +140,9 @@ namespace Services.Helpers
             //          else if the same file & (rank -2)'s square = 1, then use this
             if (ply.IsPawnMove)
             {
-                // try to find where the pawn came from
-
-                if (!ply.IsCapture)
-                {
-                    // If it is not a capture, then the pawn must come from the same file,
-                    // so we just need to check one or two ranks backward or forward depending on colour
-
-                    // check the rank above (B) or below (W), to see if the pawn came from there
-                    sourceSquare = sourceSquareHelper.GetSourceSquare(
-                                    previousBoardPosition,
-                                    ply.DestinationRank + rankDirection,
-                                    ply.DestinationFile,
-                                    ply.Piece,
-                                    ply.Colour);
-
-                    // check two ranks above (B) or below (W) if not found
-                    if (sourceSquare == MoveNotFound)
-                    {
-                        sourceSquare = sourceSquareHelper.GetSourceSquare(
-                                    previousBoardPosition,
-                                    ply.DestinationRank + 2 * rankDirection,
-                                    ply.DestinationFile,
-                                    ply.Piece,
-                                    ply.Colour);
-
-                        // if still not found, throw an exception
-                        if (sourceSquare == MoveNotFound)
-                        {
-                            throw new Exception($"MoveInterpreter > GetSourceSquare: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} no source square found");
-                        }
-                    }
-                    ;
-                }
-                else
-                {
-                    // find the file before the 'x'
-                    string[] rawMoveSplit = ply.RawMove.ToLower().Split('x');
-                    var sourceFileKey = rawMoveSplit[0];
-                    var sourceFile = Constants.File[sourceFileKey[0]];
-                    var sourceRank = ply.DestinationRank + rankDirection;
-                    sourceSquare = sourceRank * 8 + sourceFile;
-                }
+                sourceSquare = pawnMoveInterpreter.GetSourceSquare(
+                        previousBoardPosition,
+                        ply);
             }
             else if (ply.IsPieceMove)
             {

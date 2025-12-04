@@ -21,7 +21,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Repositories", "src\Reposit
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RepositoriesTests", "test\RepositoriesTests\RepositoriesTests.csproj", "{0A640B73-FBA2-4826-B694-E20AF8E88B1B}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServicesHelpersTests", "ServicesHelpersTests\ServicesHelpersTests.csproj", "{78AE5620-909E-4231-B805-248AAEF8C9A0}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "ServicesHelpersTests", "test\ServicesHelpersTests\ServicesHelpersTests.csproj", "{78AE5620-909E-4231-B805-248AAEF8C9A0}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

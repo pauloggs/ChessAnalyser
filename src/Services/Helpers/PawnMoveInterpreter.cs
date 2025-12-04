@@ -6,14 +6,19 @@ namespace Services.Helpers
 {
     public interface IPawnMoveInterpreter
     {
+        /// <summary>
+        /// Determines the source square for a pawn move given the previous board position and the ply information.
+        /// This can be from either a standard pawn move or a capture.
+        /// </summary>
+        /// <param name="previousBoardPosition"></param>
+        /// <param name="ply"></param>
+        /// <returns></returns>
         int GetSourceSquare(
             BoardPosition previousBoardPosition,
             Ply ply);
     }
 
-    public class PawnMoveInterpreter(
-        ISourceSquareHelper sourceSquareHelper,
-        IBitBoardManipulator bitBoardManipulator) : IPawnMoveInterpreter
+    public class PawnMoveInterpreter(IBitBoardManipulator bitBoardManipulator) : IPawnMoveInterpreter
     {
         public int GetSourceSquare(BoardPosition previousBoardPosition, Ply ply)
         {
@@ -31,13 +36,11 @@ namespace Services.Helpers
                         previousBoardPosition,
                         ply.Piece,
                         ply.Colour,
-                        potentialSourceRank,
-                        potentialSourceFile);
+                        potentialSourceRank,                        potentialSourceFile);
 
                     if (sourcePawnFoundAtSquare)
                     {
                         return SquareHelper.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
-
                     }
                 }
 
@@ -46,7 +49,13 @@ namespace Services.Helpers
             }
             else if (ply.IsCapture)
             {
-
+                // find the file before the 'x'
+                string[] rawMoveSplit = ply.RawMove.ToLower().Split('x');
+                var sourceFileKey = rawMoveSplit[0];
+                var sourceFile = Constants.File[sourceFileKey[0]];
+                var sourceRank = ply.DestinationRank + rankDirection;
+                var sourceSquare = SquareHelper.GetSquareFromRankAndFile(sourceRank, sourceFile);
+                return sourceSquare;
             }
 
             throw new ArgumentException("Unable to determine source square for pawn move.");
