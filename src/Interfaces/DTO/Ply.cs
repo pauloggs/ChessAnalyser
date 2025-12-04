@@ -28,7 +28,7 @@ namespace Interfaces.DTO
         public Colour Colour { get; set; }
 
         /// <summary>
-        /// Whether the move involves a piece (as opposed to a pawn move or castling).
+        /// Whether the move involves a piece (as opposed to castling). Includes pawn moves.
         /// </summary>
         public bool IsPieceMove { get; set; }
 
@@ -81,5 +81,10 @@ namespace Interfaces.DTO
         /// The piece involved in the move (e.g., 'P' for pawn, 'N' for knight).
         /// </summary>
         public Piece Piece { get; set; }
+
+        /// <summary>
+        /// The piece to which a pawn is promoted, if applicable.
+        /// </summary>
+        public Piece PromotionPiece { get; set; }
     }
 }

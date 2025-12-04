@@ -24,6 +24,10 @@ namespace Services
         ulong RemovePiece(
             ulong piecePositions,
             int square);
+
+        ulong AddPiece(
+            ulong piecePositions,
+            int square);
     }
 
     public class BitBoardManipulator : IBitBoardManipulator
@@ -83,6 +87,13 @@ namespace Services
             int square)
         {
             return piecePositions &= ~ (ulong)(1ul << square);
+        }
+
+        public ulong AddPiece(
+            ulong piecePositions,
+            int square)
+        {
+            return piecePositions |= (ulong)(1ul << square);
         }
     }    
 }

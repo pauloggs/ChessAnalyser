@@ -29,30 +29,60 @@ namespace Services.Helpers
 
             if (ply.IsPieceMove)
             {
-                var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
-
-                var newPiecePositions
-                    = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
-
-                if (ply.IsCapture)
+                if (ply.IsPromotion)
                 {
-                    var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+                    // remove the pawn from the source square
+                    var pawnPositions = currentBoardPosition.PiecePositions[piecePositionsKey];
+                    currentBoardPosition.PiecePositions[piecePositionsKey]
+                        = bitBoardManipulator.RemovePiece(pawnPositions, sourceSquare);
 
-                    // update the opposing colour's piece position to remove the piece at the destination square
-                    foreach (var piece in Constants.PieceIndex.Keys)
+                    // add the promoted piece to the destination square
+                    string promotedPiecePositionsKey = ply.Colour.ToString() + ply.PromotionPiece.Name;
+                    var promotedPiecePositions = currentBoardPosition.PiecePositions[promotedPiecePositionsKey];
+                    currentBoardPosition.PiecePositions[promotedPiecePositionsKey]
+                        = bitBoardManipulator.AddPiece(promotedPiecePositions, destinationSquare);
+
+                    // if it's a capture, remove the opponent's piece from the destination square
+                    if (ply.IsCapture)
                     {
+                        var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+                        foreach (var piece in Constants.PieceIndex.Keys)
+                        {
+                            string oppPiecePositionsKey = new([oppCol, piece]);
+                            currentBoardPosition.PiecePositions[oppPiecePositionsKey]
+                                = bitBoardManipulator.RemovePiece(
+                                    currentBoardPosition.PiecePositions[oppPiecePositionsKey],
+                                    destinationSquare);
+                        }
+                    }
+                }
+                else
+                {
+                    var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
 
-                        string oppPiecePositionsKey = new([oppCol, piece]);
-                        currentBoardPosition.PiecePositions[oppPiecePositionsKey]
-                            = bitBoardManipulator.RemovePiece(
-                                currentBoardPosition.PiecePositions[oppPiecePositionsKey],
-                                destinationSquare);
+                    var newPiecePositions
+                        = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
+
+                    if (ply.IsCapture)
+                    {
+                        var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+
+                        // update the opposing colour's piece position to remove the piece at the destination square
+                        foreach (var piece in Constants.PieceIndex.Keys)
+                        {
+
+                            string oppPiecePositionsKey = new([oppCol, piece]);
+                            currentBoardPosition.PiecePositions[oppPiecePositionsKey]
+                                = bitBoardManipulator.RemovePiece(
+                                    currentBoardPosition.PiecePositions[oppPiecePositionsKey],
+                                    destinationSquare);
+                        }
+
+                        currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
                     }
 
                     currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
-                }
-
-                currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
+                }                    
             }
             else if (ply.IsKingsideCastling)
             {
@@ -118,6 +148,21 @@ namespace Services.Helpers
                         = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 56, 59);
                 }
             }
+            //else if (ply.IsEnpassant)
+            //{
+            //    // move the pawn
+            //    var pawnPositions = currentBoardPosition.PiecePositions[piecePositionsKey];
+            //    currentBoardPosition.PiecePositions[piecePositionsKey]
+            //        = bitBoardManipulator.PiecePositionsAfterMove(pawnPositions, sourceSquare, destinationSquare);
+
+            //    // remove the captured pawn
+            //    var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+            //    string oppPawnPositionsKey = new([oppCol, 'P']);
+            //    currentBoardPosition.PiecePositions[oppPawnPositionsKey]
+            //        = bitBoardManipulator.RemovePiece(
+            //            currentBoardPosition.PiecePositions[oppPawnPositionsKey],
+            //            destinationSquare + (ply.Colour == Colour.W ? -8 : 8));
+            //}
             else
             {
                 throw new Exception($"Move is invalid {ply.RawMove}");

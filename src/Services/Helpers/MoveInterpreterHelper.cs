@@ -74,7 +74,8 @@ namespace Services.Helpers
                 ply.IsPieceMove = true;
                 ply.IsPromotion = true;
                 var promotionPiece = (rawMove.Substring(rawMove.IndexOf('=') + 1))[0];
-                piece = PieceRetriever.GetSafePiece(promotionPiece); // get the promotion piece safely
+                piece = Constants.Pieces['P']; // is a pawn move
+                ply.PromotionPiece = PieceRetriever.GetSafePiece(promotionPiece); // get the promotion piece safely
             }
             else if (rawMove == "O-O-O")
             {

@@ -91,7 +91,7 @@ namespace ServicesHelpersTests
             Assert.Equal('P', piecePawn.Name);
             Assert.Equal('N', pieceKnight.Name);
             Assert.Equal('B', pieceCapture.Name);
-            Assert.Equal('Q', piecePromotion.Name);
+            Assert.Equal('P', piecePromotion.Name);
             Assert.Equal('C', pieceKingsideCastling.Name);
             Assert.Equal('C', pieceQueensideCastling.Name);
             Assert.False(plyPawn.IsCapture);
