@@ -1,13 +1,18 @@
 ﻿using Interfaces.DTO;
+using static Interfaces.Constants;
 
 namespace Services
 {
     public interface IBitBoardManipulator
 	{
+        /// <summary>
+        /// Determines whether a specific piece of a specific color occupies a precise square on the chessboard, 
+        /// utilizing an underlying 64-bit bitboard representation for efficient lookup via bitwise operations.
+        /// </summary>
         bool ReadSquare(
             BoardPosition boardPosition,
-            char piece,
-            char colour,
+            Piece piece,
+            Colour colour,
             int rank,
             int file);
 
@@ -19,23 +24,34 @@ namespace Services
         ulong RemovePiece(
             ulong piecePositions,
             int square);
+
+        ulong AddPiece(
+            ulong piecePositions,
+            int square);
     }
 
     public class BitBoardManipulator : IBitBoardManipulator
     {
-
         public bool ReadSquare(
             BoardPosition boardPosition,
-            char piece,
-            char colour,
+            Piece piece,
+            Colour colour,
             int rank,
             int file)
         {
-            string piecePositionsKey = new(new[] { colour, piece });
+            if (rank < 0 || rank > 7 || file < 0 || file > 7)
+            {
+                throw new ArgumentOutOfRangeException($"Rank and file must be between 0 and 7 inclusive");
+            }
+
+            // Construct the key to access the piece positions
+            // string piecePositionsKey = new(new[] { colour, piece });
+
+            string piecePositionsKey = colour.ToString() + piece.Name;
 
             var piecePositionBytes
                 = BitConverter.GetBytes(boardPosition.PiecePositions[piecePositionsKey])
-                ?? Array.Empty<byte>();
+                ?? [];
 
             if (piecePositionBytes.Length < 8)
             {
@@ -45,9 +61,17 @@ namespace Services
             return GetFileFromRank(piecePositionBytes[rank], file);
         }
 
-        private static bool GetFileFromRank(byte files, int file)
+
+        /// <summary>
+        /// Takes the supplied file and create a bitmask that is ANDed with the rank byte to determine if a piece exists on that file in the rank.
+        /// </summary>
+        /// <param name="fileByte"></param>
+        /// <param name="file"></param>
+        /// <returns></returns>
+        private static bool GetFileFromRank(byte fileByte, int file)
         {
-            return (files & (1 << file)) != 0;
+            // Shift a 1 to the left by the file number and AND it with the rank byte
+            return (fileByte & (1 << file)) != 0;
         }
 
         public ulong PiecePositionsAfterMove(
@@ -63,6 +87,13 @@ namespace Services
             int square)
         {
             return piecePositions &= ~ (ulong)(1ul << square);
+        }
+
+        public ulong AddPiece(
+            ulong piecePositions,
+            int square)
+        {
+            return piecePositions |= (ulong)(1ul << square);
         }
     }    
 }

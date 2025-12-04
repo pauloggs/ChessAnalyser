@@ -26,26 +26,6 @@ namespace Services.Helpers
             Ply ply,
             int currentBoardIndex);
 
-        ///// <summary>
-        ///// Removes a piece from the board position at the specified file and rank.
-        ///// </summary>
-        ///// <param name="boardPosition"></param>
-        ///// <param name="piece"></param>
-        ///// <param name="col"></param>
-        ///// <param name="file"></param>
-        ///// <param name="rank"></param>
-        //void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
-
-        ///// <summary>
-        ///// Adds a piece to the board position at the specified file and rank.
-        ///// </summary>
-        ///// <param name="boardPosition"></param>
-        ///// <param name="piece"></param>
-        ///// <param name="col"></param>
-        ///// <param name="file"></param>
-        ///// <param name="rank"></param>
-        //void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank);
-
         /// <summary>
         /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
         /// </summary>
@@ -61,7 +41,7 @@ namespace Services.Helpers
         IBoardPositionUpdater boardPositionUpdater,
         IBitBoardManipulator bitBoardManipulator) : IBoardPositionsHelper
     {
-        private readonly IMoveInterpreter _moveInterpreter = moveInterpreter;
+        private readonly IMoveInterpreter moveInterpreter = moveInterpreter;
 
         private readonly IDisplayService _displayService = displayService;
        
@@ -103,31 +83,7 @@ namespace Services.Helpers
 
             return startingBoardPosition;
         }   
-       
-        //public void RemovePieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        //{
-        //    // calculate the square bitboard
-        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
-
-        //    // determine the colour
-        //    var colour = col == 0 ? "W" : "P";
-
-        //    // remove the piece from the bitboard
-        //    boardPosition.PiecePositions[colour + piece] &= ~square;
-        //}
-
-        //public void AddPieceFromBoardPosition(BoardPosition boardPosition, char piece, int col, char file, int rank)
-        //{
-        //    // calculate the square bitboard
-        //    var square = (ulong)Math.Pow(2, rank * 8 + Constants.File[file]);
-
-        //    // determine the colour
-        //    var colour = col == 0 ? "W" : "P";
-
-        //    // add the piece to the bitboard
-        //    boardPosition.PiecePositions[colour + piece] |= square;
-        //}
-
+      
         public void SetBoardPositionFromPly(
             Game game,
             BoardPosition previousBoardPosition,
@@ -141,23 +97,18 @@ namespace Services.Helpers
             // Assign the current board position to the game at the current index
             game.BoardPositions[currentBoardIndex] = currentBoardPositions;
 
-            // Determine the colour of the player making the move
-            var colour = ply.Colour;
-
             // Get the piece, source square, and destination square for the move
             var (piece, sourceSquare, destinationSquare)
-                    = _moveInterpreter.GetSourceAndDestinationSquares(
+                    = moveInterpreter.GetSourceAndDestinationSquares(
                         previousBoardPosition,
-                        ply,
-                        colour);
+                        ply);
 
             // Update the current board position with the move
             boardPositionUpdater.UpdateCurrentBoardPositionWithMove(
                 currentBoardPositions,
                 ply,
                 sourceSquare,
-                destinationSquare,
-                colour
+                destinationSquare
                 );
 
             _displayService.DisplayBoardPosition(currentBoardPositions);

@@ -7,6 +7,7 @@ namespace Interfaces.DTO
 		//public double Value { get; set; }
 
         public char Name { get; }
+
         public double Value { get; }
 
         public Piece(char name, double value)

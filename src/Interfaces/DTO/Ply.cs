@@ -7,6 +7,11 @@ namespace Interfaces.DTO
     /// </summary>
     public class Ply
     {
+        public Ply()
+        {
+            Piece = new Piece('P', 1); // Default to a pawn piece
+        }
+
         /// <summary>
         /// The move number in the game (1-based index).
         /// </summary>
@@ -20,10 +25,10 @@ namespace Interfaces.DTO
         /// <summary>
         /// The colour of the player making the move ('W' for White, 'B' for Black).
         /// </summary>
-        public char Colour { get; set; }
+        public Colour Colour { get; set; }
 
         /// <summary>
-        /// Whether the move involves a piece (as opposed to a pawn move or castling).
+        /// Whether the move involves a piece (as opposed to castling). Includes pawn moves.
         /// </summary>
         public bool IsPieceMove { get; set; }
 
@@ -75,6 +80,11 @@ namespace Interfaces.DTO
         /// <summary>
         /// The piece involved in the move (e.g., 'P' for pawn, 'N' for knight).
         /// </summary>
-        public char Piece { get; set; }
+        public Piece Piece { get; set; }
+
+        /// <summary>
+        /// The piece to which a pawn is promoted, if applicable.
+        /// </summary>
+        public Piece PromotionPiece { get; set; }
     }
 }

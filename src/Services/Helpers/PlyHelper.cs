@@ -1,5 +1,6 @@
 ﻿using Interfaces.DTO;
 using System.Text.RegularExpressions;
+using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
@@ -37,7 +38,7 @@ namespace Services.Helpers
                     {
                         MoveNumber = (plyNumber / 2) + 1, // Integer division to get the move number.
                         RawMove = plyString, // Store the raw move string. This will be parsed later.
-                        Colour = plyNumber % 2 == 0 ? 'W' : 'B' // Even ply numbers are White's moves.
+                        Colour = plyNumber % 2 == 0 ? Colour.W : Colour.B // Even ply numbers are White's moves.
                     };
 
                     plyDictionary[plyNumber] = ply; // Add the ply to the dictionary.

@@ -36,6 +36,27 @@ namespace Interfaces
         }
 
         /// <summary>
+        /// An enumeration to represent the colour of players or pieces.
+        /// </summary>
+        public enum Colour
+        {
+            /// <summary>
+            /// No colour / not applicable.
+            /// </summary>
+            N = 0,
+
+            /// <summary>
+            /// White colour.
+            /// </summary>
+            W = 1,
+
+            /// <summary>
+            /// Black colour.
+            /// </summary>
+            B = 2
+        }
+
+        /// <summary>
         /// Defines the marker that indicates the start of a new game in a PGN file.
         /// </summary>
         public static string GameStartMarker { get; } = "[Event";
@@ -127,5 +148,7 @@ namespace Interfaces
         /// Defines the mapping of game end conditions from PGN result strings to internal representations.
         /// </summary>
         public static IReadOnlyDictionary<string, string> GameEndConditions => _gameEndConditions;
+
+        public static int MoveNotFound { get; } = -1;
     }
 }
