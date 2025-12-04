@@ -51,6 +51,11 @@ namespace Services
                     // get the previous board position, which is needed to calculate the current one
                     var previousBoardPosition = game.BoardPositions[plyIndex];
 
+                    if (plyIndex == 15)
+                    {
+                        Console.WriteLine("Debugging ply 23");
+                    }
+
                     // set the current board position from the previous one and the current ply
                     boardPositionsHelper.SetBoardPositionFromPly(
                         game, 
