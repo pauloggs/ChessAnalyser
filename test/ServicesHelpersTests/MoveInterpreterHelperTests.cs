@@ -10,6 +10,7 @@ namespace ServicesHelpersTests
         private Mock<ISourceSquareHelper> sourceSquareHelperMock;
         private Mock<IDestinationSquareHelper> destinationSquareHelperMock;
         private Mock<IPawnMoveInterpreter> pawnMoveInterpreter;
+        private Mock<IPieceMoveInterpreter> pieceMoveInterpreter;
         private IMoveInterpreterHelper sut;
 
         public MoveInterpreterHelperTests()
@@ -17,10 +18,12 @@ namespace ServicesHelpersTests
             sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             destinationSquareHelperMock = new Mock<IDestinationSquareHelper>();
             pawnMoveInterpreter = new Mock<IPawnMoveInterpreter>();
+            pieceMoveInterpreter = new Mock<IPieceMoveInterpreter>();
             sut = new MoveInterpreterHelper(
                 sourceSquareHelperMock.Object, 
                 destinationSquareHelperMock.Object,
-                pawnMoveInterpreter.Object);
+                pawnMoveInterpreter.Object,
+                pieceMoveInterpreter.Object);
         }
 
         [Theory]

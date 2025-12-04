@@ -46,14 +46,14 @@ namespace Services.Helpers
                  && potentialSourceRank >= 0 && potentialSourceRank < 8)
             {
                 // check if the piece is here
-                var potentialKnightSquare = bitBoardManipulator.ReadSquare(
+                var potentialSourceSquare = bitBoardManipulator.ReadSquare(
                     previousBoardPosition,
                     piece,
                     colour,
                     potentialSourceRank,
                     potentialSourceFile);
 
-                if (potentialKnightSquare == true)
+                if (potentialSourceSquare == true)
                 {
                     returnValue = SquareHelper.GetSquareFromRankAndFile(potentialSourceRank, potentialSourceFile);
                 }
