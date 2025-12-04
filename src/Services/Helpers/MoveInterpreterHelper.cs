@@ -71,6 +71,7 @@ namespace Services.Helpers
             if (rawMove.Contains('='))
             {
                 ply.IsPawnMove = true;
+                ply.IsPieceMove = true;
                 ply.IsPromotion = true;
                 var promotionPiece = (rawMove.Substring(rawMove.IndexOf('=') + 1))[0];
                 piece = PieceRetriever.GetSafePiece(promotionPiece); // get the promotion piece safely

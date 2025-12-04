@@ -15,21 +15,41 @@ namespace Services.Helpers
             // For piece moves, the destination square is always the last two characters of the raw move
             if (ply.IsPieceMove)
             {
-                try
+                if (!ply.IsPromotion)
                 {
-                    // Get destination file from second last character of raw move
-                    ply.DestinationFile = Constants.File[ply.RawMove[^2]];
+                    try
+                    {
+                        // Get destination file from second last character of raw move
+                        ply.DestinationFile = Constants.File[ply.RawMove[^2]];
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+
+                    // Get destination rank from last character of raw move
+                    ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
+
+                    // Return destination square as an integer 0-63
+                    return SquareHelper.GetSquareFromRankAndFile(ply.DestinationRank, ply.DestinationFile); 
                 }
-                catch (Exception)
+                else
                 {
-                    throw;
+                    // Promotion move, e.g. e8=Q
+                    try
+                    {
+                        // Get destination file from second last character of raw move
+                        ply.DestinationFile = Constants.File[ply.RawMove[^4]];
+                    }
+                    catch (Exception)
+                    {
+                        throw;
+                    }
+                    // Get destination rank from third last character of raw move
+                    ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 3]) - 1;
+                    // Return destination square as an integer 0-63
+                    return SquareHelper.GetSquareFromRankAndFile(ply.DestinationRank, ply.DestinationFile);
                 }
-
-                // Get destination rank from last character of raw move
-                ply.DestinationRank = (int)char.GetNumericValue(ply.RawMove[ply.RawMove.Length - 1]) - 1;
-
-                // Return destination square as an integer 0-63
-                return SquareHelper.GetSquareFromRankAndFile(ply.DestinationRank, ply.DestinationFile);
             }
             else if (ply.IsKingsideCastling || ply.IsQueensideCastling)
             {
