@@ -219,6 +219,103 @@ namespace ServicesTests
             Assert.Throws<System.ArgumentOutOfRangeException>(() => sut.RemovePiece(initialPosition, -1));
         }
 
+        [Theory(DisplayName = "Should add a piece (turn on a bit) at a specific square from an empty board")]
+        // Test adding a piece to various positions on an empty board
+        [InlineData(0, 0b1ul)]                          // Add A1 piece (LSB)
+        [InlineData(1, 0b10ul)]                         // Add B1 piece
+        [InlineData(7, 0b10000000ul)]                  // Add H1 piece
+        [InlineData(31, 0b10000000000000000000000000000000ul)] // Add D4 piece (mid-board)
+        [InlineData(63, 0b1000000000000000000000000000000000000000000000000000000000000000ul)] // Add H8 piece (MSB)
+        public void AddPiece_ToEmptyBoard_ResultsInOnlyThatPiece(int squareToAdd, ulong expectedResult)
+        {
+            ulong emptyBoard = 0b0ul;
+
+            // Act
+            ulong actual = sut.AddPiece(emptyBoard, squareToAdd);
+
+            // Assert
+            Assert.Equal(expectedResult, actual);
+        }
+
+        [Fact(DisplayName = "Should add the target piece while leaving other existing pieces intact")]
+        public void AddPiece_ToPartiallyOccupiedBoard_CombinesPositions()
+        {
+            // Board state with pieces at A1 (0) and D1 (3)
+            ulong initialPosition = 0b00001001ul;
+
+            // Expected board state after adding the piece at A2 (square 8)
+            // Expected result should have bits 0, 3, and 8 set.
+            ulong expectedResult = 0b00000001_00001001ul;
+
+            // Act: Add a piece at A2 (square 8)
+            ulong actual = sut.AddPiece(initialPosition, 8);
+
+            // Assert
+            Assert.Equal(expectedResult, actual);
+        }
+
+        [Fact(DisplayName = "Adding a piece to a square that is already occupied should result in no change")]
+        public void AddPiece_ToOccupiedSquare_BoardStateRemainsSame()
+        {
+            // Board state with a piece at A1 (0)
+            ulong initialPosition = 0b1ul;
+            int squareToAdd = 0;
+
+            // Act: Add a piece to A1 again
+            ulong actual = sut.AddPiece(initialPosition, squareToAdd);
+
+            // Assert: The board state should not change
+            Assert.Equal(initialPosition, actual);
+        }
+
+        [Fact(DisplayName = "Adding a piece to a full board should result in a full board")]
+        public void AddPiece_ToFullBoard_RemainsFull()
+        {
+            ulong fullBoard = ulong.MaxValue; // All 64 bits set to 1
+            int squareToAdd = 32; // Any valid square
+
+            ulong actual = sut.AddPiece(fullBoard, squareToAdd);
+
+            Assert.Equal(fullBoard, actual);
+        }
+
+        // --- Validation/Exception Handling Tests ---
+        // These tests verify your new validation logic works as expected.
+
+        [Theory(DisplayName = "Should throw ArgumentOutOfRangeException for invalid positive square indices")]
+        [InlineData(64)]
+        [InlineData(65)]
+        [InlineData(1000)]
+        public void AddPiece_InvalidPositiveSquareIndex_ThrowsException(int invalidSquareIndex)
+        {
+            ulong anyBoard = 0b0ul;
+
+            // Use Assert.Throws to verify the correct exception type is thrown
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                sut.AddPiece(anyBoard, invalidSquareIndex)
+            );
+
+            // Optional: Verify the exception message contains the invalid value
+            Assert.Contains(invalidSquareIndex.ToString(), exception.Message);
+        }
+
+        [Theory(DisplayName = "Should throw ArgumentOutOfRangeException for invalid negative square indices")]
+        [InlineData(-1)]
+        [InlineData(-10)]
+        public void AddPiece_InvalidNegativeSquareIndex_ThrowsException(int invalidSquareIndex)
+        {
+            ulong anyBoard = 0b0ul;
+
+            // Note: C# bit shifting *would* throw a different exception (System.ArgumentOutOfRangeException
+            // regarding the shift count itself) without your explicit `if` check. 
+            // We test that your specific domain validation is hit first.
+            var exception = Assert.Throws<ArgumentOutOfRangeException>(() =>
+                sut.AddPiece(anyBoard, invalidSquareIndex)
+            );
+
+            Assert.Contains(invalidSquareIndex.ToString(), exception.Message);
+        }
+
         // Helper method to create a BoardPosition for testing
         // This method assumes the BoardPosition class and Colour enum exist.
         private BoardPosition CreateBoardWithPiece(Colour colour, char piece, int rank, int file)

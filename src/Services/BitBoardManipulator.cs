@@ -86,6 +86,11 @@ namespace Services
             ulong piecePositions,
             int square)
         {
+            if (square < 0 || square > 63)
+            {
+                throw new ArgumentOutOfRangeException($"Square {square} is out of range when attempting to RemovePiece");
+            }
+
             return piecePositions |= (ulong)(1ul << square);
         }
     }    
