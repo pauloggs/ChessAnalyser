@@ -20,7 +20,6 @@ namespace ServicesHelpersTests
             pawnMoveInterpreter = new Mock<IPawnMoveInterpreter>();
             pieceMoveInterpreter = new Mock<IPieceMoveInterpreter>();
             sut = new MoveInterpreterHelper(
-                sourceSquareHelperMock.Object, 
                 destinationSquareHelperMock.Object,
                 pawnMoveInterpreter.Object,
                 pieceMoveInterpreter.Object);

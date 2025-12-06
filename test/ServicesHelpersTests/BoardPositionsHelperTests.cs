@@ -24,8 +24,7 @@ namespace ServicesHelpersTests
             sut = new BoardPositionsHelper(
                 moveInterpreterMock.Object,
                 displayServiceMock.Object,
-                boardPositionUpdaterMock.Object,
-                bitBoardManipulatorMock.Object);
+                boardPositionUpdaterMock.Object);
         }
 
         [Fact]

@@ -41,7 +41,6 @@ namespace Services.Helpers
     }
 
     public class MoveInterpreterHelper(
-        ISourceSquareHelper sourceSquareHelper,
         IDestinationSquareHelper destinationSquareHelper,
         IPawnMoveInterpreter pawnMoveInterpreter,
         IPieceMoveInterpreter pieceMoveInterpreter) : IMoveInterpreterHelper

@@ -38,8 +38,7 @@ namespace Services.Helpers
     public class BoardPositionsHelper(
         IMoveInterpreter moveInterpreter,
         IDisplayService displayService,
-        IBoardPositionUpdater boardPositionUpdater,
-        IBitBoardManipulator bitBoardManipulator) : IBoardPositionsHelper
+        IBoardPositionUpdater boardPositionUpdater) : IBoardPositionsHelper
     {
         private readonly IMoveInterpreter moveInterpreter = moveInterpreter;
 
