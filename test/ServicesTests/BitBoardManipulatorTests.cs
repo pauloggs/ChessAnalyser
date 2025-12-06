@@ -1,16 +1,20 @@
 ﻿using Interfaces;
 using Interfaces.DTO;
+using Moq;
 using Services;
+using Services.Helpers;
 using static Interfaces.Constants;
 
 namespace ServicesTests
 {
     public class BitBoardManipulatorTests
     {
+        private readonly Mock<IBitBoardManipulatorHelper> bitBoardManipulatorHelperMock;
         private readonly IBitBoardManipulator sut;
         public BitBoardManipulatorTests()
         {
-            sut = new BitBoardManipulator();
+            bitBoardManipulatorHelperMock = new Mock<IBitBoardManipulatorHelper>(); 
+            sut = new BitBoardManipulator(bitBoardManipulatorHelperMock.Object);
         }
 
         [Theory]
@@ -21,9 +25,12 @@ namespace ServicesTests
             // Arrange
             BoardPosition board = CreateBoardWithPiece(colour, piece.Name, rank, file);
 
+            var bitBoardManipulatorHelpere = new BitBoardManipulatorHelper();
+            var bitBoardManipulator = new BitBoardManipulator(bitBoardManipulatorHelpere);
+
             // Act
             // Use the name of whichever method you are currently testing (original or optimized)
-            bool result = sut.ReadSquare(board, piece, colour, rank, file);
+            bool result = bitBoardManipulator.ReadSquare(board, piece, colour, rank, file);
 
             // Assert
             Assert.True(result, $"Expected {colour} {piece} at Rank {rank}, File {file} to be present.");
@@ -85,6 +92,9 @@ namespace ServicesTests
             int rank = 3; // Rank 4
             int file = 4; // File e
 
+            var bitBoardManipulatorHelpere = new BitBoardManipulatorHelper();
+            var bitBoardManipulator = new BitBoardManipulator(bitBoardManipulatorHelpere);
+
             ulong mask = 1UL << ((rank * 8) + file);
 
             var board = new BoardPosition
@@ -101,11 +111,11 @@ namespace ServicesTests
 
             // Act & Assert
             // Check for the White Pawn at e4
-            bool checkWp = sut.ReadSquare(board, Constants.Pieces['P'], Colour.W, rank, file);
+            bool checkWp = bitBoardManipulator.ReadSquare(board, Constants.Pieces['P'], Colour.W, rank, file);
             // Check for the Black Knight at e4
-            bool checkBN = sut.ReadSquare(board, Constants.Pieces['N'], Colour.B, rank, file);
+            bool checkBN = bitBoardManipulator.ReadSquare(board, Constants.Pieces['N'], Colour.B, rank, file);
             // Check for a White Knight at e4 (should be false)
-            bool checkWN = sut.ReadSquare(board, Constants.Pieces['N'], Colour.W, rank, file);
+            bool checkWN = bitBoardManipulator.ReadSquare(board, Constants.Pieces['N'], Colour.W, rank, file);
 
 
             Assert.True(checkWp, "Should find the white pawn at e4.");

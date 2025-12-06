@@ -1,4 +1,5 @@
 ﻿using Interfaces.DTO;
+using Services.Helpers;
 using static Interfaces.Constants;
 
 namespace Services
@@ -30,7 +31,7 @@ namespace Services
             int square);
     }
 
-    public class BitBoardManipulator : IBitBoardManipulator
+    public class BitBoardManipulator(IBitBoardManipulatorHelper bitBoardManipulatorHelper) : IBitBoardManipulator
     {
         public bool ReadSquare(
             BoardPosition boardPosition,
@@ -58,21 +59,21 @@ namespace Services
                 throw new Exception($"Invalid bytes in board position");
             }
 
-            return GetFileFromRank(piecePositionBytes[rank], file);
+            return bitBoardManipulatorHelper.IsPiecePresentAtFileInRank(piecePositionBytes[rank], file);
         }
 
 
-        /// <summary>
-        /// Takes the supplied file and create a bitmask that is ANDed with the rank byte to determine if a piece exists on that file in the rank.
-        /// </summary>
-        /// <param name="fileByte"></param>
-        /// <param name="file"></param>
-        /// <returns></returns>
-        private static bool GetFileFromRank(byte fileByte, int file)
-        {
-            // Shift a 1 to the left by the file number and AND it with the rank byte
-            return (fileByte & (1 << file)) != 0;
-        }
+        ///// <summary>
+        ///// Takes the supplied file and create a bitmask that is ANDed with the rank byte to determine if a piece exists on that file in the rank.
+        ///// </summary>
+        ///// <param name="fileByte"></param>
+        ///// <param name="file"></param>
+        ///// <returns></returns>
+        //private static bool IsPiecePresentAtFileInRank(byte fileByte, int file)
+        //{
+        //    // Shift a 1 to the left by the file number and AND it with the rank byte
+        //    return (fileByte & (1 << file)) != 0;
+        //}
 
         public ulong PiecePositionsAfterMove(
             ulong piecePositions,
