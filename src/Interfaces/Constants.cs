@@ -156,6 +156,7 @@ namespace Interfaces
         /// </summary>
         public static class Squares
         {
+            // King-side castling squares
             // White side (Rank 1)
             public const int E1 = 4;
             public const int G1 = 6;
@@ -167,6 +168,17 @@ namespace Interfaces
             public const int G8 = 62;
             public const int H8 = 63;
             public const int F8 = 61;
+
+            // Queen-side castling squares
+            // White side (Rank 1)
+            public const int A1 = 0; // New
+            public const int C1 = 2; // New
+            public const int D1 = 3; // New
+
+            // Black side (Rank 8)
+            public const int A8 = 56; // New
+            public const int C8 = 58; // New
+            public const int D8 = 59; // New
         }
     }
 }

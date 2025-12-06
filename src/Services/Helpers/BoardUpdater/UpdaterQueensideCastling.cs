@@ -9,6 +9,18 @@ namespace Services.Helpers.BoardUpdater
 
     public class UpdaterQueensideCastling(IBitBoardManipulator bitBoardManipulator) : IUpdaterQueensideCastling
     {
+        // White Castling
+        public const int WhiteKingSource = Squares.E1;
+        public const int WhiteKingDestination = Squares.C1;
+        public const int WhiteRookSource = Squares.A1;
+        public const int WhiteRookDestination = Squares.D1;
+
+        // Black Castling
+        public const int BlackKingSource = Squares.E8;
+        public const int BlackKingDestination = Squares.C8;
+        public const int BlackRookSource = Squares.A8;
+        public const int BlackRookDestination = Squares.D8;
+
         public void UpdateBoard(
             BoardPosition currentBoardPosition,
             string piecePositionsKey,
@@ -23,13 +35,19 @@ namespace Services.Helpers.BoardUpdater
                 var kingPositions = currentBoardPosition.PiecePositions["WK"];
 
                 currentBoardPosition.PiecePositions["WK"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 4, 2);
+                    = bitBoardManipulator.PiecePositionsAfterMove(
+                        kingPositions,
+                        WhiteKingSource,
+                        WhiteKingDestination);
 
                 // then move the rook
                 var rookPositions = currentBoardPosition.PiecePositions["WR"];
 
                 currentBoardPosition.PiecePositions["WR"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 0, 3);
+                    = bitBoardManipulator.PiecePositionsAfterMove(
+                        rookPositions,
+                        WhiteRookSource,
+                        WhiteRookDestination);
             }
             else
             {
@@ -37,13 +55,19 @@ namespace Services.Helpers.BoardUpdater
                 var kingPositions = currentBoardPosition.PiecePositions["BK"];
 
                 currentBoardPosition.PiecePositions["BK"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(kingPositions, 60, 58);
+                    = bitBoardManipulator.PiecePositionsAfterMove(
+                        kingPositions, 
+                        BlackKingSource, 
+                        BlackKingDestination);
 
                 // then move the rook
                 var rookPositions = currentBoardPosition.PiecePositions["BR"];
 
                 currentBoardPosition.PiecePositions["BR"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(rookPositions, 56, 59);
+                    = bitBoardManipulator.PiecePositionsAfterMove(
+                        rookPositions, 
+                        BlackRookSource, 
+                        BlackRookDestination);
             }
         }
     }
