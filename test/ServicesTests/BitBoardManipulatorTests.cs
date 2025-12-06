@@ -138,6 +138,87 @@ namespace ServicesTests
         }
 
 
+        [Theory(DisplayName = "Should remove a piece (turn off a bit) at a specific square")]
+        // Test removing a piece from various positions when only that piece is present
+        [InlineData(0b1ul, 0, 0b0ul)]                          // Remove A1 piece (LSB)
+        [InlineData(0b10ul, 1, 0b0ul)]                         // Remove B1 piece
+        [InlineData(0b10000000ul, 7, 0b0ul)]                  // Remove H1 piece
+        [InlineData(0b10000000000000000000000000000000ul, 31, 0b0ul)] // Remove D4 piece (mid-board)
+        [InlineData(0b1000000000000000000000000000000000000000000000000000000000000000ul, 63, 0b0ul)] // Remove H8 piece (MSB)
+        public void RemovePiece_WhenOnlyTargetPieceExists_ReturnsZero(ulong initialPosition, int squareToRemove, ulong expectedResult)
+        {
+            // Act
+            ulong actual = sut.RemovePiece(initialPosition, squareToRemove);
+
+            // Assert
+            Assert.Equal(expectedResult, actual);
+        }
+
+        [Fact(DisplayName = "Should remove the target piece while leaving other pieces intact")]
+        public void RemovePiece_WithMultiplePieces_OnlyRemovesTargetPiece()
+        {
+            // Board state with pieces at A1 (0), D1 (3), A2 (8), H8 (63)
+            ulong initialPosition = 0b10000000_00000000_00000000_00000000_00000000_00000000_00001001ul;
+
+            // Expected board state after removing the piece at square 3 (D1)
+            ulong expectedResult = 0b10000000_00000000_00000000_00000000_00000000_00000000_00000001ul;
+
+            // Act: Remove the piece at D1 (square 3)
+            ulong actual = sut.RemovePiece(initialPosition, 3);
+
+            // Assert
+            Assert.Equal(expectedResult, actual);
+
+            // Verify that removing an already non-existent piece doesn't change anything
+            ulong actualNoChange = sut.RemovePiece(actual, 3);
+            Assert.Equal(expectedResult, actualNoChange);
+        }
+
+        [Fact(DisplayName = "Removing a piece from an empty board should result in an empty board")]
+        public void RemovePiece_FromEmptyBoard_RemainsEmpty()
+        {
+            ulong emptyBoard = 0b0ul;
+            int squareToRemove = 32; // Any valid square
+
+            ulong actual = sut.RemovePiece(emptyBoard, squareToRemove);
+
+            Assert.Equal(emptyBoard, actual);
+        }
+
+        [Fact(DisplayName = "Removing a piece from a full board should result in a board with one empty square")]
+        public void RemovePiece_FromFullBoard_LeavesOneEmptySquare()
+        {
+            ulong fullBoard = ulong.MaxValue; // All 64 bits set to 1
+            int squareToRemove = 0; // Remove A1 piece
+
+            ulong expectedResult = ulong.MaxValue ^ (1ul << 0); // All but LSB set
+
+            ulong actual = sut.RemovePiece(fullBoard, squareToRemove);
+
+            Assert.Equal(expectedResult, actual);
+        }
+
+        [Fact(DisplayName = "Behavior check: Invalid positive index (64) currently results in no change")]
+        public void RemovePiece_InvalidIndex64_ReturnsOriginalBoard()
+        {
+            // 1ul << 64 results in 0 because the 64th bit shifts off the end of the ulong.
+            // Therefore, ~(0ul) is ulong.MaxValue, and ANDing with ulong.MaxValue results in no change.
+            ulong initialPosition = 0b111ul;
+
+            // Assert that the underlying runtime exception is thrown if validation isn't added
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => sut.RemovePiece(initialPosition, 64));
+        }
+
+        [Fact(DisplayName = "Behavior check: Negative index currently results in an exception")]
+        public void RemovePiece_NegativeIndex_ThrowsException()
+        {
+            // C# throws a runtime exception for negative shift counts.
+            ulong initialPosition = 0b1ul;
+
+            // Assert that the underlying runtime exception is thrown if validation isn't added
+            Assert.Throws<System.ArgumentOutOfRangeException>(() => sut.RemovePiece(initialPosition, -1));
+        }
+
         // Helper method to create a BoardPosition for testing
         // This method assumes the BoardPosition class and Colour enum exist.
         private BoardPosition CreateBoardWithPiece(Colour colour, char piece, int rank, int file)

@@ -62,19 +62,6 @@ namespace Services
             return bitBoardManipulatorHelper.IsPiecePresentAtFileInRank(piecePositionBytes[rank], file);
         }
 
-
-        ///// <summary>
-        ///// Takes the supplied file and create a bitmask that is ANDed with the rank byte to determine if a piece exists on that file in the rank.
-        ///// </summary>
-        ///// <param name="fileByte"></param>
-        ///// <param name="file"></param>
-        ///// <returns></returns>
-        //private static bool IsPiecePresentAtFileInRank(byte fileByte, int file)
-        //{
-        //    // Shift a 1 to the left by the file number and AND it with the rank byte
-        //    return (fileByte & (1 << file)) != 0;
-        //}
-
         public ulong PiecePositionsAfterMove(
             ulong piecePositions,
             int sourceSquare,
@@ -87,6 +74,11 @@ namespace Services
             ulong piecePositions,
             int square)
         {
+            if (square < 0 || square > 63)
+            {
+                throw new ArgumentOutOfRangeException($"Square {square} is out of range when attempting to RemovePiece");
+            }
+                
             return piecePositions &= ~ (ulong)(1ul << square);
         }
 
