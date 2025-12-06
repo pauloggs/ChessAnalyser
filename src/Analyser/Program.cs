@@ -2,6 +2,7 @@ using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
 using Services.Helpers;
+using Services.Helpers.BoardUpdater;
 using System.Configuration;
 using System.Reflection;
 
@@ -41,6 +42,13 @@ builder.Services.AddScoped<IPawnMoveInterpreter, PawnMoveInterpreter>();
 builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
 builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
 builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
+
+builder.Services.AddScoped<IUpdaterEnPassant, UpdaterEnPassant>();
+builder.Services.AddScoped<IUpdaterKingsideCastling, UpdaterKingsideCastling>();
+builder.Services.AddScoped<IUpdaterNonPromotion, UpdaterNonPromotion>();
+builder.Services.AddScoped<IUpdaterPromotion, UpdaterPromotion>();
+builder.Services.AddScoped<IUpdaterQueensideCastling, UpdaterQueensideCastling>();
+
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();
