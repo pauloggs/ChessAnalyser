@@ -150,5 +150,23 @@ namespace Interfaces
         public static IReadOnlyDictionary<string, string> GameEndConditions => _gameEndConditions;
 
         public static int MoveNotFound { get; } = -1;
+
+        /// <summary>
+        /// Standard algebraic notation square definitions as 0-63 indices.
+        /// </summary>
+        public static class Squares
+        {
+            // White side (Rank 1)
+            public const int E1 = 4;
+            public const int G1 = 6;
+            public const int H1 = 7;
+            public const int F1 = 5;
+
+            // Black side (Rank 8)
+            public const int E8 = 60;
+            public const int G8 = 62;
+            public const int H8 = 63;
+            public const int F8 = 61;
+        }
     }
 }
