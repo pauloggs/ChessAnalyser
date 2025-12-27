@@ -35,7 +35,7 @@ namespace Services.Helpers.BoardUpdater
                 var kingPositions = currentBoardPosition.PiecePositions["WK"];
 
                 currentBoardPosition.PiecePositions["WK"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(
+                    = bitBoardManipulator.MovePiece(
                         kingPositions,
                         WhiteKingSource,
                         WhiteKingDestination);
@@ -44,7 +44,7 @@ namespace Services.Helpers.BoardUpdater
                 var rookPositions = currentBoardPosition.PiecePositions["WR"];
 
                 currentBoardPosition.PiecePositions["WR"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(
+                    = bitBoardManipulator.MovePiece(
                         rookPositions,
                         WhiteRookSource,
                         WhiteRookDestination);
@@ -55,7 +55,7 @@ namespace Services.Helpers.BoardUpdater
                 var kingPositions = currentBoardPosition.PiecePositions["BK"];
 
                 currentBoardPosition.PiecePositions["BK"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(
+                    = bitBoardManipulator.MovePiece(
                         kingPositions,
                         BlackKingSource,
                         BlackKingDestination);
@@ -64,7 +64,7 @@ namespace Services.Helpers.BoardUpdater
                 var rookPositions = currentBoardPosition.PiecePositions["BR"];
 
                 currentBoardPosition.PiecePositions["BR"]
-                    = bitBoardManipulator.PiecePositionsAfterMove(
+                    = bitBoardManipulator.MovePiece(
                         rookPositions,
                         BlackRookSource,
                         BlackRookDestination);

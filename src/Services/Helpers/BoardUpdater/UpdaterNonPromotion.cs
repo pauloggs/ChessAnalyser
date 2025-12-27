@@ -20,25 +20,45 @@ namespace Services.Helpers.BoardUpdater
             var piecePositions = currentBoardPosition.PiecePositions[piecePositionsKey];
 
             var newPiecePositions
-                = bitBoardManipulator.PiecePositionsAfterMove(piecePositions, sourceSquare, destinationSquare);
+                = bitBoardManipulator.MovePiece(piecePositions, sourceSquare, destinationSquare);
 
+            var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
+
+            // if the move is a capture, then make sure that there is an opposing pieceKeys at the destination square. If there isn't, throw an exception
             if (ply.IsCapture)
-            {
-                var oppCol = ply.Colour == Colour.W ? 'B' : 'W';
-
-                // update the opposing colour's piece position to remove the piece at the destination square
-                foreach (var piece in Constants.PieceIndex.Keys)
+            {              
+                // update the opposing colour's pieceKeys position to remove the pieceKeys at the destination square
+                foreach (var pieceKey in Constants.PieceIndex.Keys)
                 {
 
-                    string oppPiecePositionsKey = new([oppCol, piece]);
+                    string oppPiecePositionsKey = new([oppCol, pieceKey]);
                     currentBoardPosition.PiecePositions[oppPiecePositionsKey]
                         = bitBoardManipulator.RemovePiece(
                             currentBoardPosition.PiecePositions[oppPiecePositionsKey],
                             destinationSquare);
                 }
-
-                currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
             }
+            // if the move is not a capture, then make sure that there is no opposing pieceKeys at the destination square, if there is, throw an exception
+            else
+            {                 
+                // check that there is no opposing pieceKeys at the destination square
+                foreach (var pieceKeys in Constants.PieceIndex.Keys)
+                {
+                    string oppPiecePositionsKey = new([oppCol, pieceKeys]);
+                    bool isOppPieceAtDestination
+                        = bitBoardManipulator.ReadSquare(
+                            currentBoardPosition,
+                            ply.Piece,
+                            oppCol == 'W' ? Colour.W : Colour.B,
+                            destinationSquare / 8,
+                            destinationSquare % 8);
+                    if (isOppPieceAtDestination)
+                    {
+                        throw new InvalidOperationException($"There is an opposing piece at the destination square {destinationSquare} for a non-capture move.");
+                    }
+                }
+            }
+
 
             currentBoardPosition.PiecePositions[piecePositionsKey] = newPiecePositions;
         }

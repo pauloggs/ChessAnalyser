@@ -17,7 +17,7 @@ public class UpdaterQueensideCastlingTests
         _updater = new UpdaterQueensideCastling(_mockBitBoardManipulator.Object);
 
         _mockBitBoardManipulator
-            .Setup(m => m.PiecePositionsAfterMove(It.IsAny<ulong>(), It.IsAny<int>(), It.IsAny<int>()))
+            .Setup(m => m.MovePiece(It.IsAny<ulong>(), It.IsAny<int>(), It.IsAny<int>()))
             .Returns((ulong current, int source, int dest) => (ulong)(1UL << dest));
     }
 
@@ -50,13 +50,13 @@ public class UpdaterQueensideCastlingTests
 
         // Verify exact calls to the manipulator for the King (E1 to C1)
         _mockBitBoardManipulator.Verify(
-            m => m.PiecePositionsAfterMove(initialWhiteKingBoard, 4, 2),
+            m => m.MovePiece(initialWhiteKingBoard, 4, 2),
             Times.Once(),
             "White King move parameters were incorrect for queenside castling.");
 
         // Verify exact calls to the manipulator for the Rook (A1 to D1)
         _mockBitBoardManipulator.Verify(
-            m => m.PiecePositionsAfterMove(initialWhiteRookBoard, 0, 3),
+            m => m.MovePiece(initialWhiteRookBoard, 0, 3),
             Times.Once(),
             "White Rook move parameters were incorrect for queenside castling.");
     }
@@ -89,13 +89,13 @@ public class UpdaterQueensideCastlingTests
 
         // Verify exact calls to the manipulator for the King (E8 to C8)
         _mockBitBoardManipulator.Verify(
-            m => m.PiecePositionsAfterMove(initialBlackKingBoard, 60, 58),
+            m => m.MovePiece(initialBlackKingBoard, 60, 58),
             Times.Once(),
             "Black King move parameters were incorrect for queenside castling.");
 
         // Verify exact calls to the manipulator for the Rook (A8 to D8)
         _mockBitBoardManipulator.Verify(
-            m => m.PiecePositionsAfterMove(initialBlackRookBoard, 56, 59),
+            m => m.MovePiece(initialBlackRookBoard, 56, 59),
             Times.Once(),
             "Black Rook move parameters were incorrect for queenside castling.");
     }

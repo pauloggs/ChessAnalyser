@@ -87,7 +87,7 @@ namespace Services.Helpers
             //    // move the pawn
             //    var pawnPositions = currentBoardPosition.PiecePositions[piecePositionsKey];
             //    currentBoardPosition.PiecePositions[piecePositionsKey]
-            //        = bitBoardManipulator.PiecePositionsAfterMove(pawnPositions, sourceSquare, destinationSquare);
+            //        = bitBoardManipulator.MovePiece(pawnPositions, sourceSquare, destinationSquare);
 
             //    // remove the captured pawn
             //    var oppCol = ply.Colour == Colour.W ? 'B' : 'W';

@@ -17,7 +17,15 @@ namespace Services
             int rank,
             int file);
 
-        ulong PiecePositionsAfterMove(
+        /// <summary>
+        /// Moves a piece from sourceSquare to destinationSquare on the bitboard.
+        /// Uses bitwise XOR to toggle the bits at the source and destination squares.
+        /// </summary>
+        /// <param name="currentPiecePositions"></param>
+        /// <param name="sourceSquare"></param>
+        /// <param name="destinationSquare"></param>
+        /// <returns></returns>
+        ulong MovePiece(
             ulong piecePositions,
             int sourceSquare,
             int destinationSquare);
@@ -62,12 +70,20 @@ namespace Services
             return bitBoardManipulatorHelper.IsPiecePresentAtFileInRank(piecePositionBytes[rank], file);
         }
 
-        public ulong PiecePositionsAfterMove(
-            ulong piecePositions,
+        public ulong MovePiece(
+            ulong currentPiecePositions,
             int sourceSquare,
             int destinationSquare)
         {
-            return piecePositions ^= ((ulong)(1ul << sourceSquare) + (ulong)(1ul << destinationSquare));
+            // Create a mask representing both the start and end squares
+            // For example, if moving from A2 (square 8) to A3 (square 16)
+            ulong moveMask = (1ul << sourceSquare) | (1ul << destinationSquare);
+
+            // XOR toggles the bits: removes from 'from', adds to 'to'
+            // For example, 0000...000100000000 (A2) XOR 0000...001000000000 (A3)
+            var newPiecePositions = currentPiecePositions ^ moveMask;
+
+            return newPiecePositions;
         }
 
         public ulong RemovePiece(

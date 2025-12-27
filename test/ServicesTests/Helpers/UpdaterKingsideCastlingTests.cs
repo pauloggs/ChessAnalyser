@@ -17,11 +17,11 @@ namespace ServicesTests.Helpers
             _mockBitBoardManipulator = new Mock<IBitBoardManipulator>();
             _updater = new UpdaterKingsideCastling(_mockBitBoardManipulator.Object);
 
-            // Setup common mock behavior for PiecePositionsAfterMove
+            // Setup common mock behavior for MovePiece
             // We configure the mock to simply return a bitboard representing the destination square
             // for verification purposes.
             _mockBitBoardManipulator
-                .Setup(m => m.PiecePositionsAfterMove(It.IsAny<ulong>(), It.IsAny<int>(), It.IsAny<int>()))
+                .Setup(m => m.MovePiece(It.IsAny<ulong>(), It.IsAny<int>(), It.IsAny<int>()))
                 .Returns((ulong current, int source, int dest) => (ulong)(1UL << dest));
         }
 
@@ -58,12 +58,12 @@ namespace ServicesTests.Helpers
 
             // Verify that the underlying IBitBoardManipulator was called exactly twice with the correct parameters
             _mockBitBoardManipulator.Verify(
-                m => m.PiecePositionsAfterMove(initialWhiteKingBoard, 4, 6),
+                m => m.MovePiece(initialWhiteKingBoard, 4, 6),
                 Times.Once(),
                 "King move parameters were incorrect.");
 
             _mockBitBoardManipulator.Verify(
-                m => m.PiecePositionsAfterMove(initialWhiteRookBoard, 7, 5),
+                m => m.MovePiece(initialWhiteRookBoard, 7, 5),
                 Times.Once(),
                 "Rook move parameters were incorrect.");
         }
@@ -98,12 +98,12 @@ namespace ServicesTests.Helpers
 
             // Verify that the underlying IBitBoardManipulator was called exactly twice with the correct parameters
             _mockBitBoardManipulator.Verify(
-                m => m.PiecePositionsAfterMove(initialBlackKingBoard, 60, 62),
+                m => m.MovePiece(initialBlackKingBoard, 60, 62),
                 Times.Once(),
                 "Black King move parameters were incorrect.");
 
             _mockBitBoardManipulator.Verify(
-                m => m.PiecePositionsAfterMove(initialBlackRookBoard, 63, 61),
+                m => m.MovePiece(initialBlackRookBoard, 63, 61),
                 Times.Once(),
                 "Black Rook move parameters were incorrect.");
         }
