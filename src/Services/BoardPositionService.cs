@@ -21,14 +21,12 @@ namespace Services
     public class BoardPositionService : IBoardPositionService
     {
         private readonly IBoardPositionsHelper boardPositionsHelper;
-        private readonly IDisplayService displayService;
 
         public BoardPositionService(
             IBoardPositionsHelper boardPositionsHelper,
             IDisplayService displayService)
 		{
             this.boardPositionsHelper = boardPositionsHelper;
-            this.displayService = displayService;
         }
 
         public void SetBoardPositions(List<Game> games)

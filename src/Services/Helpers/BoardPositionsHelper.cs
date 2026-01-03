@@ -1,5 +1,4 @@
-﻿using System.Text;
-using Interfaces;
+﻿using Interfaces;
 using Interfaces.DTO;
 
 namespace Services.Helpers
@@ -23,15 +22,15 @@ namespace Services.Helpers
             Game game,
             int plyIndex);
 
-        /// <summary>
-        /// Sets the board position for the current ply, based on the previous board position and the move made in the ply.
-        /// Gets the next board position from the previous board position and the ply.
-        /// </summary>
-        void SetNextBoardPositionFromPly(
-            Game game,
-            BoardPosition previousBoardPosition,
-            Ply ply,
-            int currentBoardIndex);
+        ///// <summary>
+        ///// Sets the board position for the current ply, based on the previous board position and the move made in the ply.
+        ///// Gets the next board position from the previous board position and the ply.
+        ///// </summary>
+        //void SetNextBoardPositionFromPly(
+        //    Game game,
+        //    BoardPosition previousBoardPosition,
+        //    Ply ply,
+        //    int currentBoardIndex);
 
         /// <summary>
         /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
@@ -45,7 +44,7 @@ namespace Services.Helpers
     public class BoardPositionsHelper(
         IMoveInterpreter moveInterpreter,
         IDisplayService displayService,
-        IBoardPositionCalculator boardPositionUpdater) : IBoardPositionsHelper
+        IBoardPositionCalculator boardPositionCalculator) : IBoardPositionsHelper
     {
         private readonly IMoveInterpreter moveInterpreter = moveInterpreter;
 
@@ -114,39 +113,9 @@ namespace Services.Helpers
             ply.DestinationSquare = destinationSquare;
 
             // Get and return the new board position after applying the move
-            return boardPositionUpdater.GetBoardPositionFromPly(
+            return boardPositionCalculator.GetBoardPositionFromPly(
                 previousBoardPosition,
                 ply);
-        }
-
-        public void SetNextBoardPositionFromPly(
-            Game game,
-            BoardPosition previousBoardPosition,
-            Ply ply,
-            int currentBoardIndex)
-        {
-            // Deep copy the previous board position to create the current board position
-            var currentBoardPositions
-                = previousBoardPosition.DeepCopy() ?? new BoardPosition();
-
-            // Assign the current board position to the game at the current index
-            game.BoardPositions[currentBoardIndex] = currentBoardPositions;
-
-            // Get the piece, source square, and destination square for the move
-            var (piece, sourceSquare, destinationSquare)
-                    = moveInterpreter.GetSourceAndDestinationSquares(
-                        previousBoardPosition,
-                        ply);
-
-            // Update the current board position with the move
-            boardPositionUpdater.UpdateCurrentBoardPositionWithMove(
-                currentBoardPositions,
-                ply,
-                sourceSquare,
-                destinationSquare
-                );
-
-            _displayService.DisplayBoardPosition(currentBoardPositions);
         }
 
         public bool SetWinner(Game game, int plyIndex)

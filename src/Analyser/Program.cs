@@ -2,7 +2,6 @@ using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
 using Services.Helpers;
-using Services.Helpers.BoardUpdater;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,6 +26,16 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+// Use this more permissive policy for debugging to rule out port issues:
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowSwagger", policy => {
+        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ListenLocalhost(5000); // Standard HTTP
@@ -37,12 +46,12 @@ builder.WebHost.ConfigureKestrel(serverOptions =>
 });
 
 builder.Services.AddScoped<IBitBoardManipulator, BitBoardManipulator>();
+builder.Services.AddScoped<IBoardPositionCalculator, BoardPositionCalculator>();
 builder.Services.AddScoped<IBoardPositionCalculatorHelper, BoardPositionCalculatorHelper>();
 builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
-builder.Services.AddScoped<IBoardPositionCalculator, BoardPositionCalculator>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
 builder.Services.AddScoped<ISourceSquareHelper, SourceSquareHelper>();
@@ -52,12 +61,6 @@ builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
 builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
 builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
 builder.Services.AddScoped<IBitBoardManipulatorHelper, BitBoardManipulatorHelper>();
-
-builder.Services.AddScoped<IUpdaterEnPassant, UpdaterEnPassant>();
-builder.Services.AddScoped<IUpdaterKingsideCastling, UpdaterKingsideCastling>();
-builder.Services.AddScoped<IUpdaterNonPromotion, UpdaterNonPromotion>();
-builder.Services.AddScoped<IUpdaterPromotion, UpdaterPromotion>();
-builder.Services.AddScoped<IUpdaterQueensideCastling, UpdaterQueensideCastling>();
 
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
@@ -75,6 +78,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+// ACTIVATE THE POLICY HERE
+app.UseCors("AllowSwagger");
 
 app.UseAuthorization();
 
