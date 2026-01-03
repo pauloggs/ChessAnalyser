@@ -3,7 +3,6 @@ using Repositories;
 using Services;
 using Services.Helpers;
 using Services.Helpers.BoardUpdater;
-using System.Configuration;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -28,12 +27,22 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenLocalhost(5000); // Standard HTTP
+    serverOptions.ListenAnyIP(5001, listenOptions =>
+    {
+        listenOptions.UseHttps(); // Explicit HTTPS
+    });
+});
+
 builder.Services.AddScoped<IBitBoardManipulator, BitBoardManipulator>();
+builder.Services.AddScoped<IBoardPositionCalculatorHelper, BoardPositionCalculatorHelper>();
 builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
-builder.Services.AddScoped<IBoardPositionUpdater, BoardPositionUpdater>();
+builder.Services.AddScoped<IBoardPositionCalculator, BoardPositionCalculator>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
 builder.Services.AddScoped<ISourceSquareHelper, SourceSquareHelper>();

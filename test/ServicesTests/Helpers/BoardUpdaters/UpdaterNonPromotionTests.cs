@@ -149,13 +149,27 @@ namespace ServicesTests.Helpers.BoardUpdaters
         }
 
         // --- Edge Case 2: Destination Already Occupied (Non-Capture) ---
-
-
-
         [Fact(DisplayName = "A non-capture move to an occupied square throws an exception")]
         public void UpdateBoard_NonCaptureMoveToOccupiedSquare_ShouldThrowException()
         {
-            
+            // Arrange
+            var mockBitBoardManipulatorHelper = new Mock<IBitBoardManipulatorHelper>();
+            var bitBoardManipulator = new BitBoardManipulator(mockBitBoardManipulatorHelper.Object);
+            var updatorNonPromotion = new UpdaterNonPromotion(bitBoardManipulator);
+
+            var board = SetupStandardBoard();
+            const string movingPieceKey = "WP"; // White Pawn
+            const string occupyingPieceKey = "BN"; // White Knight
+            const int source = 0;
+            const int dest = 8; 
+            board.PiecePositions[movingPieceKey] = (1ul << source); // Piece at Square A1 (source)
+            board.PiecePositions[occupyingPieceKey] = (1ul << dest); // Piece at Square A2 (destination)
+            var ply = new Ply { IsCapture = false, Colour = Colour.W, RawMove = "" };
+            // Act & Assert
+            var exception = Assert.Throws<InvalidOperationException>(() =>
+                updatorNonPromotion.UpdateBoard(board, movingPieceKey, ply, source, dest)
+            );
+            Assert.Equal($"There is an opposing piece at the destination square {dest} for a non-capture move.", exception.Message);
         }
 
         // --- Edge Case 3: Capture Flagged, But No Piece to Capture ---
@@ -243,7 +257,7 @@ namespace ServicesTests.Helpers.BoardUpdaters
             );
         }
 
-
+        
 
         private BoardPosition SetupStandardBoard()
         {

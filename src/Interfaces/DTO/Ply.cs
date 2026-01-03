@@ -85,6 +85,29 @@ namespace Interfaces.DTO
         /// <summary>
         /// The piece to which a pawn is promoted, if applicable.
         /// </summary>
-        public Piece PromotionPiece { get; set; }
+        public Piece? PromotionPiece { get; set; }
+
+        public int SourceSquare { get; set; } = -1; // 0-63
+        public int DestinationSquare { get; set; } = -1; // 0-63  
+
+        /// <summary>
+        /// Returns the key used to access the piece positions in the board position dictionary.
+        /// For example, "WP" for White Pawn, "BN" for Black Knight.
+        /// </summary>
+        public string PiecePositionsKey
+        {
+            get
+            {
+                return Colour.ToString() + Piece.Name;
+            }
+        }
+
+        public Colour OppositeColour
+        {
+            get
+            {
+                return Colour == Colour.W ? Colour.B : Colour.W;
+            }
+        }
     }
 }

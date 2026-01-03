@@ -11,7 +11,7 @@ namespace ServicesTests.Helpers
     {
         private Mock<IMoveInterpreter> moveInterpreterMock;
         private Mock<IDisplayService> displayServiceMock;
-        private Mock<IBoardPositionUpdater> boardPositionUpdaterMock;
+        private Mock<IBoardPositionCalculator> boardPositionUpdaterMock;
         private Mock<IBitBoardManipulator> bitBoardManipulatorMock;
         private IBoardPositionsHelper sut;
 
@@ -19,7 +19,7 @@ namespace ServicesTests.Helpers
         {
             moveInterpreterMock = new Mock<IMoveInterpreter>();
             displayServiceMock = new Mock<IDisplayService>();
-            boardPositionUpdaterMock = new Mock<IBoardPositionUpdater>();
+            boardPositionUpdaterMock = new Mock<IBoardPositionCalculator>();
             bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
             sut = new BoardPositionsHelper(
                 moveInterpreterMock.Object,
@@ -49,7 +49,7 @@ namespace ServicesTests.Helpers
                     It.IsAny<Ply>())).Returns(moveInterpretation);
 
             // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+            sut.SetNextBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
 
             // Assert
             Assert.True(game.BoardPositions.ContainsKey(currentBoardIndex));
@@ -70,7 +70,7 @@ namespace ServicesTests.Helpers
             int currentBoardIndex = 0;
 
             // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+            sut.SetNextBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
 
             // Assert
             Assert.NotNull(game.BoardPositions[currentBoardIndex]);
@@ -99,7 +99,7 @@ namespace ServicesTests.Helpers
                     It.IsAny<Ply>())).Returns(moveInterpretation);
 
             // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
+            sut.SetNextBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
 
             // Assert
             moveInterpreterMock.

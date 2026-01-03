@@ -6,7 +6,11 @@ namespace Interfaces.DTO
     /// </summary>
     public class BoardPosition
 	{
-		public Dictionary<string, ulong> PiecePositions { get; set; }
+        /// <summary>
+        /// Keyed by piece type and colour (e.g., "WP" for White Pawn),
+		/// Value is a 64bit Word (ulong) representing the positions of that piece type on the board.
+        /// </summary>
+        public Dictionary<string, ulong> PiecePositions { get; set; }
 
 		/// <summary>
 		/// If this board position was the result of a two-square pawn move,
@@ -31,7 +35,7 @@ namespace Interfaces.DTO
 				{ "BQ", 0 },
 				{ "BK", 0 }
             };		
-        }
-	}
+        }        
+    }
 }
 
