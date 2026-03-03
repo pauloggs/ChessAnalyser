@@ -1,112 +1,27 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using Moq;
 using Services;
 using Services.Helpers;
-using System.Drawing;
 using static Interfaces.Constants;
 
 namespace ServicesHelpersTests
-{  
+{
     public class BoardPositionsHelperTests
     {
-        private Mock<IMoveInterpreter> moveInterpreterMock;
-        private Mock<IDisplayService> displayServiceMock;
-        private Mock<IBoardPositionUpdater> boardPositionUpdaterMock;
-        private Mock<IBitBoardManipulator> bitBoardManipulatorMock;
-        private IBoardPositionsHelper sut;
+        private readonly Mock<IMoveInterpreter> moveInterpreterMock;
+        private readonly Mock<IDisplayService> displayServiceMock;
+        private readonly Mock<IBoardPositionCalculator> boardPositionCalculatorMock;
+        private readonly IBoardPositionsHelper sut;
 
         public BoardPositionsHelperTests()
         {
             moveInterpreterMock = new Mock<IMoveInterpreter>();
             displayServiceMock = new Mock<IDisplayService>();
-            boardPositionUpdaterMock = new Mock<IBoardPositionUpdater>();
-            bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
+            boardPositionCalculatorMock = new Mock<IBoardPositionCalculator>();
             sut = new BoardPositionsHelper(
                 moveInterpreterMock.Object,
                 displayServiceMock.Object,
-                boardPositionUpdaterMock.Object,
-                bitBoardManipulatorMock.Object);
-        }
-
-        [Fact]
-        public void SetBoardPositionFromPly_ValidInput_SetsBoardPosition()
-        {
-            // Arrange
-            var game = new Game
-            {
-                Name = "Test Game",
-                Plies = []
-            };
-            var previousBoardPosition = sut.GetStartingBoardPosition();
-            var ply = new Ply { RawMove = "e4" };
-            int currentBoardIndex = 1;
-
-            var moveInterpretation = (Piece: new Piece(name: 'X', value: 0.0), sourceSquare: 0, destinationSquare: 1);
-
-            // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
-            moveInterpreterMock.Setup(
-                mi => mi.GetSourceAndDestinationSquares(
-                    It.IsAny<BoardPosition>(),
-                    It.IsAny<Ply>())).Returns(moveInterpretation);
-
-            // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
-
-            // Assert
-            Assert.True(game.BoardPositions.ContainsKey(currentBoardIndex));
-            //moveInterpreterMock.Verify(mi => mi.InterpretMove(previousBoardPosition, ply), Times.Once);
-        }
-
-        [Fact]
-        public void SetBoardPositionFromPly_ShouldAssignDeepCopiedPosition_WhenValidInputProvided()
-        {
-            // Arrange
-            var game = new Game
-            {
-                Name = "Test Game",
-                Plies = []
-            };
-            var previousBoardPosition = new BoardPosition();
-            var ply = new Ply { RawMove = "e4", Colour = Colour.W };
-            int currentBoardIndex = 0;
-
-            // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
-
-            // Assert
-            Assert.NotNull(game.BoardPositions[currentBoardIndex]);
-        }
-
-        [Fact]
-        public void SetBoardPositionFromPly_ShouldCallGetSourceAndDestinationSquares_WhenCalled()
-        {
-            // Arrange
-            var game = new Game
-            {
-                Name = "Test Game",
-                Plies = []
-            };
-            var previousBoardPosition = new BoardPosition();
-            var ply = new Ply { RawMove = "e5", Colour = Colour.B };
-
-            int currentBoardIndex = 0;
-
-            var moveInterpretation = (Piece: new Piece(name: 'X', value: 0.0), sourceSquare: 0, destinationSquare: 1);
-
-            // set up mi's GetSourceAndDestinationSquares to return a valid MoveInterpretation
-            moveInterpreterMock.Setup(
-                mi => mi.GetSourceAndDestinationSquares(
-                    It.IsAny<BoardPosition>(),
-                    It.IsAny<Ply>())).Returns(moveInterpretation);
-
-            // Act
-            sut.SetBoardPositionFromPly(game, previousBoardPosition, ply, currentBoardIndex);
-
-            // Assert
-            moveInterpreterMock.
-                Verify(
-                    m => m.GetSourceAndDestinationSquares(previousBoardPosition, ply), 
-                    Times.Once);
+                boardPositionCalculatorMock.Object);
         }
 
         [Fact]

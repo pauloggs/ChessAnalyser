@@ -3,7 +3,7 @@ using Interfaces.DTO;
 using Moq;
 using Services.Helpers;
 
-namespace ServicesHelpersTests
+namespace ServicesTests.Helpers
 {
     public class MoveInterpreterHelperTests
     {
@@ -32,7 +32,7 @@ namespace ServicesHelpersTests
         public void RemoveCheck_ShouldRemoveCheckIndicatorAndSetIsCheckTrue(string rawMove, string newRawMove)
         {
             // Arrange
-            var ply = new Interfaces.DTO.Ply
+            var ply = new Ply
             {
                 RawMove = rawMove,
                 IsCheck = false,

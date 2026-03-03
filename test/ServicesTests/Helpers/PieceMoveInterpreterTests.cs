@@ -5,7 +5,7 @@ using Services;
 using Services.Helpers;
 using static Interfaces.Constants;
 
-namespace ServicesHelpersTests
+namespace ServicesTests.Helpers
 {
     public class PieceMoveInterpreterTests
     {
@@ -16,7 +16,10 @@ namespace ServicesHelpersTests
             var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelper,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             int expectedSourceSquareIndex = 30; // g4
@@ -30,7 +33,7 @@ namespace ServicesHelpersTests
                 RawMove = "Nf6",
                 DestinationFile = 5, // 'f'
                 DestinationRank = 5, // '6'
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 
@@ -79,7 +82,10 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelperMock.Object,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
             var previousBoardPosition = new BoardPosition();
 
@@ -88,14 +94,14 @@ namespace ServicesHelpersTests
                 RawMove = "TestMove", // No disambiguation
                 DestinationFile = destFile,
                 DestinationRank = destRank,
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 
             // 1. Mock GetSourceRankAndOrFile to return "not specified" so the RankAndFileHelper check passes
             sourceSquareHelperMock
                 .Setup(s => s.GetSourceRankAndOrFile(It.IsAny<string>()))
-                .Returns((Constants.MoveNotFound, Constants.MoveNotFound)); // Returns (-1, -1)
+                .Returns((MoveNotFound, MoveNotFound)); // Returns (-1, -1)
 
             // 2. Mock GetSourceSquare to return the expected index when the coordinates match
             sourceSquareHelperMock
@@ -122,15 +128,17 @@ namespace ServicesHelpersTests
         public void GetSourceSquare_KnightMove_DisambiguationByFile_OnlyChecksSpecifiedFile()
         {
             // Arrange
-            // Mock the deepest dependency (Bitboard Manipulator)
-            var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
-
             // Mock the helper INTERFACE itself (do not pass constructor args here)
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
 
             var rankAndFileHelper = new RankAndFileHelper();
+            var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
 
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelperMock.Object,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
+
 
             // Instantiate the SUT (PieceMoveInterpreter) with the ISourceSquareHelper MOCK
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
@@ -146,14 +154,14 @@ namespace ServicesHelpersTests
                 RawMove = "Nbd2",
                 DestinationFile = 3, // 'd'
                 DestinationRank = 1, // '2'
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 
             // Setup 1: Configure the GetSourceRankAndOrFile method on the ISourceSquareHelper MOCK
             sourceSquareHelperMock
                 .Setup(s => s.GetSourceRankAndOrFile(ply.RawMove))
-                .Returns((Constants.MoveNotFound, specifiedSourceFile)); // Returns Rank=-1, File=1
+                .Returns((MoveNotFound, specifiedSourceFile)); // Returns Rank=-1, File=1
 
             // Setup 2: Configure the GetSourceSquare method on the ISourceSquareHelper MOCK
             // This setup must define the behavior of the helper's internal logic using a callback
@@ -191,7 +199,10 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelperMock.Object,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             // Expected Source Square: B1 (Rank 0, File 1, Index 1)
@@ -204,14 +215,14 @@ namespace ServicesHelpersTests
                 RawMove = "Nbd2",
                 DestinationFile = 3, // 'd' file index
                 DestinationRank = 1, // '2' rank index
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 
             // 1. Mock GetSourceRankAndOrFile to return the specified 'b' file index (1)
             sourceSquareHelperMock
                 .Setup(s => s.GetSourceRankAndOrFile(ply.RawMove))
-                .Returns((Constants.MoveNotFound, 1)); // Specified File: 1, Specified Rank: -1
+                .Returns((MoveNotFound, 1)); // Specified File: 1, Specified Rank: -1
 
             // 2. Mock GetSourceSquare to return the expected index for B1
             sourceSquareHelperMock
@@ -249,7 +260,10 @@ namespace ServicesHelpersTests
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
             var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelperMock.Object,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             var ply = new Ply
@@ -257,7 +271,7 @@ namespace ServicesHelpersTests
                 RawMove = "Nd4",
                 DestinationFile = 3, // 'd'
                 DestinationRank = 3, // '4'
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 
@@ -272,7 +286,7 @@ namespace ServicesHelpersTests
             var sourceSquare = pieceMoveInterpreter.GetSourceSquare(new BoardPosition(), ply);
 
             // Assert
-            Assert.Equal(Constants.MoveNotFound, sourceSquare);
+            Assert.Equal(MoveNotFound, sourceSquare);
             Assert.Equal(-1, sourceSquare);
         }
 
@@ -289,7 +303,10 @@ namespace ServicesHelpersTests
             // Use the real helper, injecting the mock manipulator
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulatorMock.Object);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
+                sourceSquareHelper,
+                rankAndFileHelper,
+                bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             var previousBoardPosition = new BoardPosition();
@@ -299,7 +316,7 @@ namespace ServicesHelpersTests
                 RawMove = "TestMove", // RawMove isn't used for disambiguation in these cases
                 DestinationFile = destFile,
                 DestinationRank = destRank,
-                Piece = Constants.Pieces['N'],
+                Piece = Pieces['N'],
                 Colour = Colour.W
             };
 

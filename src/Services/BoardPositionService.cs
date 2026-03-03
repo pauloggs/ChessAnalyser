@@ -1,4 +1,5 @@
-﻿using Interfaces.DTO;
+using Interfaces;
+using Interfaces.DTO;
 using Services.Helpers;
 
 namespace Services
@@ -20,43 +21,40 @@ namespace Services
     public class BoardPositionService : IBoardPositionService
     {
         private readonly IBoardPositionsHelper boardPositionsHelper;
-        private readonly IDisplayService displayService;
 
         public BoardPositionService(
-            IBoardPositionsHelper boardPositionsHelper,
-            IDisplayService displayService)
+            IBoardPositionsHelper boardPositionsHelper)
 		{
             this.boardPositionsHelper = boardPositionsHelper;
-            this.displayService = displayService;
         }
 
         public void SetBoardPositions(List<Game> games)
         {
             foreach (var game in games)
             {
-                game.BoardPositions[0] = boardPositionsHelper.GetStartingBoardPosition();
+                Console.WriteLine($"Setting board positions for game '{game.Name}'");
 
-                // moved here from the helper
+                // initialize the starting position
+                var startingBoardPosition = boardPositionsHelper.GetStartingBoardPosition();
+                game.InitialBoardPosition = startingBoardPosition;
+
+                // Maintain legacy index -1 for compatibility with any existing code/tests.
+                game.BoardPositions[-1] = startingBoardPosition;
+
                 var numberOfPlies = game.Plies.Keys.Count;
 
-                // loop through all the plies of this game, and set the board positions for each ply
                 for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
                 {
-                    // check for game result, 1-0, 0-1, 1/2-1/2, and set the winner (White,Black or None) if found
+                    Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
                     if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
-                    // ply 0 is applied to create the first board position, so current board index is ply index + 1
-                    var currentBoardIndex = plyIndex + 1;
+                    var boardPositionFromPly = boardPositionsHelper.GetBoardPositionForPly(
+                        game,
+                        plyIndex);
 
-                    // get the previous board position, which is needed to calculate the current one
-                    var previousBoardPosition = game.BoardPositions[plyIndex];
+                    game.BoardPositions[plyIndex] = boardPositionFromPly;
 
-                    // set the current board position from the previous one and the current ply
-                    boardPositionsHelper.SetBoardPositionFromPly(
-                        game, 
-                        previousBoardPosition, 
-                        game.Plies[plyIndex], 
-                        currentBoardIndex);
+                    PrintBoardPosition.Print(boardPositionFromPly);
                 }
             }
         }

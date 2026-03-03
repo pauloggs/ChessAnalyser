@@ -2,7 +2,6 @@ using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
 using Services.Helpers;
-using System.Configuration;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
@@ -27,12 +26,31 @@ builder.Services.AddSwaggerGen(options =>
     options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
 });
 
+// Use this more permissive policy for debugging to rule out port issues:
+builder.Services.AddCors(options => {
+    options.AddPolicy("AllowSwagger", policy => {
+        policy.SetIsOriginAllowed(origin => new Uri(origin).Host == "localhost")
+              .AllowAnyHeader()
+              .AllowAnyMethod();
+    });
+});
+
+builder.WebHost.ConfigureKestrel(serverOptions =>
+{
+    serverOptions.ListenLocalhost(5000); // Standard HTTP
+    serverOptions.ListenAnyIP(5001, listenOptions =>
+    {
+        listenOptions.UseHttps(); // Explicit HTTPS
+    });
+});
+
 builder.Services.AddScoped<IBitBoardManipulator, BitBoardManipulator>();
+builder.Services.AddScoped<IBoardPositionCalculator, BoardPositionCalculator>();
+builder.Services.AddScoped<IBoardPositionCalculatorHelper, BoardPositionCalculatorHelper>();
 builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
-builder.Services.AddScoped<IBoardPositionUpdater, BoardPositionUpdater>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
 builder.Services.AddScoped<ISourceSquareHelper, SourceSquareHelper>();
@@ -41,6 +59,7 @@ builder.Services.AddScoped<IPawnMoveInterpreter, PawnMoveInterpreter>();
 builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
 builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
 builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
+builder.Services.AddScoped<IBitBoardManipulatorHelper, BitBoardManipulatorHelper>();
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();
@@ -57,6 +76,11 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseRouting();
+
+// ACTIVATE THE POLICY HERE
+app.UseCors("AllowSwagger");
 
 app.UseAuthorization();
 

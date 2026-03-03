@@ -1,4 +1,3 @@
-﻿using System.Text;
 using Interfaces;
 using Interfaces.DTO;
 
@@ -14,17 +13,24 @@ namespace Services.Helpers
 		BoardPosition GetStartingBoardPosition();
 
         /// <summary>
-        /// Sets the board position for the current ply, based on the previous board position and the move made in the ply.
+        /// Gets the next board position from the game and ply index. 
+        /// If the ply index is 0, the board position is based on the starting position.
+        /// If the ply index is greater than 0, the board position is based on the 
+        /// previous board position and the move made in the ply.
         /// </summary>
-        /// <param name="game"></param>
-        /// <param name="previousBoardPosition"></param>
-        /// <param name="ply"></param>
-        /// <param name="currentBoardIndex"></param>
-        void SetBoardPositionFromPly(
+        BoardPosition GetBoardPositionForPly(
             Game game,
-            BoardPosition previousBoardPosition,
-            Ply ply,
-            int currentBoardIndex);
+            int plyIndex);
+
+        ///// <summary>
+        ///// Sets the board position for the current ply, based on the previous board position and the move made in the ply.
+        ///// Gets the next board position from the previous board position and the ply.
+        ///// </summary>
+        //void SetNextBoardPositionFromPly(
+        //    Game game,
+        //    BoardPosition previousBoardPosition,
+        //    Ply ply,
+        //    int currentBoardIndex);
 
         /// <summary>
         /// Checks if the last move resulted in a game end condition and sets the winner accordingly.
@@ -38,8 +44,7 @@ namespace Services.Helpers
     public class BoardPositionsHelper(
         IMoveInterpreter moveInterpreter,
         IDisplayService displayService,
-        IBoardPositionUpdater boardPositionUpdater,
-        IBitBoardManipulator bitBoardManipulator) : IBoardPositionsHelper
+        IBoardPositionCalculator boardPositionCalculator) : IBoardPositionsHelper
     {
         private readonly IMoveInterpreter moveInterpreter = moveInterpreter;
 
@@ -82,20 +87,37 @@ namespace Services.Helpers
                 = 0b_0001_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000_0000;
 
             return startingBoardPosition;
-        }   
-      
-        public void SetBoardPositionFromPly(
-            Game game,
-            BoardPosition previousBoardPosition,
-            Ply ply,
-            int currentBoardIndex)
-        {
-            // Deep copy the previous board position to create the current board position
-            var currentBoardPositions
-                = previousBoardPosition.DeepCopy() ?? new BoardPosition();
+        }
 
-            // Assign the current board position to the game at the current index
-            game.BoardPositions[currentBoardIndex] = currentBoardPositions;
+        /// <summary>
+        /// Gets the next board position from the game and ply index.
+        /// Ply zero is the first move, so BoardPositin[0] is the position after the first move.
+        /// </summary>
+        public BoardPosition GetBoardPositionForPly(
+            Game game,
+            int plyIndex)
+        {
+            if (game is null)
+            {
+                throw new ArgumentNullException(nameof(game));
+            }
+
+            BoardPosition previousBoardPosition;
+
+            if (plyIndex == 0)
+            {
+                previousBoardPosition = game.InitialBoardPosition
+                    ?? throw new InvalidOperationException("InitialBoardPosition must be set before computing ply 0.");
+            }
+            else
+            {
+                if (!game.BoardPositions.TryGetValue(plyIndex - 1, out previousBoardPosition!))
+                {
+                    throw new InvalidOperationException($"Previous board position for ply {plyIndex - 1} is missing.");
+                }
+            }
+
+            var ply = game.Plies[plyIndex];
 
             // Get the piece, source square, and destination square for the move
             var (piece, sourceSquare, destinationSquare)
@@ -103,15 +125,15 @@ namespace Services.Helpers
                         previousBoardPosition,
                         ply);
 
-            // Update the current board position with the move
-            boardPositionUpdater.UpdateCurrentBoardPositionWithMove(
-                currentBoardPositions,
-                ply,
-                sourceSquare,
-                destinationSquare
-                );
+            // Update the ply with the piece and squares
+            ply.Piece = piece;
+            ply.SourceSquare = sourceSquare;
+            ply.DestinationSquare = destinationSquare;
 
-            _displayService.DisplayBoardPosition(currentBoardPositions);
+            // Get and return the new board position after applying the move
+            return boardPositionCalculator.GetBoardPositionFromPly(
+                previousBoardPosition,
+                ply);
         }
 
         public bool SetWinner(Game game, int plyIndex)

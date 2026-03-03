@@ -1,4 +1,4 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using Repositories;
 using System.Threading.Tasks;
 
@@ -54,7 +54,8 @@ namespace Services
         {
             foreach (var game in games)
             {
-                await chessRepository.InsertGame(game);
+                var gameId = await chessRepository.InsertGame(game);
+                await chessRepository.InsertBoardPositions(game, gameId);
             }
         }
     }

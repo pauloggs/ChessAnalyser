@@ -1,4 +1,4 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using System.Text.RegularExpressions;
 using static Interfaces.Constants;
 
@@ -21,17 +21,45 @@ namespace Services.Helpers
         /// the next ply number.</param>
         public static void AddPlies(Dictionary<int, Ply> plyDictionary, string line, ref int plyNumber)
         {
-            // Remove move numbers (e.g., "1.", "2.", etc.) from the line
-            Regex moveNumbersRegex = new Regex(@"\d+\.");
-
-            // Clean the line by removing move numbers
-            line = moveNumbersRegex.Replace(line, "");
-
-            // Split the line into individual moves based on spaces
-            var plies = line.Split(" ");
-
-            foreach (string plyString in plies)
+            if (string.IsNullOrWhiteSpace(line))
             {
+                return;
+            }
+
+            // 1. Remove comments in braces: { ... }
+            line = Regex.Replace(line, @"\{[^}]*\}", " ");
+
+            // 2. Remove ';' comments to end of line
+            line = Regex.Replace(line, @";.*$", " ");
+
+            // 3. Remove move numbers (e.g., "1.", "2.", "1...") from the line
+            line = Regex.Replace(line, @"\d+\.(\.\.)?", " ");
+
+            // 4. Split the line into individual tokens based on whitespace
+            var plies = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
+
+            foreach (string rawToken in plies)
+            {
+                var plyString = rawToken.Trim();
+
+                // Skip empty tokens
+                if (string.IsNullOrWhiteSpace(plyString))
+                {
+                    continue;
+                }
+
+                // Skip NAGs like $1, $5, etc.
+                if (IsNagToken(plyString))
+                {
+                    continue;
+                }
+
+                // Skip ellipsis tokens ("...")
+                if (plyString == "...")
+                {
+                    continue;
+                }
+
                 if (!string.IsNullOrWhiteSpace(plyString))
                 {
                     var ply = new Ply()
@@ -46,6 +74,24 @@ namespace Services.Helpers
                     plyNumber++; // Increment the ply number for the next move.
                 }
             }
+        }
+
+        private static bool IsNagToken(string token)
+        {
+            if (string.IsNullOrEmpty(token) || token[0] != '$' || token.Length == 1)
+            {
+                return false;
+            }
+
+            for (int i = 1; i < token.Length; i++)
+            {
+                if (!char.IsDigit(token[i]))
+                {
+                    return false;
+                }
+            }
+
+            return true;
         }
     }
 }

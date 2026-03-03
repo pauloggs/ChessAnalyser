@@ -53,9 +53,7 @@ namespace Services.Helpers
                 case 'K':
                     sourceSquare = pieceSourceFinderService.FindKingSource(
                         previousBoardPosition,
-                        ply,
-                        sourceRank,
-                        sourceFile);
+                        ply);
                     break;
             }
 
