@@ -1,4 +1,4 @@
-﻿namespace Interfaces.DTO
+namespace Interfaces.DTO
 {
     using System.Collections.Generic;
     using System.ComponentModel.DataAnnotations.Schema;
@@ -31,9 +31,14 @@
         /// <summary>
         /// Represents a dictionary of BoardPosition objects at each zero-index Ply of the game.
         /// Ply 0 represents  first move by White, which is the first position after the starting position.
-        /// BoardPositions[-1] represents the starting position before any moves are made.
         /// </summary>
         public Dictionary<int, BoardPosition> BoardPositions { get; set; }
+
+        /// <summary>
+        /// The starting board position before any moves are made.
+        /// This represents the initial arrangement of pieces at the beginning of the game.
+        /// </summary>
+        public BoardPosition? InitialBoardPosition { get; set; }
 
         /// <summary>
         /// GameMoves is generated from a concatenation of all the moves in the game.

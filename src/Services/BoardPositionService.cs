@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using Services.Helpers;
 
@@ -33,10 +33,14 @@ namespace Services
         {
             foreach (var game in games)
             {
-                Console.WriteLine(game.Name);
+                Console.WriteLine($"Setting board positions for game '{game.Name}'");
 
-                // initialize the board positions dictionary, with the starting position at index -1
-                game.BoardPositions[-1] = boardPositionsHelper.GetStartingBoardPosition();
+                // initialize the starting position
+                var startingBoardPosition = boardPositionsHelper.GetStartingBoardPosition();
+                game.InitialBoardPosition = startingBoardPosition;
+
+                // Maintain legacy index -1 for compatibility with any existing code/tests.
+                game.BoardPositions[-1] = startingBoardPosition;
 
                 // moved here from the helper
                 var numberOfPlies = game.Plies.Keys.Count;
@@ -45,10 +49,6 @@ namespace Services
                 for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
                 {
                     Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
-                    if (plyIndex == 94)
-                    {
-                        Console.WriteLine("Debug stop");
-                    }
                     // check for game result, 1-0, 0-1, 1/2-1/2, and set the winner (White,Black or None) if found
                     // if winner is set, break the loop as no more board positions are needed
                     if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
@@ -59,7 +59,7 @@ namespace Services
 
                     game.BoardPositions[plyIndex] = boardPositionFromPly;
 
-                    // display the board position
+                    // display the board position in the console for debugging
                     PrintBoardPosition.Print(boardPositionFromPly);
                 }
             }

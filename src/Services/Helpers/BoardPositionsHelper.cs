@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 
 namespace Services.Helpers
@@ -97,7 +97,25 @@ namespace Services.Helpers
             Game game,
             int plyIndex)
         {
-            var previousBoardPosition = game.BoardPositions[plyIndex - 1];
+            if (game is null)
+            {
+                throw new ArgumentNullException(nameof(game));
+            }
+
+            BoardPosition previousBoardPosition;
+
+            if (plyIndex == 0)
+            {
+                previousBoardPosition = game.InitialBoardPosition
+                    ?? throw new InvalidOperationException("InitialBoardPosition must be set before computing ply 0.");
+            }
+            else
+            {
+                if (!game.BoardPositions.TryGetValue(plyIndex - 1, out previousBoardPosition!))
+                {
+                    throw new InvalidOperationException($"Previous board position for ply {plyIndex - 1} is missing.");
+                }
+            }
 
             var ply = game.Plies[plyIndex];
 

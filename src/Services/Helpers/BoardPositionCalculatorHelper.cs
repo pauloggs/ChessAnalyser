@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using static Interfaces.Constants;
 
@@ -41,6 +41,19 @@ namespace Services.Helpers
             // 1. Start with a deep copy
             BoardPosition newBoardPosition = previousBoardPosition.DeepCopy();
 
+            // En-passant is only legal immediately after a double pawn push.
+            if (!previousBoardPosition.EnPassantTargetFile.HasValue)
+            {
+                throw new InvalidOperationException("En-passant capture failed: no en-passant target is available.");
+            }
+
+            var destinationFileChar = FileIds[ply.DestinationFile];
+
+            if (char.ToUpperInvariant(previousBoardPosition.EnPassantTargetFile.Value) != destinationFileChar)
+            {
+                throw new InvalidOperationException("En-passant capture failed: destination file does not match en-passant target file.");
+            }
+
             // 2. Identify the square of the pawn being captured
             // If White is moving to Rank 6, the captured Black pawn is on Rank 5
             // If Black is moving to Rank 3, the captured White pawn is on Rank 4
@@ -54,7 +67,7 @@ namespace Services.Helpers
 
             if (occupyingPiece != Constants.Pieces['P'] || occupyingColour == ply.Colour)
             {
-                throw new InvalidOperationException("En-passant capture failed: No enemy pawn at the expected capture square.");
+                throw new InvalidOperationException("En-passant capture failed: no enemy pawn at the expected capture square.");
             }
 
             // 4. Remove the captured enemy pawn
@@ -69,6 +82,9 @@ namespace Services.Helpers
                 newBoardPosition,
                 ply);
 
+            // 6. Clear en-passant target for the resulting position
+            newBoardPosition.EnPassantTargetFile = null;
+
             return newBoardPosition;
         }
 
@@ -76,6 +92,9 @@ namespace Services.Helpers
         {
             // 1. Start with a copy of the board
             BoardPosition newBoardPosition = previousBoardPosition.DeepCopy();
+
+            // Promotion always clears any en-passant target
+            newBoardPosition.EnPassantTargetFile = null;
 
             // 2. Handle the Capture (if applicable)
             if (ply.IsCapture)
@@ -129,18 +148,34 @@ namespace Services.Helpers
             BoardPosition newBoardPosition
                 = previousBoardPosition.DeepCopy();
 
+            // By default, en-passant is only valid for a single reply move.
+            // Unless we detect a new double pawn push below, clear the target.
+            newBoardPosition.EnPassantTargetFile = null;
+
             var newPositionsForPlyPiece = newBoardPosition.PiecePositions[ply.PiecePositionsKey];
 
             if (ply.IsCapture)
             {
-                // Ensure that there is an opposing piece at the destination square
+                // Ensure that there is an opposing piece at the destination square.
+                // If the destination is empty for a pawn capture, this may be an en-passant move.
                 var (occupyingPiece, occupyingColour) = bitBoardManipulator.ReadSquare(
-                    newBoardPosition,
+                    previousBoardPosition,
                     ply.DestinationSquare);
 
-                // Throw an exception if there is no opposing piece at the destination square
-                // or if the occupying piece is of the same colour as the moving piece
-                if (occupyingPiece == null || occupyingColour == ply.Colour)
+                if (occupyingPiece == null)
+                {
+                    // Potential en-passant: only valid for pawn captures.
+                    if (ply.IsPawnMove)
+                    {
+                        ply.IsEnpassant = true;
+                        return GetBoardPositionFromEnPassant(previousBoardPosition, ply);
+                    }
+
+                    throw new InvalidOperationException($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.");
+                }
+
+                // Throw an exception if the occupying piece is of the same colour as the moving piece
+                if (occupyingColour == ply.Colour)
                 {
                     throw new InvalidOperationException($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.");
                 }
@@ -169,6 +204,18 @@ namespace Services.Helpers
                 newBoardPosition,
                 ply);
 
+            // If this is a quiet double pawn push, set the en-passant target file
+            if (ply.IsPawnMove && !ply.IsCapture && !ply.IsPromotion)
+            {
+                var sourceRank = ply.SourceSquare / 8;
+                var destinationRank = ply.DestinationSquare / 8;
+
+                if (Math.Abs(destinationRank - sourceRank) == 2)
+                {
+                    newBoardPosition.EnPassantTargetFile = FileIds[ply.DestinationFile];
+                }
+            }
+
             return newBoardPosition;
         }        
 
@@ -188,6 +235,9 @@ namespace Services.Helpers
 
             BoardPosition currentBoardPosition
                 = previousBoardPosition.DeepCopy();
+
+            // Castling clears any en-passant target
+            currentBoardPosition.EnPassantTargetFile = null;
 
             // handle king-side castling for that particular colour
             if (ply.Colour == Colour.W)
@@ -250,6 +300,9 @@ namespace Services.Helpers
 
             BoardPosition currentBoardPosition
                 = previousBoardPosition.DeepCopy();
+
+            // Castling clears any en-passant target
+            currentBoardPosition.EnPassantTargetFile = null;
 
             // handle king-side castling for that particular colour
             if (ply.Colour == Colour.W)

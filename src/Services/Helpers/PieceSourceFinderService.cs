@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 
 namespace Services.Helpers
@@ -44,8 +44,15 @@ namespace Services.Helpers
 
     public class PieceSourceFinderService(
         ISourceSquareHelper sourceSquareHelper,
-        IRankAndFileHelper rankAndFileHelper) : IPieceSourceFinderService
+        IRankAndFileHelper rankAndFileHelper,
+        IBitBoardManipulator bitBoardManipulator) : IPieceSourceFinderService
     {
+        private readonly ISourceSquareHelper sourceSquareHelper = sourceSquareHelper;
+
+        private readonly IRankAndFileHelper rankAndFileHelper = rankAndFileHelper;
+
+        private readonly IBitBoardManipulator bitBoardManipulator = bitBoardManipulator;
+
         public int FindKnightSource(BoardPosition previousBoardPosition, Ply ply, int specifiedSourceRank, int specifiedSourceFile)
         {
             // The 8 possible relative "L" moves a knight could have made to reach the destination
@@ -102,7 +109,7 @@ namespace Services.Helpers
                     int potSquare = potRank * 8 + potFile;
 
                     // 2. Check for ANY piece on this square
-                    var (piece, _) = BitBoardReader.ReadSquare(previousBoardPosition, potSquare);
+                    var (piece, _) = bitBoardManipulator.ReadSquare(previousBoardPosition, potSquare);
 
                     if (piece is not null)
                     {
@@ -149,7 +156,7 @@ namespace Services.Helpers
                     int potSquare = potRank * 8 + potFile;
 
                     // 2. Check if square is occupied
-                    var (piece,_) = BitBoardReader.ReadSquare(previousBoardPosition, potSquare);
+                    var (piece, _) = bitBoardManipulator.ReadSquare(previousBoardPosition, potSquare);
 
                     if (piece is not null)
                     {

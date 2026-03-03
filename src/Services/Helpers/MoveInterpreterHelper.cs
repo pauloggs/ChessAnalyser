@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using static Interfaces.Constants;
 
@@ -47,9 +47,39 @@ namespace Services.Helpers
     {        
         public void RemoveCheck(Ply ply)
         {
-            if (ply.RawMove[^1] == '+')
+            if (string.IsNullOrEmpty(ply.RawMove))
             {
-                ply.RawMove = ply.RawMove.Remove(ply.RawMove.Length - 1);
+                return;
+            }
+
+            var raw = ply.RawMove;
+            var sawCheckOrMate = false;
+
+            // Strip trailing annotation symbols, preserving the core move.
+            while (!string.IsNullOrEmpty(raw))
+            {
+                var last = raw[^1];
+
+                if (last == '+' || last == '#')
+                {
+                    sawCheckOrMate = true;
+                    raw = raw[..^1];
+                    continue;
+                }
+
+                // Drop trailing '!' / '?' annotations (e.g. "e4!", "Nf3?!", "Qh5!!")
+                if (last == '!' || last == '?')
+                {
+                    raw = raw[..^1];
+                    continue;
+                }
+
+                break;
+            }
+
+            ply.RawMove = raw;
+            if (sawCheckOrMate)
+            {
                 ply.IsCheck = true;
             }
         }
