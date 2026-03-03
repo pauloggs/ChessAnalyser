@@ -23,8 +23,7 @@ namespace Services
         private readonly IBoardPositionsHelper boardPositionsHelper;
 
         public BoardPositionService(
-            IBoardPositionsHelper boardPositionsHelper,
-            IDisplayService displayService)
+            IBoardPositionsHelper boardPositionsHelper)
 		{
             this.boardPositionsHelper = boardPositionsHelper;
         }
@@ -42,15 +41,11 @@ namespace Services
                 // Maintain legacy index -1 for compatibility with any existing code/tests.
                 game.BoardPositions[-1] = startingBoardPosition;
 
-                // moved here from the helper
                 var numberOfPlies = game.Plies.Keys.Count;
 
-                // loop through each ply to determine the board position
                 for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
                 {
                     Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
-                    // check for game result, 1-0, 0-1, 1/2-1/2, and set the winner (White,Black or None) if found
-                    // if winner is set, break the loop as no more board positions are needed
                     if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
                     var boardPositionFromPly = boardPositionsHelper.GetBoardPositionForPly(
@@ -59,7 +54,6 @@ namespace Services
 
                     game.BoardPositions[plyIndex] = boardPositionFromPly;
 
-                    // display the board position in the console for debugging
                     PrintBoardPosition.Print(boardPositionFromPly);
                 }
             }

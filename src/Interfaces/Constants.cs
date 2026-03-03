@@ -1,4 +1,4 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 
 namespace Interfaces
 {
@@ -130,7 +130,6 @@ namespace Interfaces
             (-1,-2),
             (1,-2),
             (2,-1),
-
             (2,1),
             (1,2),
             (-1,2),
@@ -171,14 +170,14 @@ namespace Interfaces
 
             // Queen-side castling squares
             // White side (Rank 1)
-            public const int A1 = 0; // New
-            public const int C1 = 2; // New
-            public const int D1 = 3; // New
+            public const int A1 = 0;
+            public const int C1 = 2;
+            public const int D1 = 3;
 
             // Black side (Rank 8)
-            public const int A8 = 56; // New
-            public const int C8 = 58; // New
-            public const int D8 = 59; // New
+            public const int A8 = 56;
+            public const int C8 = 58;
+            public const int D8 = 59;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿using static Interfaces.Constants;
+using static Interfaces.Constants;
 
 namespace Interfaces.DTO
 {

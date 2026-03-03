@@ -4,7 +4,7 @@ using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
 using System.Data;
-using System.Reflection.PortableExecutable;
+using System.Linq;
 
 namespace Repositories
 {
@@ -39,7 +39,6 @@ namespace Repositories
         /// <summary>
         /// Retrieves all games from the database.
         /// </summary>
-        /// <returns></returns>
         public async Task<List<Game>> GetGames()
         {
             var returnValue = new List<Game>();
@@ -59,7 +58,6 @@ namespace Repositories
         /// <summary>
         /// Gets an open SQL connection.
         /// </summary>
-        /// <returns></returns>
         public SqlConnection GetOpenConnection()
         {
             var cs = new SqlConnection(_config.GetConnectionString("ChessConnection"));

@@ -35,7 +35,6 @@ builder.Services.AddCors(options => {
     });
 });
 
-
 builder.WebHost.ConfigureKestrel(serverOptions =>
 {
     serverOptions.ListenLocalhost(5000); // Standard HTTP
@@ -61,7 +60,6 @@ builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
 builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
 builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
 builder.Services.AddScoped<IBitBoardManipulatorHelper, BitBoardManipulatorHelper>();
-
 builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();

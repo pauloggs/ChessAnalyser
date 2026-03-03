@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using Moq;
 using Services;
@@ -16,7 +16,7 @@ namespace ServicesHelpersTests
             var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             int expectedSourceSquareIndex = 30; // g4
@@ -78,7 +78,8 @@ namespace ServicesHelpersTests
             // Arrange
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
+            var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
             var previousBoardPosition = new BoardPosition();
 
@@ -129,8 +130,7 @@ namespace ServicesHelpersTests
 
             var rankAndFileHelper = new RankAndFileHelper();
 
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
-
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
 
             // Instantiate the SUT (PieceMoveInterpreter) with the ISourceSquareHelper MOCK
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
@@ -190,7 +190,8 @@ namespace ServicesHelpersTests
             // Arrange
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
+            var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             // Expected Source Square: B1 (Rank 0, File 1, Index 1)
@@ -247,7 +248,8 @@ namespace ServicesHelpersTests
             // Arrange
             var sourceSquareHelperMock = new Mock<ISourceSquareHelper>();
             var rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper);
+            var bitBoardManipulatorMock = new Mock<IBitBoardManipulator>();
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelperMock.Object, rankAndFileHelper, bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             var ply = new Ply
@@ -287,7 +289,7 @@ namespace ServicesHelpersTests
             // Use the real helper, injecting the mock manipulator
             ISourceSquareHelper sourceSquareHelper = new SourceSquareHelper(bitBoardManipulatorMock.Object);
             IRankAndFileHelper rankAndFileHelper = new RankAndFileHelper();
-            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper);
+            IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulatorMock.Object);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             var previousBoardPosition = new BoardPosition();
