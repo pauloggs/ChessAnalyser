@@ -1,6 +1,5 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using Services.Helpers;
-using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace ServicesHelpersTests
 {

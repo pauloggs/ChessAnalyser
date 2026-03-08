@@ -316,6 +316,27 @@ namespace ServicesTests
             Assert.Contains(invalidSquareIndex.ToString(), exception.Message);
         }
 
+        [Fact(DisplayName = "ReadSquare(BoardPosition, int) returns (null, null) for empty square")]
+        public void ReadSquare_BySquare_WhenEmpty_ReturnsNullPieceAndColour()
+        {
+            var board = new BoardPosition();
+            board.PiecePositions["WP"] = 1UL << 8; // only a2
+            var (piece, colour) = sut.ReadSquare(board, 28); // e4 empty
+            Assert.Null(piece);
+            Assert.Null(colour);
+        }
+
+        [Fact(DisplayName = "ReadSquare(BoardPosition, int) returns piece and colour for occupied square")]
+        public void ReadSquare_BySquare_WhenOccupied_ReturnsPieceAndColour()
+        {
+            var board = new BoardPosition();
+            board.PiecePositions["WP"] = 1UL << 8; // a2 = square 8
+            var (piece, colour) = sut.ReadSquare(board, 8);
+            Assert.NotNull(piece);
+            Assert.Equal('P', piece.Name);
+            Assert.Equal(Colour.W, colour);
+        }
+
         /// <summary>
         /// MovePiece(BoardPosition, Ply) must reject invalid square indices so that a bug in source-finding
         /// (e.g. returning -1) does not corrupt the board via 1UL &lt;&lt; -1 behaviour.

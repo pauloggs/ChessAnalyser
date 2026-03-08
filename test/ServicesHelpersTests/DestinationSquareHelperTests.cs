@@ -106,5 +106,33 @@ namespace ServicesHelpersTests
             Assert.Equal(4, ply.DestinationRank);
             Assert.Equal(4, ply.DestinationFile);
         }
+
+        [Fact]
+        public void GetDestinationSquare_WhenNeitherPieceMoveNorCastling_Throws()
+        {
+            var ply = new Ply
+            {
+                RawMove = "???",
+                IsPieceMove = false,
+                IsKingsideCastling = false,
+                IsQueensideCastling = false
+            };
+
+            var ex = Assert.Throws<Exception>(() => _sut.GetDestinationSquare(ply));
+            Assert.Contains("piece move", ex.Message, StringComparison.OrdinalIgnoreCase);
+        }
+
+        [Fact]
+        public void GetDestinationSquare_WhenPieceMoveButRawMoveTooShort_Throws()
+        {
+            var ply = new Ply
+            {
+                RawMove = "e",
+                IsPieceMove = true,
+                IsPromotion = false
+            };
+
+            Assert.Throws<IndexOutOfRangeException>(() => _sut.GetDestinationSquare(ply));
+        }
     }
 }

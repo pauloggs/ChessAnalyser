@@ -1,146 +1,156 @@
 # Test Coverage Gaps
 
-This document identifies test coverage gaps in the ChessAnalyser codebase (focusing on code that existed before recent AI-assisted improvements). Addressing these gaps would have caught bugs such as the knight/king source-finder sign error and invalid square handling in `MovePiece`.
+This document identifies test coverage in the ChessAnalyser codebase. It was originally written when many components had no or empty tests; since then, most critical and supporting gaps have been addressed.
 
 ---
 
-## 1. Critical: No Tests (or Empty Tests)
+## 1. Now Covered (Previously Critical)
 
 ### 1.1 **FileHandler** / **FileHandlerTests**
 - **Location:** `src/Services/FileHandler.cs`, `test/ServicesTests/FileHandlerTests.cs`
-- **Gap:** `FileHandlerTests` contains only an empty `Test1()` with no assertions. `FileHandler.LoadPgnFiles(string path)` is **never tested** (file vs directory, missing path, `FileHandlerHelper`/`DirectoryProcessor` integration).
-- **Risk:** Regressions in file/directory loading and path handling go undetected.
+- **Status:** ✅ **Covered.** Tests for single file, directory with PGNs, non-existent path, invalid path.
 
 ### 1.2 **PgnParser** / **PgnParserTests**
 - **Location:** `src/Services/PgnParser.cs`, `test/ServicesTests/PgnParserTests.cs`
-- **Gap:** The method `GetPgnGamesFromPgnFiles_ShouldReturnGames()` has **no `[Fact]` attribute** (so it is not run), and its body is empty. No test verifies that `GetGamesFromPgnFiles` returns games from a list of `PgnFile`, assigns `SourcePgnFileName`/`GameIndexInFile`, or that `GameIdGenerator.GetGameId` is applied.
-- **Risk:** Regressions in the main parsing entry point and game-ID assignment are untested.
+- **Status:** ✅ **Covered.** Tests for single/multiple games, source file name and game index, empty list, `SetBoardPositions` delegation.
 
 ### 1.3 **BoardPositionService**
-- **Location:** `src/Services/BoardPositionService.cs`
-- **Gap:** **No dedicated test class.** It is only mocked in `PgnParserTests`. Its behaviour (iterating games, calling `GetStartingBoardPosition`, `GetBoardPositionForPly`, `SetWinner`, populating `game.BoardPositions`) is never asserted.
-- **Risk:** Orchestration bugs (e.g. wrong ply order, wrong game/board association) are untested.
+- **Location:** `src/Services/BoardPositionService.cs`, `test/ServicesTests/BoardPositionServiceTests.cs`
+- **Status:** ✅ **Covered.** Tests for single game flow and early exit when `SetWinner` returns true.
 
 ### 1.4 **BoardPositionCalculator** and **BoardPositionCalculatorHelper**
-- **Location:** `src/Services/Helpers/BoardPositionCalculator.cs`, `BoardPositionCalculatorHelper.cs`
-- **Gap:** **No tests at all.** The entire “apply one ply to a board” pipeline is untested:
-  - `GetBoardPositionFromPly` (routing to en-passant, promotion, non-promotion, castling)
-  - `GetBoardPositionFromEnPassant`
-  - `GetBoardPositionFromPromotion`
-  - `GetBoardPositionFromNonPromotion`
-  - `GetBoardPositionFromKingSideCastling` / `GetBoardPositionFromQueenSideCastling`
-- **Risk:** This is the core of move application. Bugs here (e.g. wrong bitboard updates, missing validation) would not be caught by unit tests. The knight source-finder bug only surfaced when this path was exercised end-to-end.
+- **Location:** `src/Services/Helpers/BoardPositionCalculator.cs`, `BoardPositionCalculatorHelper.cs`, `test/ServicesTests/BoardPositionCalculatorTests.cs`, `BoardPositionCalculatorHelperTests.cs`
+- **Status:** ✅ **Covered.** Tests for routing (en-passant, promotion, non-promotion, castling, unrecognized), non-promotion pawn move, double push en-passant target, piece at destination throws, kingside/queenside castling, **en-passant** (valid capture and no-target throws), **promotion** (white to queen, square occupied throws).
 
 ### 1.5 **BoardPositionsHelper.GetBoardPositionForPly**
-- **Location:** `src/Services/Helpers/BoardPositionsHelper.cs`
-- **Gap:** `BoardPositionsHelperTests` covers `GetStartingBoardPosition` and `SetWinner` only. **`GetBoardPositionForPly` is never tested** (obtaining previous position, calling `MoveInterpreter.GetSourceAndDestinationSquares`, updating the ply, calling `BoardPositionCalculator.GetBoardPositionFromPly`, `BuildParsingContext`).
-- **Risk:** Integration between move interpretation and board calculation is unverified; context for error messages could be wrong.
+- **Location:** `test/ServicesHelpersTests/BoardPositionsHelperTests.cs`
+- **Status:** ✅ **Covered.** Tests for using initial/previous position, updating ply, calling calculator, null game/initial position/missing previous position, full starting bitboard layout.
 
 ### 1.6 **DestinationSquareHelper**
-- **Location:** `src/Services/Helpers/DestinationSquareHelper.cs`
-- **Gap:** **No direct tests.** It is only mocked in `MoveInterpreterHelperTests`. Logic for piece moves (including promotion, e.g. `e8=Q`), castling (-1), and invalid/malformed moves is untested.
-- **Risk:** Wrong destination square (e.g. off-by-one in rank/file or promotion parsing) would propagate to source-finding and board updates.
+- **Location:** `test/ServicesHelpersTests/DestinationSquareHelperTests.cs`
+- **Status:** ✅ **Covered.** Tests for Nf3, e4, e8=Q, castling (-1), Bxe5, **neither piece move nor castling throws**, **malformed short move throws**.
 
 ### 1.7 **PersistenceService**
-- **Location:** `src/Services/PersistenceService.cs`
-- **Gap:** **No tests.** `GetUnprocessedGames` and `InsertGames` (and thus interaction with `IChessRepository`) are untested.
-- **Risk:** Filtering of already-processed games and insert/board-position persistence could be wrong without any test failing.
+- **Location:** `test/ServicesTests/PersistenceServiceTests.cs`
+- **Status:** ✅ **Covered.** Tests for `GetUnprocessedGames` (filtering) and `InsertGames` (repository calls).
 
 ### 1.8 **EtlService**
-- **Location:** `src/Services/EtlService.cs`
-- **Gap:** **No tests.** The full ETL flow (`LoadPgnFiles` → `GetGamesFromPgnFiles` → `GetUnprocessedGames` → `SetBoardPositions` → `InsertGames`) is untested.
-- **Risk:** Orchestration and error handling across file handling, parsing, persistence, and board generation are unverified.
+- **Location:** `test/ServicesTests/EtlServiceTests.cs`
+- **Status:** ✅ **Covered.** Tests for full load flow and no unprocessed games.
 
 ### 1.9 **ChessRepository** / **ChessRepositoryTests**
-- **Location:** `src/Repositories/ChessRepository.cs`, `test/RepositoriesTests/ChessRepositoryTests.cs`
-- **Gap:** `ChessRepositoryTests` contains only an empty `Test1()`. No tests for `GetProcessedGameIds`, `InsertGame`, `InsertBoardPositions`, or SQL/parameter usage.
-- **Risk:** Data access and SQL correctness are unverified (unless covered by integration tests elsewhere).
+- **Location:** `test/RepositoriesTests/ChessRepositoryTests.cs`
+- **Status:** ✅ **Covered.** Constructor and `GetProcessedGameIds` when connection fails.
 
 ### 1.10 **AnalyserController** / **AnalyserControllerTests**
-- **Location:** `src/Analyser/Controllers/Analyser.cs`, `test/AnalyserTests/AnalyserControllerTests.cs`
-- **Gap:** `AnalyserControllerTests` contains only an empty `Test1()`. No tests for the API endpoint(s) or interaction with `IEtlService`.
-- **Risk:** Controller behaviour and HTTP contract are untested.
+- **Location:** `test/AnalyserTests/AnalyserControllerTests.cs`
+- **Status:** ✅ **Covered.** Load games (OK and 500 on ETL throw), GetGames.
 
 ---
 
-## 2. Partially Tested or Mock-Heavy
+## 2. Partially Tested (Improvements Done)
 
 ### 2.1 **MoveInterpreter**
-- **Location:** `src/Services/MoveInterpreter.cs`, `test/ServicesTests/MoveInterpreterTests.cs`
-- **Gap:** Tests use a **mocked** `IMoveInterpreterHelper` only (null ply, invalid raw move, and that the helper is called with expected return values). There are **no tests with the real `MoveInterpreterHelper`** (and thus real `GetPiece`, `GetDestinationSquare`, `GetSourceSquare` via pawn/piece interpreters). The real pipeline from raw move to (piece, sourceSquare, destinationSquare) is untested.
-- **Risk:** Bugs in the real helper chain (e.g. destination square, piece type, or source square) would not be caught.
+- **Location:** `test/ServicesTests/MoveInterpreterWithRealHelperTests.cs`, `MoveInterpreterTests.cs`
+- **Status:** ✅ **Covered with real helper.** e4, Nf3, e4+ (check stripped) with full pipeline.
 
 ### 2.2 **PieceSourceFinderService** (bishop, rook, queen)
-- **Location:** `src/Services/Helpers/PieceSourceFinderService.cs`
-- **Gap:** **Knight and king** are now covered by `PieceSourceFinderServiceTests` (with real board and real dependencies). **Bishop, rook, and queen** (`FindBishopSource`, `FindRookSource`, `FindQueenSource`) have no analogous tests with real board positions.
-- **Risk:** Similar “direction” or indexing bugs in sliding-piece source finding could go undetected.
+- **Location:** `test/ServicesHelpersTests/PieceSourceFinderServiceTests.cs`
+- **Status:** ✅ **Covered.** Knight, king, bishop, rook, queen and “no knight can reach” tests with real dependencies.
 
 ### 2.3 **BoardPositionsHelper.GetStartingBoardPosition**
 - **Location:** `test/ServicesHelpersTests/BoardPositionsHelperTests.cs`
-- **Gap:** Only asserts “not null” and “PiecePositions not null”. **No assertion that the 12 piece bitboards match the standard starting position** (e.g. WP on rank 2, WN on b1/g1, etc.).
-- **Risk:** Wrong initial bitboard layout would not be detected.
+- **Status:** ✅ **Covered.** Full bitboard layout asserted for starting position.
 
 ---
 
-## 3. Supporting / Lower-Risk Gaps
+## 3. Supporting / Lower-Risk (Now Covered)
 
 ### 3.1 **Naming**
-- **Location:** `src/Services/Naming.cs`
-- **Gap:** No tests for `GetGameName` (format, missing/malformed tags, key not present).
-- **Risk:** Low for core correctness; higher for display/naming consistency.
+- **Location:** `test/ServicesTests/NamingTests.cs`
+- **Status:** ✅ **Covered.** All tags present, spaces to hyphens, missing key throws.
 
 ### 3.2 **DisplayService**
-- **Location:** `src/Services/DisplayService.cs`
-- **Gap:** No tests for `GetBoardArrayFromBoardPositions` or display output. Logic (e.g. `col = key[0] == 'W' ? 1 : 1`) is subtle and could hide display bugs.
-- **Risk:** Display-only; no impact on persistence or analysis if unused there.
+- **Location:** `test/ServicesTests/DisplayServiceTests.cs`
+- **Status:** ✅ **Covered.** Single piece, black piece, empty board for `GetBoardArrayFromBoardPositions`.
 
 ### 3.3 **DirectoryProcessor** / **FileHandlerHelper**
-- **Location:** `src/Services/Helpers/DirectoryProcessor.cs`, `FileHandlerHelper.cs`
-- **Gap:** No direct tests. Only exercised via `FileHandler`, which is itself untested.
-- **Risk:** Recursion, file filtering, or path handling could be wrong.
+- **Location:** `test/ServicesHelpersTests/DirectoryProcessorTests.cs`, `FileHandlerHelperTests.cs`
+- **Status:** ✅ **Covered.** Load single file, append to list, file not found; process directory (one file, recursive subdir, empty).
 
 ### 3.4 **StringExtensions**
-- **Location:** `src/Services/Helpers/StringExtensions.cs`
-- **Gap:** No tests for `RemoveLineEndings` (e.g. `\n`, `\r\n`, mixed).
-- **Risk:** Low; single regex, but used in PGN parsing.
+- **Location:** `test/ServicesHelpersTests/StringExtensionsTests.cs`
+- **Status:** ✅ **Covered.** `RemoveLineEndings` for `\n`, `\r\n`, mixed, empty, no line endings.
 
 ### 3.5 **ExtensionMethods** (Interfaces)
-- **Location:** `src/Interfaces/ExtensionMethods.cs`
-- **Gap:** No tests for `DeepCopy` (BoardPosition), `GetSquareFromRankAndFile`, or `Algebraic(int)`.
-- **Risk:** `DeepCopy` is used in board updates; wrong copy would be serious. The other two are simple but used widely.
+- **Location:** `test/ServicesHelpersTests/ExtensionMethodsTests.cs`
+- **Status:** ✅ **Covered.** `DeepCopy` (independent copy, null throws), `GetSquareFromRankAndFile`, `Algebraic`.
 
 ---
 
-## 4. Summary Table
+## 4. Integration Tests
+
+### 4.1 **PGN pipeline (real PGN files)**
+- **Location:** `test/ServicesTests/PgnPipelineIntegrationTests.cs`
+- **Status:** ✅ **Covered.** Full pipeline (FileHandler → PgnParser → BoardPositionService) for:
+  - `checkmate.pgn`
+  - `king-side-castling-with-numerics.pgn`
+  - `promotion.pgn`
+  - `queen-side-castling-with-numerics.pgn`
+  - `en-passant.pgn` (minimal game with en-passant capture)
+
+---
+
+## 5. Summary Table (Current State)
 
 | Component | Test file | Coverage |
 |-----------|-----------|----------|
-| FileHandler | FileHandlerTests | ❌ Empty |
-| PgnParser | PgnParserTests | ❌ No [Fact], empty test |
-| BoardPositionService | — | ❌ None |
-| BoardPositionCalculator | — | ❌ None |
-| BoardPositionCalculatorHelper | — | ❌ None |
-| BoardPositionsHelper.GetBoardPositionForPly | BoardPositionsHelperTests | ❌ Not tested |
-| DestinationSquareHelper | — | ❌ None (only mocked) |
-| PersistenceService | — | ❌ None |
-| EtlService | — | ❌ None |
-| ChessRepository | ChessRepositoryTests | ❌ Empty |
-| AnalyserController | AnalyserControllerTests | ❌ Empty |
-| MoveInterpreter (real helper) | MoveInterpreterTests | ⚠️ Mocked only |
-| PieceSourceFinder (B/R/Q) | PieceSourceFinderServiceTests | ⚠️ Knight/King only |
-| GetStartingBoardPosition | BoardPositionsHelperTests | ⚠️ Shallow (not null only) |
-| Naming, DisplayService, DirectoryProcessor, FileHandlerHelper, StringExtensions, ExtensionMethods | — | ⚠️ None / low risk |
+| FileHandler | FileHandlerTests | ✅ |
+| PgnParser | PgnParserTests | ✅ |
+| BoardPositionService | BoardPositionServiceTests | ✅ |
+| BoardPositionCalculator | BoardPositionCalculatorTests | ✅ |
+| BoardPositionCalculatorHelper | BoardPositionCalculatorHelperTests | ✅ (incl. en-passant, promotion) |
+| BoardPositionsHelper | BoardPositionsHelperTests | ✅ |
+| DestinationSquareHelper | DestinationSquareHelperTests | ✅ (incl. invalid/malformed) |
+| PersistenceService | PersistenceServiceTests | ✅ |
+| EtlService | EtlServiceTests | ✅ |
+| ChessRepository | ChessRepositoryTests | ✅ |
+| AnalyserController | AnalyserControllerTests | ✅ |
+| MoveInterpreter (real helper) | MoveInterpreterWithRealHelperTests | ✅ |
+| PieceSourceFinder (N/K/B/R/Q) | PieceSourceFinderServiceTests | ✅ |
+| GetStartingBoardPosition | BoardPositionsHelperTests | ✅ (full layout) |
+| Naming | NamingTests | ✅ |
+| DisplayService | DisplayServiceTests | ✅ |
+| DirectoryProcessor / FileHandlerHelper | DirectoryProcessorTests, FileHandlerHelperTests | ✅ |
+| StringExtensions | StringExtensionsTests | ✅ |
+| ExtensionMethods | ExtensionMethodsTests | ✅ |
+| PGN pipeline integration | PgnPipelineIntegrationTests | ✅ (5 PGNs) |
 
 ---
 
-## 5. Recommended Priorities
+## 6. Remaining / Optional Gaps
 
-1. **High:** Add tests for **BoardPositionCalculator** / **BoardPositionCalculatorHelper** (at least one test per move type: normal piece, capture, promotion, en-passant, kingside/queenside castling) with real `BoardPosition` and `Ply`. This is the core that would have caught the knight/king source bug earlier if covered.
-2. **High:** Add tests for **BoardPositionsHelper.GetBoardPositionForPly** (e.g. one simple game with a few plies, real dependencies or a test double for the calculator that records inputs).
-3. **High:** Implement **PgnParserTests.GetPgnGamesFromPgnFiles** with `[Fact]` and real or in-memory PGN content; assert game count, `SourcePgnFileName`, `GameIndexInFile`, and that `GameId` is set.
-4. **Medium:** Add **DestinationSquareHelper** tests (piece move, promotion, castling, invalid move).
-5. **Medium:** Add **FileHandler** tests (file path, directory path, non-existent path) and fill **ChessRepositoryTests** (e.g. with an in-memory or test double repository).
-6. **Medium:** Add **PieceSourceFinderService** tests for **bishop, rook, queen** (real board, correct source square).
-7. **Lower:** **PersistenceService**, **EtlService**, **BoardPositionService** (with mocks or in-memory repo); **Naming**; **ExtensionMethods.DeepCopy**; **AnalyserController** (HTTP and ETL wiring).
+- **BitBoardManipulator**  
+  - `MovePiece(BoardPosition, Ply)` validation and bitboard logic are tested (e.g. invalid squares, piece moves). `ReadSquare(BoardPosition, int square)` (returns `(Piece?, Colour?)`) is covered for empty and occupied squares. Deeper bitboard edge cases (e.g. multiple pieces, every piece type) are optional.
 
-Using this list to add tests will significantly reduce the risk of regressions and make it much easier to catch bugs similar to the knight/king source-finder and invalid-square issues before they reach production.
+- **SquareHelper**  
+  - Out-of-range and valid inputs are tested in `SquareHelperTests`. No further gaps identified.
+
+- **ChessRepository**  
+  - Only constructor and failure path are tested. `InsertGame` / `InsertBoardPositions` with a real or in-memory database would require test infrastructure (e.g. local DB or testcontainers). Mark as optional for future work.
+
+- **DisplayService.DisplayBoardPosition**  
+  - Only `GetBoardArrayFromBoardPositions` is tested. Console output is not asserted; acceptable for a display helper.
+
+- **En-passant detection in PGN**  
+  - Covered via `en-passant.pgn` integration test and `BoardPositionCalculatorHelper` en-passant tests. No separate “parser detects e.p. suffix” test; optional.
+
+---
+
+## 7. Recommended Next Steps (If Extending Further)
+
+1. Add repository tests with a test database or in-memory provider if persistence behaviour becomes critical.
+2. Add more PGN edge-case files (e.g. resignation, time forfeit, unusual annotations) if parsing robustness is a priority.
+3. Add targeted tests for **BitBoardManipulator** (e.g. `ReadSquare`, `AddPiece`/`RemovePiece` with various piece sets) if bitboard logic is changed often.
+
+Using the current test set will catch regressions in parsing, board position calculation, move interpretation, source finding, and the full PGN pipeline.

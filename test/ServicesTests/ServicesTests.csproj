@@ -44,6 +44,7 @@
     <None Include="..\..\docs\king-side-castling-with-numerics.pgn" Link="TestData\Integration\king-side-castling-with-numerics.pgn" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\promotion.pgn" Link="TestData\Integration\promotion.pgn" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\queen-side-castling-with-numerics.pgn" Link="TestData\Integration\queen-side-castling-with-numerics.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\en-passant.pgn" Link="TestData\Integration\en-passant.pgn" CopyToOutputDirectory="PreserveNewest" />
   </ItemGroup>
 
 </Project>

@@ -144,5 +144,31 @@ namespace ServicesTests
             Assert.True(game.BoardPositions.Count >= 1);
             Assert.Equal("B", game.Winner);
         }
+
+        [Fact]
+        public void FullPipeline_EnPassantPgn_LoadsParsesAndComputesBoardPositionsWithoutThrow()
+        {
+            var path = GetIntegrationTestDataPath("en-passant.pgn");
+            if (!File.Exists(path))
+            {
+                path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "docs", "en-passant.pgn"));
+            }
+            Assert.True(File.Exists(path), "en-passant.pgn not found at " + path);
+
+            var (fileHandler, pgnParser, boardPositionService) = BuildPipeline();
+
+            var pgnFiles = fileHandler.LoadPgnFiles(path);
+            Assert.NotEmpty(pgnFiles);
+
+            var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
+            Assert.Single(games);
+
+            boardPositionService.SetBoardPositions(games);
+
+            var game = games[0];
+            Assert.NotNull(game.InitialBoardPosition);
+            Assert.True(game.BoardPositions.Count >= 1);
+            Assert.Equal("W", game.Winner);
+        }
     }
 }

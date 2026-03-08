@@ -123,5 +123,113 @@ namespace ServicesTests
 
             Assert.Throws<InvalidOperationException>(() => _sut.GetBoardPositionFromNonPromotion(prev, ply, null));
         }
+
+        private static BoardPosition GetMinimalPosition()
+        {
+            var b = new BoardPosition();
+            b.PiecePositions["WP"] = 0; b.PiecePositions["WN"] = 0; b.PiecePositions["WB"] = 0; b.PiecePositions["WR"] = 0; b.PiecePositions["WQ"] = 0; b.PiecePositions["WK"] = 0;
+            b.PiecePositions["BP"] = 0; b.PiecePositions["BN"] = 0; b.PiecePositions["BB"] = 0; b.PiecePositions["BR"] = 0; b.PiecePositions["BQ"] = 0; b.PiecePositions["BK"] = 0;
+            return b;
+        }
+
+        [Fact]
+        public void GetBoardPositionFromEnPassant_WhenValidWhiteCapture_CapturesBlackPawnAndMovesWhitePawn()
+        {
+            // White pawn on e5 (36), Black pawn on d5 (35). White plays exd6 e.p.
+            var prev = GetMinimalPosition();
+            prev.PiecePositions["WP"] = 1UL << 36;
+            prev.PiecePositions["BP"] = 1UL << 35;
+            prev.PiecePositions["WK"] = 1UL << 4;
+            prev.PiecePositions["BK"] = 1UL << 60;
+            prev.EnPassantTargetFile = 'D';
+
+            var ply = new Ply
+            {
+                RawMove = "exd6",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['P'],
+                IsEnpassant = true,
+                IsCapture = true,
+                SourceSquare = 36,
+                DestinationSquare = 43,
+                DestinationFile = 3
+            };
+
+            var result = _sut.GetBoardPositionFromEnPassant(prev, ply, null);
+
+            Assert.True((result.PiecePositions["WP"] & (1UL << 36)) == 0);
+            Assert.True((result.PiecePositions["WP"] & (1UL << 43)) != 0);
+            Assert.True((result.PiecePositions["BP"] & (1UL << 35)) == 0);
+            Assert.Null(result.EnPassantTargetFile);
+        }
+
+        [Fact]
+        public void GetBoardPositionFromEnPassant_WhenNoEnPassantTarget_Throws()
+        {
+            var prev = GetStartingPosition();
+            prev.EnPassantTargetFile = null;
+            var ply = new Ply
+            {
+                RawMove = "exd6",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['P'],
+                IsEnpassant = true,
+                DestinationFile = 3,
+                SourceSquare = 36,
+                DestinationSquare = 43
+            };
+
+            Assert.Throws<InvalidOperationException>(() => _sut.GetBoardPositionFromEnPassant(prev, ply, null));
+        }
+
+        [Fact]
+        public void GetBoardPositionFromPromotion_WhenWhitePromotesToQueen_ReplacesPawnWithQueen()
+        {
+            var prev = GetMinimalPosition();
+            prev.PiecePositions["WP"] = 1UL << 52; // e7
+            prev.PiecePositions["WK"] = 1UL << 4;
+            prev.PiecePositions["BK"] = 1UL << 63; // h8 so e8 (60) is free
+
+            var ply = new Ply
+            {
+                RawMove = "e8=Q",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['P'],
+                IsPromotion = true,
+                IsCapture = false,
+                PromotionPiece = Constants.Pieces['Q'],
+                SourceSquare = 52,
+                DestinationSquare = 60
+            };
+
+            var result = _sut.GetBoardPositionFromPromotion(prev, ply, null);
+
+            Assert.True((result.PiecePositions["WP"] & (1UL << 52)) == 0);
+            Assert.True((result.PiecePositions["WQ"] & (1UL << 60)) != 0);
+            Assert.Null(result.EnPassantTargetFile);
+        }
+
+        [Fact]
+        public void GetBoardPositionFromPromotion_WhenSquareOccupied_Throws()
+        {
+            var prev = GetMinimalPosition();
+            prev.PiecePositions["WP"] = 1UL << 52;
+            prev.PiecePositions["BK"] = 1UL << 60; // block e8
+            prev.PiecePositions["WK"] = 1UL << 4;
+
+            var ply = new Ply
+            {
+                RawMove = "e8=Q",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['P'],
+                IsPromotion = true,
+                IsCapture = false,
+                PromotionPiece = Constants.Pieces['Q'],
+                SourceSquare = 52,
+                DestinationSquare = 60
+            };
+
+            Assert.Throws<InvalidOperationException>(() => _sut.GetBoardPositionFromPromotion(prev, ply, null));
+        }
     }
 }
