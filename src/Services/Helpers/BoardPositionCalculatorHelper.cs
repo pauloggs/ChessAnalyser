@@ -34,6 +34,21 @@ namespace Services.Helpers
         private static string AppendContext(string message, string? ctx) =>
             string.IsNullOrEmpty(ctx) ? message : $"{message} ({ctx})";
 
+        private static string GetPieceSquaresDiagnostic(BoardPosition board, Ply ply)
+        {
+            if (!board.PiecePositions.TryGetValue(ply.PiecePositionsKey, out ulong bb))
+                return $"[{ply.PiecePositionsKey}] bitboard missing.";
+            var squares = new List<string>();
+            for (int sq = 0; sq < 64; sq++)
+            {
+                if ((bb & (1UL << sq)) != 0)
+                    squares.Add(sq.Algebraic());
+            }
+            return squares.Count == 0
+                ? $"[{ply.PiecePositionsKey}] has no pieces on board."
+                : $"[{ply.PiecePositionsKey}] on: {string.Join(", ", squares)}.";
+        }
+
         public BoardPosition GetBoardPositionFromEnPassant(BoardPosition previousBoardPosition, Ply ply, string? parsingContext = null)
         {
             // 1. Start with a deep copy
@@ -76,9 +91,16 @@ namespace Services.Helpers
 
             // 5. Move the friendly pawn from source to destination
             // This removes from source and adds to destination
-            bitBoardManipulator.MovePiece(
-                newBoardPosition,
-                ply);
+            try
+            {
+                bitBoardManipulator.MovePiece(
+                    newBoardPosition,
+                    ply);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                throw new ArgumentOutOfRangeException(ex.ParamName, AppendContext(ex.Message, parsingContext));
+            }
 
             // 6. Clear en-passant target for the resulting position
             newBoardPosition.EnPassantTargetFile = null;
@@ -197,9 +219,18 @@ namespace Services.Helpers
             }
 
             // Move the piece from source to destination
-            bitBoardManipulator.MovePiece(
-                newBoardPosition,
-                ply);
+            try
+            {
+                bitBoardManipulator.MovePiece(
+                    newBoardPosition,
+                    ply);
+            }
+            catch (ArgumentOutOfRangeException ex)
+            {
+                var diag = GetPieceSquaresDiagnostic(previousBoardPosition, ply);
+                var msg = string.IsNullOrEmpty(diag) ? ex.Message : $"{ex.Message} {diag}";
+                throw new ArgumentOutOfRangeException(ex.ParamName, AppendContext(msg, parsingContext));
+            }
 
             // If this is a quiet double pawn push, set the en-passant target file.
             // Derive file from DestinationSquare so we are not dependent on ply.DestinationFile being set by the caller.

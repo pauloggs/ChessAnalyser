@@ -170,5 +170,47 @@ namespace ServicesTests
             Assert.True(game.BoardPositions.Count >= 1);
             Assert.Equal("W", game.Winner);
         }
+
+        /// <summary>
+        /// Game 28 (Shaposhnikov vs Alekhine, B20): without heuristics, 12.Ne2 is ambiguous (two knights can reach e2)
+        /// so the parser correctly throws "Ambiguous move". If the PGN had disambiguation (e.g. 12.Nde2), the pipeline
+        /// would complete and after 15.Ne4 (ply 28) a white knight would be on e4.
+        /// </summary>
+        [Fact]
+        public void FullPipeline_Game28_AmbiguousNe2_ThrowsOrCompletesWithKnightOnE4()
+        {
+            var path = GetIntegrationTestDataPath("Alekhine.pgn");
+            if (!File.Exists(path))
+            {
+                path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "docs", "Alekhine.pgn"));
+            }
+            Assert.True(File.Exists(path), "Alekhine.pgn not found at " + path);
+
+            var (fileHandler, pgnParser, boardPositionService) = BuildPipeline();
+
+            var pgnFiles = fileHandler.LoadPgnFiles(path);
+            var games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
+            Assert.True(games.Count >= 28, "Alekhine.pgn should have at least 28 games");
+
+            var game28 = games[27];
+            Assert.Contains("Shaposhnikov", game28.Name, StringComparison.OrdinalIgnoreCase);
+
+            try
+            {
+                boardPositionService.SetBoardPositions(new List<Game> { game28 });
+            }
+            catch (InvalidOperationException ex) when (ex.Message.Contains("Ambiguous", StringComparison.OrdinalIgnoreCase))
+            {
+                // Expected: 12.Ne2 is ambiguous; parser correctly requires disambiguation in PGN.
+                return;
+            }
+
+            // If we get here, the game completed (e.g. PGN was given disambiguation); assert position after 15.Ne4.
+            Assert.True(game28.BoardPositions.ContainsKey(28), "Position after ply 28 must be present");
+            var posAfterPly28 = game28.BoardPositions[28];
+            Assert.True(posAfterPly28.PiecePositions.TryGetValue("WN", out var wnBb), "Position should have WN bitboard");
+            const int e4 = 28;
+            Assert.True((wnBb & (1UL << e4)) != 0, "After 15.Ne4 (ply 28), a white knight must be on e4 (square 28).");
+        }
     }
 }

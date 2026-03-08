@@ -125,13 +125,19 @@ namespace Services.Helpers
                         previousBoardPosition,
                         ply);
 
+            var parsingContext = BuildParsingContext(game, plyIndex);
+
+            if (sourceSquare < 0 && ply.IsPieceMove && destinationSquare >= 0)
+            {
+                throw new InvalidOperationException(
+                    (string.IsNullOrEmpty(parsingContext) ? "Ambiguous move" : $"Ambiguous move ({parsingContext})")
+                    + $": multiple {piece.Name}s can reach the same square; PGN must disambiguate (e.g. by file Nce4 or rank N4e4).");
+            }
+
             // Update the ply with the piece and squares
             ply.Piece = piece;
             ply.SourceSquare = sourceSquare;
             ply.DestinationSquare = destinationSquare;
-
-            // Build parsing context for error messages (PGN file, game index, game name, ply index)
-            var parsingContext = BuildParsingContext(game, plyIndex);
 
             // Get and return the new board position after applying the move
             return boardPositionCalculator.GetBoardPositionFromPly(

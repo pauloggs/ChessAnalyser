@@ -1,5 +1,6 @@
 using Interfaces;
 using Interfaces.DTO;
+using static Interfaces.Constants;
 
 namespace Services.Helpers
 {
@@ -59,16 +60,14 @@ namespace Services.Helpers
             int[] dRank = { 2, 2, 1, 1, -1, -1, -2, -2 };
             int[] dFile = { 1, -1, 2, -2, 2, -2, 1, -1 };
 
+            var candidates = new List<int>();
             for (int i = 0; i < 8; i++)
             {
-                // Source = destination - move delta (knight moved FROM source TO destination)
                 int potRank = ply.DestinationRank - dRank[i];
                 int potFile = ply.DestinationFile - dFile[i];
 
-                // 1. Ensure the potential source is on the board
                 if (potRank >= 0 && potRank <= 7 && potFile >= 0 && potFile <= 7)
                 {
-                    // 2. Check if the piece at this potential square is the correct Knight
                     int foundSquare = sourceSquareHelper.GetSourceSquare(
                         previousBoardPosition,
                         potRank,
@@ -76,18 +75,44 @@ namespace Services.Helpers
                         ply.Piece,
                         ply.Colour);
 
-                    if (foundSquare >= 0)
-                    {
-                        // 3. Check PGN disambiguation (e.g., "Nbd2" -> specifiedSourceFile = 1)
-                        if (rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
+                    if (foundSquare >= 0 &&
+                        rankAndFileHelper.PotentialRankOrFileMatchesSpecifiedRankOrFile(
                             potRank, potFile, specifiedSourceRank, specifiedSourceFile))
-                        {
-                            return foundSquare;
-                        }
+                    {
+                        candidates.Add(foundSquare);
                     }
                 }
             }
 
+            if (candidates.Count == 0)
+            {
+                // Fallback: when no disambiguation, check piece bitboard directly for all 8 candidate squares
+                if (specifiedSourceRank < 0 && specifiedSourceFile < 0 &&
+                    previousBoardPosition.PiecePositions.TryGetValue(ply.PiecePositionsKey, out ulong knightBitboard))
+                {
+                    for (int i = 0; i < 8; i++)
+                    {
+                        int potRank = ply.DestinationRank - dRank[i];
+                        int potFile = ply.DestinationFile - dFile[i];
+                        if (potRank >= 0 && potRank <= 7 && potFile >= 0 && potFile <= 7)
+                        {
+                            int square = potRank * 8 + potFile;
+                            if ((knightBitboard & (1UL << square)) != 0)
+                                candidates.Add(square);
+                        }
+                    }
+                    if (candidates.Count == 1)
+                        return candidates[0];
+                    // Multiple knights can reach the destination and PGN does not disambiguate: do not guess.
+                    return Constants.MoveNotFound;
+                }
+                return Constants.MoveNotFound;
+            }
+
+            if (candidates.Count == 1)
+                return candidates[0];
+
+            // Multiple knights can reach the destination and PGN does not disambiguate: do not guess; require disambiguation in PGN.
             return Constants.MoveNotFound;
         }
 

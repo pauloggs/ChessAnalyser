@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using System.Linq;
 using System.Text.RegularExpressions;
 using static Interfaces.Constants;
 
@@ -32,8 +33,9 @@ namespace Services.Helpers
             // 2. Remove ';' comments to end of line
             line = Regex.Replace(line, @";.*$", " ");
 
-            // 3. Remove move numbers (e.g., "1.", "2.", "1...") from the line
-            line = Regex.Replace(line, @"\d+\.(\.\.)?", " ");
+            // 3. Remove move numbers (e.g., "1.", "2.", "1...") from the line.
+            // Also match full-width period (U+FF0E) and other dot-like punctuation so move numbers are stripped regardless of encoding.
+            line = Regex.Replace(line, @"\d+[.\uFF0E\u3002](\.\.)?", " ");
 
             // 4. Split the line into individual tokens based on whitespace
             var plies = line.Split(' ', StringSplitOptions.RemoveEmptyEntries);
@@ -58,6 +60,21 @@ namespace Services.Helpers
                 if (plyString == "...")
                 {
                     continue;
+                }
+
+                // Skip tokens that are purely digits (e.g. "1", "2" left when move number regex did not match, e.g. "1 e4" without dot)
+                if (plyString.Length > 0 && plyString.All(char.IsDigit))
+                {
+                    continue;
+                }
+
+                // If token still starts with a move number (e.g. "1.e4" or "9.Nxd4" when regex did not strip it), strip that prefix
+                var moveNumMatch = System.Text.RegularExpressions.Regex.Match(plyString, @"^\d+[.\uFF0E\u3002](\.\.)?");
+                if (moveNumMatch.Success)
+                {
+                    plyString = plyString[moveNumMatch.Length..].Trim();
+                    if (string.IsNullOrWhiteSpace(plyString))
+                        continue;
                 }
 
                 if (!string.IsNullOrWhiteSpace(plyString))
