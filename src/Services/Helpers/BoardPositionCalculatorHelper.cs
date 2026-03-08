@@ -8,35 +8,33 @@ namespace Services.Helpers
     {
         BoardPosition GetBoardPositionFromEnPassant(
             BoardPosition previousBoardPosition,
-            Ply ply);
+            Ply ply,
+            string? parsingContext = null);
 
         BoardPosition GetBoardPositionFromPromotion(
             BoardPosition previousBoardPosition,
-            Ply ply);
+            Ply ply,
+            string? parsingContext = null);
 
-        /// <summary>
-        /// Returns a new BoardPosition after applying a non-promotion move described by the given Ply.
-        /// This is done by moving the piece from the source square to the destination square for the specified piece and colour 
-        /// in the BoardPosition's PiecePositions dictionary.
-        /// </summary>
-        /// <param name="previousBoardPosition"></param>
-        /// <param name="ply"></param>
-        /// <returns></returns>
         BoardPosition GetBoardPositionFromNonPromotion(
             BoardPosition previousBoardPosition,
-            Ply ply);
+            Ply ply,
+            string? parsingContext = null);
 
         BoardPosition GetBoardPositionFromKingSideCastling(
             BoardPosition previousBoardPosition,
             Ply ply);
         BoardPosition GetBoardPositionFromQueenSideCastling(
             BoardPosition previousBoardPosition,
-            Ply ply);   
+            Ply ply);
     }
 
     public class BoardPositionCalculatorHelper(IBitBoardManipulator bitBoardManipulator) : IBoardPositionCalculatorHelper
     {
-        public BoardPosition GetBoardPositionFromEnPassant(BoardPosition previousBoardPosition, Ply ply)
+        private static string AppendContext(string message, string? ctx) =>
+            string.IsNullOrEmpty(ctx) ? message : $"{message} ({ctx})";
+
+        public BoardPosition GetBoardPositionFromEnPassant(BoardPosition previousBoardPosition, Ply ply, string? parsingContext = null)
         {
             // 1. Start with a deep copy
             BoardPosition newBoardPosition = previousBoardPosition.DeepCopy();
@@ -44,14 +42,14 @@ namespace Services.Helpers
             // En-passant is only legal immediately after a double pawn push.
             if (!previousBoardPosition.EnPassantTargetFile.HasValue)
             {
-                throw new InvalidOperationException("En-passant capture failed: no en-passant target is available.");
+                throw new InvalidOperationException(AppendContext("En-passant capture failed: no en-passant target is available.", parsingContext));
             }
 
             var destinationFileChar = FileIds[ply.DestinationFile];
 
             if (char.ToUpperInvariant(previousBoardPosition.EnPassantTargetFile.Value) != destinationFileChar)
             {
-                throw new InvalidOperationException("En-passant capture failed: destination file does not match en-passant target file.");
+                throw new InvalidOperationException(AppendContext("En-passant capture failed: destination file does not match en-passant target file.", parsingContext));
             }
 
             // 2. Identify the square of the pawn being captured
@@ -67,7 +65,7 @@ namespace Services.Helpers
 
             if (occupyingPiece != Constants.Pieces['P'] || occupyingColour == ply.Colour)
             {
-                throw new InvalidOperationException("En-passant capture failed: no enemy pawn at the expected capture square.");
+                throw new InvalidOperationException(AppendContext("En-passant capture failed: no enemy pawn at the expected capture square.", parsingContext));
             }
 
             // 4. Remove the captured enemy pawn
@@ -88,7 +86,7 @@ namespace Services.Helpers
             return newBoardPosition;
         }
 
-        public BoardPosition GetBoardPositionFromPromotion(BoardPosition previousBoardPosition, Ply ply)
+        public BoardPosition GetBoardPositionFromPromotion(BoardPosition previousBoardPosition, Ply ply, string? parsingContext = null)
         {
             // 1. Start with a copy of the board
             BoardPosition newBoardPosition = previousBoardPosition.DeepCopy();
@@ -105,7 +103,7 @@ namespace Services.Helpers
 
                 if (targetPiece == null || targetColour == ply.Colour)
                 {
-                    throw new InvalidOperationException($"Invalid capture at {ply.DestinationSquare} during promotion.");
+                    throw new InvalidOperationException(AppendContext($"Invalid capture at {ply.DestinationSquare} during promotion.", parsingContext));
                 }
 
                 // Remove the captured piece
@@ -120,7 +118,7 @@ namespace Services.Helpers
                 var (targetPiece, _) = bitBoardManipulator.ReadSquare(newBoardPosition, ply.DestinationSquare);
                 if (targetPiece != null)
                 {
-                    throw new InvalidOperationException($"Square {ply.DestinationSquare} is occupied; cannot promote.");
+                    throw new InvalidOperationException(AppendContext($"Square {ply.DestinationSquare} is occupied; cannot promote.", parsingContext));
                 }
             }
 
@@ -143,7 +141,7 @@ namespace Services.Helpers
             return newBoardPosition;
         }
 
-        public BoardPosition GetBoardPositionFromNonPromotion(BoardPosition previousBoardPosition, Ply ply)
+        public BoardPosition GetBoardPositionFromNonPromotion(BoardPosition previousBoardPosition, Ply ply, string? parsingContext = null)
         {
             BoardPosition newBoardPosition
                 = previousBoardPosition.DeepCopy();
@@ -168,16 +166,15 @@ namespace Services.Helpers
                     if (ply.IsPawnMove)
                     {
                         ply.IsEnpassant = true;
-                        return GetBoardPositionFromEnPassant(previousBoardPosition, ply);
+                        return GetBoardPositionFromEnPassant(previousBoardPosition, ply, parsingContext);
                     }
 
-                    throw new InvalidOperationException($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.");
+                    throw new InvalidOperationException(AppendContext($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.", parsingContext));
                 }
 
-                // Throw an exception if the occupying piece is of the same colour as the moving piece
                 if (occupyingColour == ply.Colour)
                 {
-                    throw new InvalidOperationException($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.");
+                    throw new InvalidOperationException(AppendContext($"There is no opposing piece at the destination square {ply.DestinationSquare} for a capture move.", parsingContext));
                 }
 
                 // Remove the opposing piece from the destination square
@@ -195,7 +192,7 @@ namespace Services.Helpers
 
                 if (occupyingPiece != null)
                 {
-                    throw new InvalidOperationException($"There is a piece at the destination square {ply.DestinationSquare} for a non-capture move.");
+                    throw new InvalidOperationException(AppendContext($"There is a piece at the destination square {ply.DestinationSquare} for a non-capture move.", parsingContext));
                 }
             }
 
@@ -204,7 +201,8 @@ namespace Services.Helpers
                 newBoardPosition,
                 ply);
 
-            // If this is a quiet double pawn push, set the en-passant target file
+            // If this is a quiet double pawn push, set the en-passant target file.
+            // Derive file from DestinationSquare so we are not dependent on ply.DestinationFile being set by the caller.
             if (ply.IsPawnMove && !ply.IsCapture && !ply.IsPromotion)
             {
                 var sourceRank = ply.SourceSquare / 8;
@@ -212,7 +210,8 @@ namespace Services.Helpers
 
                 if (Math.Abs(destinationRank - sourceRank) == 2)
                 {
-                    newBoardPosition.EnPassantTargetFile = FileIds[ply.DestinationFile];
+                    var destinationFile = ply.DestinationSquare % 8;
+                    newBoardPosition.EnPassantTargetFile = FileIds[destinationFile];
                 }
             }
 

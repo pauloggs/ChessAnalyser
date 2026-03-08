@@ -61,8 +61,9 @@ namespace Services.Helpers
 
             for (int i = 0; i < 8; i++)
             {
-                int potRank = ply.DestinationRank + dRank[i];
-                int potFile = ply.DestinationFile + dFile[i];
+                // Source = destination - move delta (knight moved FROM source TO destination)
+                int potRank = ply.DestinationRank - dRank[i];
+                int potFile = ply.DestinationFile - dFile[i];
 
                 // 1. Ensure the potential source is on the board
                 if (potRank >= 0 && potRank <= 7 && potFile >= 0 && potFile <= 7)
@@ -204,8 +205,9 @@ namespace Services.Helpers
 
             for (int i = 0; i < 8; i++)
             {
-                int potRank = ply.DestinationRank + dRank[i];
-                int potFile = ply.DestinationFile + dFile[i];
+                // Source = destination - move delta (king moved FROM source TO destination)
+                int potRank = ply.DestinationRank - dRank[i];
+                int potFile = ply.DestinationFile - dFile[i];
 
                 // 1. Ensure the potential source is on the board
                 if (potRank >= 0 && potRank <= 7 && potFile >= 0 && potFile <= 7)

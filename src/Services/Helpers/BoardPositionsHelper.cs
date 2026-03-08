@@ -130,10 +130,29 @@ namespace Services.Helpers
             ply.SourceSquare = sourceSquare;
             ply.DestinationSquare = destinationSquare;
 
+            // Build parsing context for error messages (PGN file, game index, game name, ply index)
+            var parsingContext = BuildParsingContext(game, plyIndex);
+
             // Get and return the new board position after applying the move
             return boardPositionCalculator.GetBoardPositionFromPly(
                 previousBoardPosition,
-                ply);
+                ply,
+                parsingContext);
+        }
+
+        private static string? BuildParsingContext(Game game, int plyIndex)
+        {
+            if (game == null) return null;
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(game.SourcePgnFileName))
+                parts.Add($"PGN file: {game.SourcePgnFileName}");
+            if (game.GameIndexInFile.HasValue)
+                parts.Add($"Game #{game.GameIndexInFile}");
+            if (!string.IsNullOrEmpty(game.Name))
+                parts.Add($"\"{game.Name}\"");
+            var moveText = game.Plies.TryGetValue(plyIndex, out var p) ? p.RawMove : "?";
+            parts.Add($"Ply {plyIndex} (move {moveText})");
+            return parts.Count > 0 ? string.Join(", ", parts) : null;
         }
 
         public bool SetWinner(Game game, int plyIndex)

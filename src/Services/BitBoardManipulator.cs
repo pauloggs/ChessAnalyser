@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using Services.Helpers;
 using static Interfaces.Constants;
@@ -151,6 +151,12 @@ namespace Services
         {
             var sourceSquare = ply.SourceSquare;
             var destinationSquare = ply.DestinationSquare;
+
+            if (sourceSquare < 0 || sourceSquare > 63 || destinationSquare < 0 || destinationSquare > 63)
+            {
+                throw new ArgumentOutOfRangeException(nameof(ply),
+                    $"Invalid square for move '{ply.RawMove}': SourceSquare={sourceSquare}, DestinationSquare={destinationSquare}. Both must be 0-63.");
+            }
 
             var piecePositionsKey = ply.PiecePositionsKey;
 

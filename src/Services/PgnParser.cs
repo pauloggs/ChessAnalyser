@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using Services.Helpers;
 using System.Security.Cryptography;
@@ -47,18 +47,19 @@ namespace Services
             List<PgnGame> pgnGames = [];
             List<Game> games = [];
 
-            // Get the PgnGame objects from the PGN files
+            // Parse each PGN file and create games, preserving source file and game index for error reporting
             foreach (var pgnFile in pgnFiles)
             {
                 var extractedPgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile);
-                pgnGames.AddRange(extractedPgnGames);                
-            }
-
-            // Parse each PgnGame into a Game object
-            foreach (var pgnGame in pgnGames)
-            {
-                var game = PgnParserHelper.GetGameFromPgnGame(pgnGame);
-                games.Add(game);
+                var gameIndex = 0;
+                foreach (var pgnGame in extractedPgnGames)
+                {
+                    gameIndex++;
+                    var game = PgnParserHelper.GetGameFromPgnGame(pgnGame);
+                    game.SourcePgnFileName = pgnFile.Name;
+                    game.GameIndexInFile = gameIndex;
+                    games.Add(game);
+                }
             }
 
             // Generate GameId for each game

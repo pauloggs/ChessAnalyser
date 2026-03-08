@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 using Interfaces.DTO;
 using Moq;
 using Services;
@@ -314,6 +314,52 @@ namespace ServicesTests
             );
 
             Assert.Contains(invalidSquareIndex.ToString(), exception.Message);
+        }
+
+        /// <summary>
+        /// MovePiece(BoardPosition, Ply) must reject invalid square indices so that a bug in source-finding
+        /// (e.g. returning -1) does not corrupt the board via 1UL &lt;&lt; -1 behaviour.
+        /// </summary>
+        [Theory(DisplayName = "MovePiece(BoardPosition, Ply) throws when SourceSquare is out of 0-63")]
+        [InlineData(-1, 12)]
+        [InlineData(-2, 0)]
+        [InlineData(64, 0)]
+        [InlineData(65, 63)]
+        public void MovePiece_InvalidSourceSquare_ThrowsArgumentOutOfRange(int invalidSource, int validDest)
+        {
+            var board = CreateBoardWithPiece(Colour.W, 'N', 1, 4); // knight on e2
+            var ply = new Ply
+            {
+                RawMove = "Nf4",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['N'],
+                SourceSquare = invalidSource,
+                DestinationSquare = validDest
+            };
+
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => sut.MovePiece(board, ply));
+            Assert.Contains(nameof(ply), ex.ParamName ?? ex.Message, StringComparison.OrdinalIgnoreCase);
+            Assert.Contains(invalidSource.ToString(), ex.Message);
+        }
+
+        [Theory(DisplayName = "MovePiece(BoardPosition, Ply) throws when DestinationSquare is out of 0-63")]
+        [InlineData(12, -1)]
+        [InlineData(0, 64)]
+        [InlineData(63, 100)]
+        public void MovePiece_InvalidDestinationSquare_ThrowsArgumentOutOfRange(int validSource, int invalidDest)
+        {
+            var board = CreateBoardWithPiece(Colour.W, 'N', 1, 4);
+            var ply = new Ply
+            {
+                RawMove = "Nf4",
+                Colour = Colour.W,
+                Piece = Constants.Pieces['N'],
+                SourceSquare = validSource,
+                DestinationSquare = invalidDest
+            };
+
+            var ex = Assert.Throws<ArgumentOutOfRangeException>(() => sut.MovePiece(board, ply));
+            Assert.Contains(invalidDest.ToString(), ex.Message);
         }
 
         // Helper method to create a BoardPosition for testing

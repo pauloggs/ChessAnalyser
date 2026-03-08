@@ -47,6 +47,16 @@ namespace Interfaces.DTO
 
         public string Winner { get; set; }
 
+        /// <summary>
+        /// Source PGN file name (when loaded from file). Used for error reporting during parsing.
+        /// </summary>
+        public string? SourcePgnFileName { get; set; }
+
+        /// <summary>
+        /// 1-based index of this game within the source PGN file. Used for error reporting during parsing.
+        /// </summary>
+        public int? GameIndexInFile { get; set; }
+
         public Game()
         {
             Tags = [];
