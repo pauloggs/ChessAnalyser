@@ -19,7 +19,8 @@ namespace ServicesTests
             var bitBoardManipulator = new BitBoardManipulator(bitBoardHelper);
             var sourceSquareHelper = new SourceSquareHelper(bitBoardManipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulator);
+            var legalMoveChecker = new LegalMoveChecker(bitBoardManipulator);
+            var pieceSourceFinderService = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, bitBoardManipulator, legalMoveChecker);
             var pawnMoveInterpreter = new PawnMoveInterpreter(bitBoardManipulator);
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
             var destinationSquareHelper = new DestinationSquareHelper();

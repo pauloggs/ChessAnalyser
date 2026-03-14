@@ -29,7 +29,9 @@ namespace Services.Helpers
             Ply ply);
     }
 
-    public class BoardPositionCalculatorHelper(IBitBoardManipulator bitBoardManipulator) : IBoardPositionCalculatorHelper
+    public class BoardPositionCalculatorHelper(
+        IBitBoardManipulator bitBoardManipulator,
+        ILegalMoveChecker legalMoveChecker) : IBoardPositionCalculatorHelper
     {
         private static string AppendContext(string message, string? ctx) =>
             string.IsNullOrEmpty(ctx) ? message : $"{message} ({ctx})";
@@ -216,6 +218,14 @@ namespace Services.Helpers
                 {
                     throw new InvalidOperationException(AppendContext($"There is a piece at the destination square {ply.DestinationSquare} for a non-capture move.", parsingContext));
                 }
+            }
+
+            // Reject illegal moves: any move that would leave the king in check (pinned piece or king moving into attack).
+            if (legalMoveChecker.WouldMoveLeaveKingInCheck(
+                previousBoardPosition, ply.Colour, ply.PiecePositionsKey, ply.SourceSquare, ply.DestinationSquare))
+            {
+                throw new InvalidOperationException(AppendContext(
+                    "Move would leave the king in check (illegal).", parsingContext));
             }
 
             // Move the piece from source to destination

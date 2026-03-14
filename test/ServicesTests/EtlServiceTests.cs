@@ -19,7 +19,7 @@ namespace ServicesTests
             var unprocessed = new List<Game> { games[0] };
 
             fileHandlerMock.Setup(f => f.LoadPgnFiles(It.IsAny<string>())).Returns(pgnFiles);
-            pgnParserMock.Setup(p => p.GetGamesFromPgnFiles(pgnFiles)).Returns(games);
+            pgnParserMock.Setup(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>())).Returns(games);
             persistenceMock.Setup(ps => ps.GetUnprocessedGames(games)).ReturnsAsync(unprocessed);
 
             var sut = new EtlService(
@@ -31,10 +31,11 @@ namespace ServicesTests
             await sut.LoadGamesToDatabase("C:\\PGN");
 
             fileHandlerMock.Verify(f => f.LoadPgnFiles("C:\\PGN"), Times.Once);
-            pgnParserMock.Verify(p => p.GetGamesFromPgnFiles(pgnFiles), Times.Once);
+            pgnParserMock.Verify(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>()), Times.Once);
             persistenceMock.Verify(ps => ps.GetUnprocessedGames(games), Times.Once);
-            boardPositionServiceMock.Verify(b => b.SetBoardPositions(unprocessed), Times.Once);
+            boardPositionServiceMock.Verify(b => b.SetBoardPositions(unprocessed, It.IsAny<List<GameParseError>>()), Times.Once);
             persistenceMock.Verify(ps => ps.InsertGames(unprocessed), Times.Once);
+            persistenceMock.Verify(ps => ps.InsertParseErrors(It.IsAny<List<GameParseError>>()), Times.Once);
         }
 
         [Fact]
@@ -49,7 +50,7 @@ namespace ServicesTests
             var games = new List<Game> { new Game { Name = "G", GameId = "x", Plies = new Dictionary<int, Ply>() } };
 
             fileHandlerMock.Setup(f => f.LoadPgnFiles(It.IsAny<string>())).Returns(pgnFiles);
-            pgnParserMock.Setup(p => p.GetGamesFromPgnFiles(It.IsAny<List<PgnFile>>())).Returns(games);
+            pgnParserMock.Setup(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>())).Returns(games);
             persistenceMock.Setup(ps => ps.GetUnprocessedGames(It.IsAny<List<Game>>())).ReturnsAsync(new List<Game>());
 
             var sut = new EtlService(
@@ -60,7 +61,7 @@ namespace ServicesTests
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 
-            boardPositionServiceMock.Verify(b => b.SetBoardPositions(It.IsAny<List<Game>>()), Times.Never);
+            boardPositionServiceMock.Verify(b => b.SetBoardPositions(It.IsAny<List<Game>>(), It.IsAny<List<GameParseError>>()), Times.Never);
             persistenceMock.Verify(ps => ps.InsertGames(It.IsAny<List<Game>>()), Times.Never);
         }
     }

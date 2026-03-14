@@ -129,9 +129,11 @@ namespace Services.Helpers
 
             if (sourceSquare < 0 && ply.IsPieceMove && destinationSquare >= 0)
             {
+                string message = piece.Name == 'K'
+                    ? "King move: no king found adjacent to destination, or move would leave the king in check (illegal)."
+                    : $"Ambiguous move: multiple {piece.Name}s can reach the same square; PGN must disambiguate (e.g. by file Nce4 or rank N4e4).";
                 throw new InvalidOperationException(
-                    (string.IsNullOrEmpty(parsingContext) ? "Ambiguous move" : $"Ambiguous move ({parsingContext})")
-                    + $": multiple {piece.Name}s can reach the same square; PGN must disambiguate (e.g. by file Nce4 or rank N4e4).");
+                    (string.IsNullOrEmpty(parsingContext) ? message : $"{message} ({parsingContext})"));
             }
 
             // Update the ply with the piece and squares

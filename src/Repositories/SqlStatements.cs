@@ -34,6 +34,12 @@ namespace Repositories
             FROM
         	    [Chess].[dbo].[Game];
         """;
+
+        public static string InsertGameParseError =>
+            """
+            INSERT INTO dbo.GameParseError (SourcePgnFileName, GameIndexInFile, GameName, ErrorMessage)
+            VALUES (@SourcePgnFileName, @GameIndexInFile, @GameName, @ErrorMessage);
+            """;
     }
 }
 

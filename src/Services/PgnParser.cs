@@ -12,10 +12,12 @@ namespace Services
         /// <summary>
         /// Extracts a collection of chess games from a list of PGN (Portable Game Notation) files.
         /// </summary>
-        /// <param name="pgnGames">A list of <see cref="PgnFile"/> objects representing the raw PGN files to process.</param>
-        /// <returns>A list of <see cref="Game"/> objects representing the chess games parsed from the provided PGN files.  The
-        /// list will be empty if no games are found.</returns>
         List<Game> GetGamesFromPgnFiles(List<PgnFile> pgnGames);
+
+        /// <summary>
+        /// Extracts games from a single PGN file. Used to parse and persist one file at a time.
+        /// </summary>
+        List<Game> GetGamesFromPgnFile(PgnFile pgnFile);
 
         /// <summary>
         /// Updates the board positions based on the provided list of games.
@@ -44,32 +46,30 @@ namespace Services
         /// identifier.</returns>
         public List<Game> GetGamesFromPgnFiles(List<PgnFile> pgnFiles)
         {
-            List<PgnGame> pgnGames = [];
             List<Game> games = [];
-
-            // Parse each PGN file and create games, preserving source file and game index for error reporting
             foreach (var pgnFile in pgnFiles)
-            {
-                var extractedPgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile);
-                var gameIndex = 0;
-                foreach (var pgnGame in extractedPgnGames)
-                {
-                    gameIndex++;
-                    var game = PgnParserHelper.GetGameFromPgnGame(pgnGame);
-                    game.SourcePgnFileName = pgnFile.Name;
-                    game.GameIndexInFile = gameIndex;
-                    games.Add(game);
-                }
-            }
+                games.AddRange(GetGamesFromPgnFile(pgnFile));
+            return games;
+        }
 
-            // Generate GameId for each game
+        /// <summary>
+        /// Extracts and parses games from a single PGN file. Sets SourcePgnFileName and GameIndexInFile on each game.
+        /// </summary>
+        public List<Game> GetGamesFromPgnFile(PgnFile pgnFile)
+        {
+            var games = new List<Game>();
+            var extractedPgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile);
+            var gameIndex = 0;
+            foreach (var pgnGame in extractedPgnGames)
+            {
+                gameIndex++;
+                var game = PgnParserHelper.GetGameFromPgnGame(pgnGame);
+                game.SourcePgnFileName = pgnFile.Name;
+                game.GameIndexInFile = gameIndex;
+                games.Add(game);
+            }
             foreach (var game in games)
-            {
-                // GameId is generated from a hash of the moves (plies) in the game.
-                // This is making the assumption that the moves uniquely identify a game.
                 game.GameId = GameIdGenerator.GetGameId(game.Plies);
-            }
-
             return games;
         }
 

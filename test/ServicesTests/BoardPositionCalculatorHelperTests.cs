@@ -26,7 +26,8 @@ namespace ServicesTests
             return b;
         }
 
-        private readonly IBoardPositionCalculatorHelper _sut = new BoardPositionCalculatorHelper(new BitBoardManipulator(new BitBoardManipulatorHelper()));
+        private static readonly IBitBoardManipulator _manipulator = new BitBoardManipulator(new BitBoardManipulatorHelper());
+        private readonly IBoardPositionCalculatorHelper _sut = new BoardPositionCalculatorHelper(_manipulator, new LegalMoveChecker(_manipulator));
 
         [Fact]
         public void GetBoardPositionFromNonPromotion_WhenWhitePawnE4_MovesPawnFromE2ToE4()

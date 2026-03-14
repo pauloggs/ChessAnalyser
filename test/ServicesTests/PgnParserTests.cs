@@ -82,7 +82,7 @@ namespace ServicesTests
 
             _sut.SetBoardPositions(games);
 
-            _boardPositionServiceMock.Verify(s => s.SetBoardPositions(games), Times.Once);
+            _boardPositionServiceMock.Verify(s => s.SetBoardPositions(games, null), Times.Once);
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace Services
+namespace Services
 {
     public interface IEtlService
     {
@@ -24,26 +24,25 @@
 
         public async Task LoadGamesToDatabase(string filePath)
         {
-            // Load PGN files from the provided path
             var pgnFiles = fileHandler.LoadPgnFiles(filePath);
 
-            // Parse PGN files into individual games
-            List<Interfaces.DTO.Game> games = pgnParser.GetGamesFromPgnFiles(pgnFiles);
-
-            // Filter out games that are already processed and persisted
-            var unprocessedGames = await persistenceService.GetUnprocessedGames(games);
-
-            if (unprocessedGames == null || unprocessedGames.Count == 0)
+            foreach (var pgnFile in pgnFiles)
             {
-                Console.WriteLine("No new games to process.");
-                return;
+                // Parse this PGN file into games
+                var games = pgnParser.GetGamesFromPgnFile(pgnFile);
+                if (games == null || games.Count == 0)
+                    continue;
+
+                var unprocessedGames = await persistenceService.GetUnprocessedGames(games);
+                if (unprocessedGames == null || unprocessedGames.Count == 0)
+                    continue;
+
+                var parseErrors = new List<Interfaces.DTO.GameParseError>();
+                boardPositionService.SetBoardPositions(unprocessedGames, parseErrors);
+
+                await persistenceService.InsertGames(unprocessedGames);
+                await persistenceService.InsertParseErrors(parseErrors);
             }
-
-            // Generate board positions for each unprocessed game
-            boardPositionService.SetBoardPositions(unprocessedGames);
-
-            // Insert unprocessed games into the database
-            await persistenceService.InsertGames(unprocessedGames);
         }
     }
 }

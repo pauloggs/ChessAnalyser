@@ -23,6 +23,11 @@ namespace Repositories
         /// Replaces any existing rows for this game.
         /// </summary>
         Task InsertBoardPositions(Game game, int gameId);
+
+        /// <summary>
+        /// Inserts a parse error record for diagnostics. Does not reference Game (failed games are not inserted).
+        /// </summary>
+        Task InsertGameParseError(GameParseError error);
     }
 
     public class ChessRepository : IChessRepository
@@ -189,6 +194,23 @@ namespace Repositories
                 transaction.Rollback();
                 throw;
             }
+        }
+
+        /// <summary>
+        /// Inserts a single parse error into dbo.GameParseError.
+        /// </summary>
+        public async Task InsertGameParseError(GameParseError error)
+        {
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                SqlStatements.InsertGameParseError,
+                new
+                {
+                    error.SourcePgnFileName,
+                    error.GameIndexInFile,
+                    error.GameName,
+                    error.ErrorMessage
+                });
         }
     }
 }

@@ -58,6 +58,7 @@ builder.Services.AddScoped<IDestinationSquareHelper, DestinationSquareHelper>();
 builder.Services.AddScoped<IPawnMoveInterpreter, PawnMoveInterpreter>();
 builder.Services.AddScoped<IPieceMoveInterpreter, PieceMoveInterpreter>();
 builder.Services.AddScoped<IPieceSourceFinderService, PieceSourceFinderService>();
+builder.Services.AddScoped<ILegalMoveChecker, LegalMoveChecker>();
 builder.Services.AddScoped<IRankAndFileHelper, RankAndFileHelper>();
 builder.Services.AddScoped<IBitBoardManipulatorHelper, BitBoardManipulatorHelper>();
 builder.Services.AddScoped<INaming, Naming>();

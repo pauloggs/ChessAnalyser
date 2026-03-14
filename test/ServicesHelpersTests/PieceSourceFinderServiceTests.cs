@@ -67,7 +67,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             var board = CreateBoardWithWhiteKnightOn(Squares.G1); // g1 = 6
             var ply = new Ply
@@ -93,7 +94,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             int c3 = 2 * 8 + 2;  // 18
             int g3 = 2 * 8 + 6;  // 22
@@ -123,7 +125,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             var board = CreateBoardWithBlackKingOn(Squares.G8); // 62
             var ply = new Ply
@@ -147,7 +150,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             var board = CreateBoardWithWhiteKnightOn(0); // knight on a1 only
             var ply = new Ply
@@ -164,6 +168,41 @@ namespace ServicesHelpersTests
             Assert.Equal(MoveNotFound, source);
         }
 
+        [Fact(DisplayName = "FindKnightSource_Ne7_WhenKnightsOnC6AndG8_AndC6PinnedByBb5_ReturnsG8")]
+        public void FindKnightSource_Ne7_WhenKnightsOnC6AndG8_AndC6PinnedByBb5_ReturnsG8()
+        {
+            // Position after 5.Bb5: Black knights on c6 (42) and g8 (62), White bishop on b5 (33), Black king e8 (60).
+            // 5...Ne7: both knights can geometrically reach e7, but c6 is pinned (moving it would leave BK in check). Only g8 is legal.
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+
+            int c6 = 5 * 8 + 2;   // 42
+            int g8 = 7 * 8 + 6;   // 62
+            int b5 = 4 * 8 + 1;   // 33
+            int e8 = 7 * 8 + 4;   // 60
+            var board = new BoardPosition();
+            board.PiecePositions["BN"] = (1UL << c6) | (1UL << g8);
+            board.PiecePositions["BK"] = 1UL << e8;
+            board.PiecePositions["WB"] = 1UL << b5;
+
+            var ply = new Ply
+            {
+                RawMove = "Ne7",
+                DestinationRank = 6,  // e7 = rank 7 in 1-based = 6 in 0-based
+                DestinationFile = 4,
+                Piece = Constants.Pieces['N'],
+                Colour = Colour.B
+            };
+
+            int source = sut.FindKnightSource(board, ply, -1, -1);
+
+            Assert.Equal(g8, source);  // Only the unpinned knight (g8) can move
+        }
+
         [Fact(DisplayName = "FindBishopSource_Bf4_WhenBishopOnC1_ReturnsSquare2")]
         public void FindBishopSource_Bf4_WhenBishopOnC1_ReturnsSquare2()
         {
@@ -171,7 +210,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             int c1 = 0 * 8 + 2;
             var board = CreateBoardWithWhiteBishopOn(c1);
@@ -196,7 +236,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             int a1 = 0;
             var board = CreateBoardWithWhiteRookOn(a1);
@@ -221,7 +262,8 @@ namespace ServicesHelpersTests
             var manipulator = new BitBoardManipulator(helper);
             var sourceSquareHelper = new SourceSquareHelper(manipulator);
             var rankAndFileHelper = new RankAndFileHelper();
-            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator);
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
 
             int d1 = 0 * 8 + 3;
             var board = CreateBoardWithWhiteQueenOn(d1);
