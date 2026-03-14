@@ -1,8 +1,10 @@
 USE Chess;
 
-DECLARE @PlayerId INT = 1568;
+DECLARE @PlayerId INT = 3019;
 DECLARE @PlayerSurname NVARCHAR(800) = 'Fischer';
 DECLARE @PlayerForenames NVARCHAR(400) = 'Robert James';
+DECLARE @PlayerName VARCHAR(800) = (SELECT TOP 1 CONCAT(p.Surname,',', p.Forenames) FROM dbo.Player p WHERE p.Id = @PlayerId);
+PRINT @PlayerName;
 
 SET @PlayerId 
 	= COALESCE(@PlayerId, (SELECT TOP 1 Id FROM Chess.dbo.Player p WHERE p.Surname = @PlayerSurname AND p.Forenames = @PlayerForenames));
