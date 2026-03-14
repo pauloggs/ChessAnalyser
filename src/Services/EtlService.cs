@@ -31,26 +31,59 @@ namespace Services
             var totalFiles = pgnFiles.Count;
             var totalGamesProcessed = 0;
 
-            // Per-file game counts (and total) for accurate PercentComplete, without enumerating twice
-            var gamesPerFile = new List<int>(totalFiles);
-            var totalGamesAllFiles = 0;
-            for (var i = 0; i < pgnFiles.Count; i++)
-            {
-                var c = _pgnParser.GetGameCountInFile(pgnFiles[i]);
-                gamesPerFile.Add(c);
-                totalGamesAllFiles += c;
-            }
-
-            var gamesIteratedSoFar = 0;
-
-            // Report immediately so progress bar shows activity before first game
+            // Report immediately so progress bar shows activity
             progress?.Report(new EtlProgress
             {
                 CurrentFileIndex = 0,
                 TotalFiles = totalFiles,
-                CurrentFileName = totalFiles > 0 ? pgnFiles[0].Name : null,
-                CurrentGameIndex = 0,
-                TotalGamesInCurrentFile = totalFiles > 0 ? gamesPerFile[0] : 0,
+                TotalGamesToProcess = 0,
+                TotalGamesProcessed = 0,
+                Status = "Running",
+                Message = "Counting unprocessed games…",
+                PercentComplete = 0
+            });
+
+            // First pass: count how many games are unprocessed (not already in DB). Same game in multiple files counted once.
+            var processedIds = (await _persistenceService.GetProcessedGameIds()).ToHashSet();
+            var totalUnprocessed = 0;
+            foreach (var pgnFile in pgnFiles)
+            {
+                if (_progressStore.IsCancellationRequested)
+                {
+                    progress?.Report(new EtlProgress { Status = "Cancelled", Message = "Load cancelled by user." });
+                    return;
+                }
+                foreach (var game in _pgnParser.EnumerateGamesFromPgnFile(pgnFile))
+                {
+                    if (!processedIds.Contains(game.GameId))
+                    {
+                        totalUnprocessed++;
+                        processedIds.Add(game.GameId);
+                    }
+                }
+            }
+
+            // Reload processed IDs from DB for the process pass (first pass only counted, did not persist)
+            processedIds = (await _persistenceService.GetProcessedGameIds()).ToHashSet();
+
+            if (totalUnprocessed == 0)
+            {
+                progress?.Report(new EtlProgress
+                {
+                    TotalFiles = totalFiles,
+                    TotalGamesToProcess = 0,
+                    TotalGamesProcessed = 0,
+                    Status = "Completed",
+                    Message = "All games already processed.",
+                    PercentComplete = 100
+                });
+                return;
+            }
+
+            progress?.Report(new EtlProgress
+            {
+                TotalFiles = totalFiles,
+                TotalGamesToProcess = totalUnprocessed,
                 TotalGamesProcessed = 0,
                 Status = "Running",
                 PercentComplete = 0
@@ -58,11 +91,9 @@ namespace Services
 
             void Report(int fileIndex, string? fileName, int gameIndex, int totalInFile, string status = "Running", string? message = null)
             {
-                var percent = totalGamesAllFiles > 0
-                    ? (int)((gamesIteratedSoFar * 100.0) / totalGamesAllFiles)
-                    : (totalFiles > 0 ? (int)((fileIndex * 100.0) / totalFiles) : 0);
-                if (status == "Completed")
-                    percent = 100;
+                var percent = totalUnprocessed > 0 && status == "Running"
+                    ? (int)((totalGamesProcessed * 100.0) / totalUnprocessed)
+                    : status == "Completed" ? 100 : 0;
 
                 progress?.Report(new EtlProgress
                 {
@@ -72,6 +103,7 @@ namespace Services
                     CurrentGameIndex = gameIndex,
                     TotalGamesInCurrentFile = totalInFile,
                     TotalGamesProcessed = totalGamesProcessed,
+                    TotalGamesToProcess = totalUnprocessed,
                     Status = status,
                     Message = message,
                     PercentComplete = percent
@@ -83,14 +115,13 @@ namespace Services
                 for (var fileIndex = 0; fileIndex < pgnFiles.Count; fileIndex++)
                 {
                     var pgnFile = pgnFiles[fileIndex];
-                    var totalGamesInFile = gamesPerFile[fileIndex];
+                    var totalGamesInFile = _pgnParser.GetGameCountInFile(pgnFile);
                     if (totalGamesInFile == 0)
                     {
                         Report(fileIndex + 1, pgnFile.Name, 0, 0);
                         continue;
                     }
 
-                    var processedIds = (await _persistenceService.GetProcessedGameIds()).ToHashSet();
                     var gameIndex = 0;
 
                     foreach (var game in _pgnParser.EnumerateGamesFromPgnFile(pgnFile))
@@ -102,13 +133,13 @@ namespace Services
                                 Status = "Cancelled",
                                 Message = "Load cancelled by user.",
                                 TotalGamesProcessed = totalGamesProcessed,
-                                PercentComplete = totalGamesAllFiles > 0 ? (int)((gamesIteratedSoFar * 100.0) / totalGamesAllFiles) : 0
+                                TotalGamesToProcess = totalUnprocessed,
+                                PercentComplete = totalUnprocessed > 0 ? (int)((totalGamesProcessed * 100.0) / totalUnprocessed) : 0
                             });
                             return;
                         }
 
                         gameIndex++;
-                        gamesIteratedSoFar++;
                         Report(fileIndex, pgnFile.Name, gameIndex, totalGamesInFile);
 
                         if (processedIds.Contains(game.GameId))
@@ -137,7 +168,8 @@ namespace Services
                 {
                     Status = "Failed",
                     Message = ex.Message,
-                    TotalGamesProcessed = totalGamesProcessed
+                    TotalGamesProcessed = totalGamesProcessed,
+                    TotalGamesToProcess = totalUnprocessed
                 });
                 throw;
             }

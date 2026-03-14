@@ -10,8 +10,8 @@ namespace Repositories
         """
         IF (NOT EXISTS (SELECT TOP 1 Id FROM dbo.Game WHERE GameId = @GameId))
         BEGIN
-            INSERT INTO dbo.Game (Name, GameId)
-            VALUES (@Name, @GameId);
+            INSERT INTO dbo.Game (Name, GameId, Winner)
+            VALUES (@Name, @GameId, @Winner);
         END;
         SELECT Id FROM dbo.Game WHERE GameId = @GameId;
         """;

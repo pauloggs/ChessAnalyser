@@ -40,6 +40,14 @@ namespace Services
                 {
                     Console.WriteLine($"Setting board positions for game '{game.Name}'");
 
+                    // Set winner from PGN Result tag so it is correct even if result is not the last ply token
+                    if (game.Tags != null &&
+                        game.Tags.TryGetValue("result", out var resultValue) &&
+                        Constants.GameEndConditions.TryGetValue(resultValue.Trim(), out var winner))
+                    {
+                        game.Winner = winner;
+                    }
+
                     var startingBoardPosition = boardPositionsHelper.GetStartingBoardPosition();
                     game.InitialBoardPosition = startingBoardPosition;
 

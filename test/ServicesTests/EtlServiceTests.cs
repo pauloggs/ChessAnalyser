@@ -35,7 +35,7 @@ namespace ServicesTests
             await sut.LoadGamesToDatabase("C:\\PGN");
 
             fileHandlerMock.Verify(f => f.LoadPgnFiles("C:\\PGN"), Times.Once);
-            persistenceMock.Verify(ps => ps.GetProcessedGameIds(), Times.Once);
+            persistenceMock.Verify(ps => ps.GetProcessedGameIds(), Times.Exactly(2)); // Once for count pass, once before process pass
             boardPositionServiceMock.Verify(b => b.SetBoardPositions(It.Is<List<Game>>(l => l.Count == 1 && l[0].GameId == "x"), It.IsAny<List<GameParseError>>()), Times.Once);
             persistenceMock.Verify(ps => ps.InsertGames(It.Is<List<Game>>(l => l.Count == 1)), Times.Once);
             persistenceMock.Verify(ps => ps.InsertParseErrors(It.IsAny<List<GameParseError>>()), Times.Once);

@@ -116,7 +116,7 @@ namespace Repositories
                 {
                     var sql = SqlStatements.InsertGame;
 
-                    var parameters = new { game.Name, game.GameId };
+                    var parameters = new { game.Name, game.GameId, Winner = game.Winner ?? "None" };
 
                     var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
 

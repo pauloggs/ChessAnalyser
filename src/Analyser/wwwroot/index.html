@@ -89,11 +89,15 @@
               return new Promise(function (r) { setTimeout(r, 500); }).then(poll);
             }
             setProgress(data.percentComplete, data.status, data.message);
-            if (data.currentFileName != null)
-              statusEl.textContent = (data.status || '') + ' — File ' + (data.currentFileIndex + 1) + '/' + data.totalFiles
-                + ' ' + (data.currentFileName || '')
-                + ', game ' + data.currentGameIndex + '/' + data.totalGamesInCurrentFile
-                + ' — ' + (data.totalGamesProcessed || 0) + ' persisted';
+            if (data.currentFileName != null || data.totalGamesToProcess != null) {
+              var statusText = (data.status || '') + ' — ';
+              if (data.totalGamesToProcess != null && data.totalGamesToProcess >= 0)
+                statusText += (data.totalGamesProcessed || 0) + ' / ' + data.totalGamesToProcess + ' processed';
+              if (data.currentFileName != null)
+                statusText += ' — File ' + (data.currentFileIndex + 1) + '/' + data.totalFiles + ' ' + (data.currentFileName || '')
+                  + ', game ' + data.currentGameIndex + '/' + data.totalGamesInCurrentFile;
+              statusEl.textContent = statusText;
+            }
             var done = data.status === 'Completed' || data.status === 'Failed' || data.status === 'Cancelled';
             if (done) {
               setLoading(false);

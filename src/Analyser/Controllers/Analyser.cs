@@ -48,6 +48,7 @@ public class Analyser(
                 ? _pgnOptions.DefaultFilePath
                 : loadGamesDto.FilePath.Trim();
             _progressStore.ClearCancel();
+            _progressStore.Set(null); // Clear previous run's progress so client doesn't see stale "Completed" and stop polling
 
             _ = Task.Run(async () =>
             {

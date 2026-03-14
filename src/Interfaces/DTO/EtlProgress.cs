@@ -23,6 +23,9 @@ namespace Interfaces.DTO
         /// <summary>Total games persisted so far in this run.</summary>
         public int TotalGamesProcessed { get; set; }
 
+        /// <summary>Total number of games that needed processing (unprocessed at start of run). Used for accurate PercentComplete.</summary>
+        public int TotalGamesToProcess { get; set; }
+
         /// <summary>Running | Completed | Failed</summary>
         public string Status { get; set; } = "Running";
 
