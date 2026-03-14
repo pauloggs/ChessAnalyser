@@ -53,6 +53,7 @@ builder.Services.AddScoped<IBoardPositionCalculatorHelper, BoardPositionCalculat
 builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
+builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();

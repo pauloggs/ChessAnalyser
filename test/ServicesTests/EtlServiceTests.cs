@@ -15,6 +15,11 @@ namespace ServicesTests
             var boardPositionServiceMock = new Mock<IBoardPositionService>();
             var progressStoreMock = new Mock<IEtlProgressStore>();
             progressStoreMock.Setup(s => s.IsCancellationRequested).Returns(false);
+            var playerResolverMock = new Mock<IPlayerResolver>();
+            playerResolverMock.Setup(pr => pr.LoadKnownPlayersAsync()).Returns(Task.CompletedTask);
+            playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>()))
+                .Callback<Game>(g => { g.WhitePlayerId = 1; g.BlackPlayerId = 2; })
+                .Returns(Task.CompletedTask);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
             var game = new Game { Name = "G", Plies = new Dictionary<int, Ply>(), GameId = "x" };
@@ -30,7 +35,8 @@ namespace ServicesTests
                 pgnParserMock.Object,
                 persistenceMock.Object,
                 boardPositionServiceMock.Object,
-                progressStoreMock.Object);
+                progressStoreMock.Object,
+                playerResolverMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 
@@ -50,6 +56,11 @@ namespace ServicesTests
             var boardPositionServiceMock = new Mock<IBoardPositionService>();
             var progressStoreMock = new Mock<IEtlProgressStore>();
             progressStoreMock.Setup(s => s.IsCancellationRequested).Returns(false);
+            var playerResolverMock = new Mock<IPlayerResolver>();
+            playerResolverMock.Setup(pr => pr.LoadKnownPlayersAsync()).Returns(Task.CompletedTask);
+            playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>()))
+                .Callback<Game>(g => { g.WhitePlayerId = 1; g.BlackPlayerId = 2; })
+                .Returns(Task.CompletedTask);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
             var game = new Game { Name = "G", GameId = "x", Plies = new Dictionary<int, Ply>() };
@@ -64,7 +75,8 @@ namespace ServicesTests
                 pgnParserMock.Object,
                 persistenceMock.Object,
                 boardPositionServiceMock.Object,
-                progressStoreMock.Object);
+                progressStoreMock.Object,
+                playerResolverMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 

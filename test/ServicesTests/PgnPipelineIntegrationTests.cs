@@ -271,8 +271,11 @@ namespace ServicesTests
             persistenceMock.Setup(p => p.InsertGames(It.IsAny<List<Game>>())).Returns(Task.CompletedTask);
             persistenceMock.Setup(p => p.InsertParseErrors(It.IsAny<List<GameParseError>>())).Returns(Task.CompletedTask);
             var progressStore = new EtlProgressStore();
+            var playerResolverMock = new Mock<IPlayerResolver>();
+            playerResolverMock.Setup(pr => pr.LoadKnownPlayersAsync()).Returns(Task.CompletedTask);
+            playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>())).Returns(Task.CompletedTask);
 
-            var etlService = new EtlService(fileHandler, pgnParser, persistenceMock.Object, boardPositionService, progressStore);
+            var etlService = new EtlService(fileHandler, pgnParser, persistenceMock.Object, boardPositionService, progressStore, playerResolverMock.Object);
             var reports = new List<EtlProgress>();
             // Use synchronous progress so "Completed" is in the list before the test asserts (Progress<T> can post async)
             var progress = new SynchronousProgress<EtlProgress>(p => reports.Add(p));

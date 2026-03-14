@@ -16,6 +16,16 @@ namespace Repositories
 
         Task<List<string>> GetProcessedGameIds();
 
+        Task<List<Player>> GetPlayers();
+
+        /// <summary>Returns the Player Id if a row exists with the given Surname and Forenames; otherwise null.</summary>
+        Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames);
+
+        /// <summary>Returns all players with the given Surname (for fuzzy forenames matching).</summary>
+        Task<List<Player>> GetPlayersBySurname(string surname);
+
+        Task<int> InsertPlayer(Player player);
+
         Task<int> InsertGame(Game game);
 
         /// <summary>
@@ -70,6 +80,46 @@ namespace Repositories
             return cs;
         }
 
+        public async Task<List<Player>> GetPlayers()
+        {
+            using var connection = GetOpenConnection();
+            using (connection)
+            {
+                var list = (await connection.QueryAsync<Player>(SqlStatements.GetPlayers)).ToList();
+                return list;
+            }
+        }
+
+        public async Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames)
+        {
+            using var connection = GetOpenConnection();
+            using (connection)
+            {
+                var id = await connection.ExecuteScalarAsync<int?>(SqlStatements.GetPlayerIdBySurnameAndForenames, new { Surname = surname, Forenames = forenames ?? "" });
+                return id;
+            }
+        }
+
+        public async Task<List<Player>> GetPlayersBySurname(string surname)
+        {
+            using var connection = GetOpenConnection();
+            using (connection)
+            {
+                var list = (await connection.QueryAsync<Player>(SqlStatements.GetPlayersBySurname, new { Surname = surname })).ToList();
+                return list;
+            }
+        }
+
+        public async Task<int> InsertPlayer(Player player)
+        {
+            using var connection = GetOpenConnection();
+            using (connection)
+            {
+                var id = await connection.ExecuteScalarAsync<int>(SqlStatements.InsertPlayer, new { player.Surname, player.Forenames });
+                return id;
+            }
+        }
+
         public async Task<List<string>> GetProcessedGameIds()
         {
             try
@@ -116,7 +166,14 @@ namespace Repositories
                 {
                     var sql = SqlStatements.InsertGame;
 
-                    var parameters = new { game.Name, game.GameId, Winner = game.Winner ?? "None" };
+                    var parameters = new
+                    {
+                        game.Name,
+                        game.GameId,
+                        Winner = game.Winner ?? "None",
+                        game.WhitePlayerId,
+                        game.BlackPlayerId
+                    };
 
                     var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);
 

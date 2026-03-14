@@ -17,13 +17,15 @@ namespace Services
         IPgnParser pgnParser,
         IPersistenceService persistenceService,
         IBoardPositionService boardPositionService,
-        IEtlProgressStore progressStore) : IEtlService
+        IEtlProgressStore progressStore,
+        IPlayerResolver playerResolver) : IEtlService
     {
         private readonly IFileHandler _fileHandler = fileHandler;
         private readonly IPgnParser _pgnParser = pgnParser;
         private readonly IPersistenceService _persistenceService = persistenceService;
         private readonly IBoardPositionService _boardPositionService = boardPositionService;
         private readonly IEtlProgressStore _progressStore = progressStore;
+        private readonly IPlayerResolver _playerResolver = playerResolver;
 
         public async Task LoadGamesToDatabase(string filePath, IProgress<EtlProgress>? progress = null)
         {
@@ -89,6 +91,8 @@ namespace Services
                 PercentComplete = 0
             });
 
+            await _playerResolver.LoadKnownPlayersAsync();
+
             void Report(int fileIndex, string? fileName, int gameIndex, int totalInFile, string status = "Running", string? message = null)
             {
                 var percent = totalUnprocessed > 0 && status == "Running"
@@ -145,7 +149,21 @@ namespace Services
                         if (processedIds.Contains(game.GameId))
                             continue;
 
+                        await _playerResolver.ResolveGamePlayersAsync(game);
                         var parseErrors = new List<GameParseError>();
+                        if (game.WhitePlayerId is null || game.BlackPlayerId is null)
+                        {
+                            parseErrors.Add(new GameParseError
+                            {
+                                SourcePgnFileName = game.SourcePgnFileName,
+                                GameIndexInFile = game.GameIndexInFile,
+                                GameName = game.Name,
+                                ErrorMessage = "Missing or invalid White/Black player (PGN tags). Game not persisted."
+                            });
+                            await _persistenceService.InsertParseErrors(parseErrors);
+                            continue;
+                        }
+
                         var list = new List<Game> { game };
                         _boardPositionService.SetBoardPositions(list, parseErrors);
 

@@ -57,7 +57,7 @@ namespace Services
 
                     for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
                     {
-                        Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
+                        //Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
                         if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
 
                         var boardPositionFromPly = boardPositionsHelper.GetBoardPositionForPly(
