@@ -7,57 +7,64 @@ namespace ServicesTests
     public class EtlServiceTests
     {
         [Fact]
-        public async Task LoadGamesToDatabase_WhenFilesAndGamesReturned_CallsSetBoardPositionsAndInsertGames()
+        public async Task LoadGamesToDatabase_WhenFilesAndGamesReturned_ProcessesOneGameAtATimeAndPersists()
         {
             var fileHandlerMock = new Mock<IFileHandler>();
             var pgnParserMock = new Mock<IPgnParser>();
             var persistenceMock = new Mock<IPersistenceService>();
             var boardPositionServiceMock = new Mock<IBoardPositionService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            progressStoreMock.Setup(s => s.IsCancellationRequested).Returns(false);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
-            var games = new List<Game> { new Game { Name = "G", Plies = new Dictionary<int, Ply>(), GameId = "x" } };
-            var unprocessed = new List<Game> { games[0] };
+            var game = new Game { Name = "G", Plies = new Dictionary<int, Ply>(), GameId = "x" };
 
             fileHandlerMock.Setup(f => f.LoadPgnFiles(It.IsAny<string>())).Returns(pgnFiles);
-            pgnParserMock.Setup(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>())).Returns(games);
-            persistenceMock.Setup(ps => ps.GetUnprocessedGames(games)).ReturnsAsync(unprocessed);
+            pgnParserMock.Setup(p => p.GetGameCountInFile(It.IsAny<PgnFile>())).Returns(1);
+            pgnParserMock.Setup(p => p.EnumerateGamesFromPgnFile(It.IsAny<PgnFile>()))
+                .Returns(new[] { game });
+            persistenceMock.Setup(ps => ps.GetProcessedGameIds()).ReturnsAsync(new List<string>());
 
             var sut = new EtlService(
                 fileHandlerMock.Object,
                 pgnParserMock.Object,
                 persistenceMock.Object,
-                boardPositionServiceMock.Object);
+                boardPositionServiceMock.Object,
+                progressStoreMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 
             fileHandlerMock.Verify(f => f.LoadPgnFiles("C:\\PGN"), Times.Once);
-            pgnParserMock.Verify(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>()), Times.Once);
-            persistenceMock.Verify(ps => ps.GetUnprocessedGames(games), Times.Once);
-            boardPositionServiceMock.Verify(b => b.SetBoardPositions(unprocessed, It.IsAny<List<GameParseError>>()), Times.Once);
-            persistenceMock.Verify(ps => ps.InsertGames(unprocessed), Times.Once);
+            persistenceMock.Verify(ps => ps.GetProcessedGameIds(), Times.Once);
+            boardPositionServiceMock.Verify(b => b.SetBoardPositions(It.Is<List<Game>>(l => l.Count == 1 && l[0].GameId == "x"), It.IsAny<List<GameParseError>>()), Times.Once);
+            persistenceMock.Verify(ps => ps.InsertGames(It.Is<List<Game>>(l => l.Count == 1)), Times.Once);
             persistenceMock.Verify(ps => ps.InsertParseErrors(It.IsAny<List<GameParseError>>()), Times.Once);
         }
 
         [Fact]
-        public async Task LoadGamesToDatabase_WhenNoUnprocessedGames_DoesNotCallSetBoardPositionsOrInsertGames()
+        public async Task LoadGamesToDatabase_WhenGameAlreadyProcessed_SkipsSetBoardPositionsAndInsert()
         {
             var fileHandlerMock = new Mock<IFileHandler>();
             var pgnParserMock = new Mock<IPgnParser>();
             var persistenceMock = new Mock<IPersistenceService>();
             var boardPositionServiceMock = new Mock<IBoardPositionService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            progressStoreMock.Setup(s => s.IsCancellationRequested).Returns(false);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
-            var games = new List<Game> { new Game { Name = "G", GameId = "x", Plies = new Dictionary<int, Ply>() } };
+            var game = new Game { Name = "G", GameId = "x", Plies = new Dictionary<int, Ply>() };
 
             fileHandlerMock.Setup(f => f.LoadPgnFiles(It.IsAny<string>())).Returns(pgnFiles);
-            pgnParserMock.Setup(p => p.GetGamesFromPgnFile(It.IsAny<PgnFile>())).Returns(games);
-            persistenceMock.Setup(ps => ps.GetUnprocessedGames(It.IsAny<List<Game>>())).ReturnsAsync(new List<Game>());
+            pgnParserMock.Setup(p => p.GetGameCountInFile(It.IsAny<PgnFile>())).Returns(1);
+            pgnParserMock.Setup(p => p.EnumerateGamesFromPgnFile(It.IsAny<PgnFile>())).Returns(new[] { game });
+            persistenceMock.Setup(ps => ps.GetProcessedGameIds()).ReturnsAsync(new List<string> { "x" });
 
             var sut = new EtlService(
                 fileHandlerMock.Object,
                 pgnParserMock.Object,
                 persistenceMock.Object,
-                boardPositionServiceMock.Object);
+                boardPositionServiceMock.Object,
+                progressStoreMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 

@@ -1,5 +1,7 @@
 using Interfaces.DTO;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Options;
 using Moq;
 using Repositories;
 using Services;
@@ -9,33 +11,80 @@ namespace ControllerTests
     public class AnalyserControllerTests
     {
         [Fact]
-        public async Task LoadGames_CallsEtlServiceWithFilePathAndReturnsOk()
+        public void GetDefaultPgnPath_ReturnsConfiguredDefaultFromOptions()
         {
             var chessRepoMock = new Mock<IChessRepository>();
             var etlServiceMock = new Mock<IEtlService>();
-            etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>())).Returns(Task.CompletedTask);
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(chessRepoMock.Object, etlServiceMock.Object);
-            var loadGamesDto = new LoadGamesDto { FilePath = "C:\\PGN\\" };
-            var result = await controller.LoadGames(loadGamesDto);
+            var controller = new Analyser.Controllers.Analyser(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+            var result = controller.GetDefaultPgnPath();
 
-            etlServiceMock.Verify(e => e.LoadGamesToDatabase("C:\\PGN\\"), Times.Once);
-            Assert.IsType<OkResult>(result);
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var value = ok.Value;
+            var prop = value?.GetType().GetProperty("defaultFilePath");
+            Assert.NotNull(prop);
+            Assert.Equal("C:\\Library\\PGN", prop.GetValue(value));
         }
 
         [Fact]
-        public async Task LoadGames_WhenEtlThrows_Returns500()
+        public void LoadGames_Returns202AcceptedAndStartsEtlInBackground()
         {
             var chessRepoMock = new Mock<IChessRepository>();
             var etlServiceMock = new Mock<IEtlService>();
-            etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>())).ThrowsAsync(new InvalidOperationException("ETL failed"));
+            etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>(), It.IsAny<IProgress<EtlProgress>>())).Returns(Task.CompletedTask);
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeMock = new Mock<IServiceScope>();
+            var providerMock = new Mock<IServiceProvider>();
+            providerMock.Setup(p => p.GetService(typeof(IEtlService))).Returns(etlServiceMock.Object);
+            scopeMock.Setup(s => s.ServiceProvider).Returns(providerMock.Object);
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(chessRepoMock.Object, etlServiceMock.Object);
-            var loadGamesDto = new LoadGamesDto { FilePath = "C:\\PGN\\" };
-            var result = await controller.LoadGames(loadGamesDto);
+            var controller = new Analyser.Controllers.Analyser(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+            var loadGamesDto = new LoadGamesDto { FilePath = "C:\\Library\\PGN\\" };
+            var result = controller.LoadGames(loadGamesDto);
 
-            var statusResult = Assert.IsType<ObjectResult>(result);
-            Assert.Equal(500, statusResult.StatusCode);
+            var accepted = Assert.IsType<AcceptedResult>(result);
+            Assert.Equal(202, accepted.StatusCode);
+        }
+
+        [Fact]
+        public void GetLoadGamesProgress_ReturnsProgressFromStore()
+        {
+            var chessRepoMock = new Mock<IChessRepository>();
+            var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var progress = new EtlProgress { CurrentFileIndex = 0, TotalFiles = 5, Status = "Running" };
+            progressStoreMock.Setup(s => s.Get()).Returns(progress);
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
+
+            var controller = new Analyser.Controllers.Analyser(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+            var result = controller.GetLoadGamesProgress();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var value = Assert.IsType<EtlProgress>(ok.Value);
+            Assert.Equal("Running", value.Status);
+            Assert.Equal(5, value.TotalFiles);
         }
 
         [Fact]
@@ -45,8 +94,16 @@ namespace ControllerTests
             var chessRepoMock = new Mock<IChessRepository>();
             chessRepoMock.Setup(r => r.GetGames()).ReturnsAsync(games);
             var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(chessRepoMock.Object, etlServiceMock.Object);
+            var controller = new Analyser.Controllers.Analyser(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
             var result = await controller.GetGames();
 
             chessRepoMock.Verify(r => r.GetGames(), Times.Once);

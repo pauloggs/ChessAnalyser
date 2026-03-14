@@ -1,3 +1,4 @@
+using Analyser;
 using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
@@ -5,6 +6,8 @@ using Services.Helpers;
 using System.Reflection;
 
 var builder = WebApplication.CreateBuilder(args);
+
+builder.Services.Configure<PgnOptions>(builder.Configuration.GetSection(PgnOptions.SectionName));
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -65,6 +68,7 @@ builder.Services.AddScoped<INaming, Naming>();
 builder.Services.AddScoped<IFileHandler, FileHandler>();
 builder.Services.AddScoped<IPgnParser, PgnParser>();
 builder.Services.AddScoped<IEtlService, EtlService>();
+builder.Services.AddSingleton<IEtlProgressStore, EtlProgressStore>();
 builder.Services.AddScoped<IChessRepository, ChessRepository>();
 
 var app = builder.Build();
@@ -77,6 +81,9 @@ if (app.Environment.IsDevelopment())
 }
 
 app.UseHttpsRedirection();
+
+app.UseDefaultFiles();
+app.UseStaticFiles();
 
 app.UseRouting();
 

@@ -20,6 +20,16 @@ namespace Services
         List<Game> GetGamesFromPgnFile(PgnFile pgnFile);
 
         /// <summary>
+        /// Enumerates games from a single PGN file one at a time to minimize memory (no full list in memory).
+        /// </summary>
+        IEnumerable<Game> EnumerateGamesFromPgnFile(PgnFile pgnFile);
+
+        /// <summary>
+        /// Returns the number of games in the PGN file (for progress reporting). Lightweight: only parses to split games.
+        /// </summary>
+        int GetGameCountInFile(PgnFile pgnFile);
+
+        /// <summary>
         /// Updates the board positions based on the provided list of games.
         /// </summary>
         /// <remarks>Each game in the list is used to determine the new state of the board positions.
@@ -71,6 +81,29 @@ namespace Services
             foreach (var game in games)
                 game.GameId = GameIdGenerator.GetGameId(game.Plies);
             return games;
+        }
+
+        /// <summary>
+        /// Yields one game at a time from the PGN file. Only one full Game is in memory at a time.
+        /// </summary>
+        public IEnumerable<Game> EnumerateGamesFromPgnFile(PgnFile pgnFile)
+        {
+            var extractedPgnGames = PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile);
+            var gameIndex = 0;
+            foreach (var pgnGame in extractedPgnGames)
+            {
+                gameIndex++;
+                var game = PgnParserHelper.GetGameFromPgnGame(pgnGame);
+                game.SourcePgnFileName = pgnFile.Name;
+                game.GameIndexInFile = gameIndex;
+                game.GameId = GameIdGenerator.GetGameId(game.Plies);
+                yield return game;
+            }
+        }
+
+        public int GetGameCountInFile(PgnFile pgnFile)
+        {
+            return PgnParserHelper.GetPgnGamesFromPgnFile(pgnFile).Count;
         }
 
         public void SetBoardPositions(List<Game> games) => boardPositionGenerator.SetBoardPositions(games);

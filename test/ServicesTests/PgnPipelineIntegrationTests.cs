@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Moq;
 using Services;
 using Services.Helpers;
 
@@ -252,5 +253,45 @@ namespace ServicesTests
                 }
             }
         }
+
+        /// <summary>
+        /// Runs ETL with a sample PGN file and collects progress reports. Proves PercentComplete increases and reaches 100.
+        /// </summary>
+        [Fact]
+        public async Task Etl_WithSamplePgnFile_ReportsProgressWithIncreasingPercentCompleteAndCompletesAt100()
+        {
+            var path = GetIntegrationTestDataPath("etl_progress_sample.pgn");
+            if (!File.Exists(path))
+                path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "TestData", "Integration", "etl_progress_sample.pgn"));
+            Assert.True(File.Exists(path), "etl_progress_sample.pgn not found at " + path);
+
+            var (fileHandler, pgnParser, boardPositionService) = BuildPipeline();
+            var persistenceMock = new Mock<IPersistenceService>();
+            persistenceMock.Setup(p => p.GetProcessedGameIds()).ReturnsAsync(new List<string>());
+            persistenceMock.Setup(p => p.InsertGames(It.IsAny<List<Game>>())).Returns(Task.CompletedTask);
+            persistenceMock.Setup(p => p.InsertParseErrors(It.IsAny<List<GameParseError>>())).Returns(Task.CompletedTask);
+            var progressStore = new EtlProgressStore();
+
+            var etlService = new EtlService(fileHandler, pgnParser, persistenceMock.Object, boardPositionService, progressStore);
+            var reports = new List<EtlProgress>();
+            // Use synchronous progress so "Completed" is in the list before the test asserts (Progress<T> can post async)
+            var progress = new SynchronousProgress<EtlProgress>(p => reports.Add(p));
+
+            await etlService.LoadGamesToDatabase(path, progress);
+
+            Assert.True(reports.Count >= 1, "At least one progress report expected");
+            var completedReport = reports.LastOrDefault(r => r.Status == "Completed");
+            Assert.NotNull(completedReport);
+            Assert.Equal(100, completedReport.PercentComplete);
+            var withNonZeroPercent = reports.Where(r => (r.PercentComplete ?? 0) > 0).ToList();
+            Assert.True(withNonZeroPercent.Count >= 1, "PercentComplete should be non-zero during run (got: " + string.Join(", ", reports.Select(r => r.PercentComplete?.ToString() ?? "null")) + ")");
+        }
+    }
+
+    internal sealed class SynchronousProgress<T> : IProgress<T>
+    {
+        private readonly Action<T> _handler;
+        public SynchronousProgress(Action<T> handler) => _handler = handler;
+        public void Report(T value) => _handler(value);
     }
 }

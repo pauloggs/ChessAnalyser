@@ -46,6 +46,9 @@
     <None Include="..\..\docs\queen-side-castling-with-numerics.pgn" Link="TestData\Integration\queen-side-castling-with-numerics.pgn" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\en-passant.pgn" Link="TestData\Integration\en-passant.pgn" CopyToOutputDirectory="PreserveNewest" />
     <None Include="..\..\docs\Alekhine.pgn" Link="TestData\Integration\Alekhine.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TestData\Integration\etl_progress_sample.pgn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

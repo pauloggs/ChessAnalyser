@@ -7,11 +7,14 @@ namespace Services
 	public interface IPersistenceService
     {
         /// <summary>
+        /// Returns the set of GameIds already present in the database (for skip-if-processed checks).
+        /// </summary>
+        Task<List<string>> GetProcessedGameIds();
+
+        /// <summary>
         /// For each provided <see cref="Game"/> check if it has already been written
         /// to the database. If it has, remove from the returned list.
         /// </summary>
-        /// <param name="games"></param>
-        /// <returns></returns>
 		Task<List<Game>> GetUnprocessedGames(List<Game> games);
 
         /// <summary>
@@ -31,10 +34,16 @@ namespace Services
         private readonly IChessRepository chessRepository = chessRepository;
 
         /// <summary>
+        /// Returns the list of GameIds already in the database.
+        /// </summary>
+        public async Task<List<string>> GetProcessedGameIds()
+        {
+            return await chessRepository.GetProcessedGameIds();
+        }
+
+        /// <summary>
         /// Filters out any <see cref="Game"/>s that have already been processed.
         /// </summary>
-        /// <param name="games"></param>
-        /// <returns></returns>
         public async Task<List<Game>> GetUnprocessedGames(List<Game> games)
         {
             var processedGameIds = await chessRepository.GetProcessedGameIds();
