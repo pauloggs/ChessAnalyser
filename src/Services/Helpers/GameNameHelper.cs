@@ -1,4 +1,4 @@
-﻿using Interfaces;
+using Interfaces;
 
 namespace Services.Helpers
 {
@@ -19,7 +19,12 @@ namespace Services.Helpers
             {
                 if (tagDicionary.ContainsKey(tag))
                 {
-                    tagList.Add(tagDicionary[tag]);
+                    var value = tagDicionary[tag];
+                    // Use dash when value is unknown or empty so the name is readable (e.g. "-|-|1904.??.??|-|White|Black|0-1|C33")
+                    if (string.IsNullOrWhiteSpace(value) || value.Trim() == "?")
+                        tagList.Add("-");
+                    else
+                        tagList.Add(value.Trim());
                 }
             }
 

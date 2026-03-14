@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PGN Load</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 1rem; }
+    input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+    button { margin-top: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; }
+    .progress-wrap { margin: 1rem 0; height: 1.5rem; background: #eee; border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #0a0; transition: width 0.2s; width: 0%; }
+    .progress-bar.failed { background: #c00; }
+    .status { margin-top: 0.5rem; font-size: 0.9rem; color: #444; }
+    .error { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>PGN Load</h1>
+  <label>Path to PGN file or folder:</label>
+  <input type="text" id="path" placeholder="Path from appsettings (or override)" />
+  <button id="start">Start load</button>
+  <button id="cancel" style="display: none;">Cancel</button>
+
+  <div class="progress-wrap" id="wrap" style="display: none;">
+    <div class="progress-bar" id="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script>
+    (function () {
+      const pathInput = document.getElementById('path');
+      const startBtn = document.getElementById('start');
+      const cancelBtn = document.getElementById('cancel');
+      const wrap = document.getElementById('wrap');
+      const bar = document.getElementById('bar');
+      const statusEl = document.getElementById('status');
+
+      const base = window.location.origin;
+      const api = base + '/Analyser';
+
+      fetch(api + '/DefaultPgnPath')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (data && data.defaultFilePath) pathInput.value = data.defaultFilePath;
+        })
+        .catch(function () {});
+
+      function setLoading(loading) {
+        startBtn.disabled = loading;
+        pathInput.disabled = loading;
+        cancelBtn.style.display = loading ? 'inline-block' : 'none';
+        cancelBtn.disabled = false;
+      }
+
+      function setProgress(percent, status, message) {
+        wrap.style.display = 'block';
+        bar.style.width = (percent ?? 0) + '%';
+        bar.setAttribute('aria-valuenow', percent ?? 0);
+        bar.classList.toggle('failed', status === 'Failed' || status === 'Cancelled');
+        let t = status || '';
+        if (message) t += (t ? ': ' : '') + message;
+        statusEl.textContent = t;
+        statusEl.className = 'status' + (status === 'Failed' || status === 'Cancelled' ? ' error' : '');
+      }
+
+      function parseJsonSafe(response) {
+        return response.text().then(function (text) {
+          if (!text || text.trim() === '') return null;
+          try {
+            return JSON.parse(text);
+          } catch (_) {
+            return null;
+          }
+        });
+      }
+
+      function poll() {
+        return fetch(api + '/LoadGamesProgress')
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            return parseJsonSafe(r);
+          })
+          .then(function (data) {
+            if (!data) {
+              setProgress(0, 'Running', 'Starting…');
+              return new Promise(function (r) { setTimeout(r, 500); }).then(poll);
+            }
+            setProgress(data.percentComplete, data.status, data.message);
+            if (data.currentFileName != null || data.totalGamesToProcess != null) {
+              var statusText = (data.status || '') + ' — ';
+              if (data.totalGamesToProcess != null && data.totalGamesToProcess >= 0)
+                statusText += (data.totalGamesProcessed || 0) + ' / ' + data.totalGamesToProcess + ' processed';
+              if (data.currentFileName != null)
+                statusText += ' — File ' + (data.currentFileIndex + 1) + '/' + data.totalFiles + ' ' + (data.currentFileName || '')
+                  + ', game ' + data.currentGameIndex + '/' + data.totalGamesInCurrentFile;
+              statusEl.textContent = statusText;
+            }
+            var done = data.status === 'Completed' || data.status === 'Failed' || data.status === 'Cancelled';
+            if (done) {
+              setLoading(false);
+              if (data.status === 'Completed') setProgress(100, 'Completed', null);
+            } else if (data.status === 'Running') {
+              return new Promise(function (r) { setTimeout(r, 500); }).then(poll);
+            }
+          })
+          .catch(function (e) {
+            statusEl.textContent = 'Error: ' + e.message;
+            statusEl.className = 'status error';
+            setLoading(false);
+          });
+      }
+
+      startBtn.addEventListener('click', function () {
+        const path = pathInput.value.trim();
+        if (!path) return;
+        setLoading(true);
+        setProgress(0, 'Starting…', null);
+        fetch(api + '/LoadGames', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: path, displayBoardPosition: false })
+        })
+          .then(function (r) {
+            if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + r.statusText + (t ? ': ' + t : '')); });
+            return poll();
+          })
+          .catch(function (e) {
+            statusEl.textContent = 'Error: ' + e.message;
+            statusEl.className = 'status error';
+            setLoading(false);
+          });
+      });
+
+      cancelBtn.addEventListener('click', function () {
+        cancelBtn.disabled = true;
+        fetch(api + '/CancelLoad', { method: 'POST' }).catch(function () {});
+      });
+    })();
+  </script>
+</body>
+</html>

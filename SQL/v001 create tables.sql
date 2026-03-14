@@ -1,6 +1,0 @@
-CREATE TABLE dbo.Game(
-    Id INT IDENTITY(1,1),
-    Name VARCHAR(100) NOT NULL,
-    GameId VARCHAR(MAX) NOT NULL,
-    DateCreated DATETIME DEFAULT GETDATE()
-)

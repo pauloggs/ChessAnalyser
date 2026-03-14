@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PGN Load Progress</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
+    h1 { font-size: 1.25rem; }
+    label { display: block; margin-top: 1rem; }
+    input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
+    button { margin-top: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; }
+    .progress-wrap { margin: 1rem 0; height: 1.5rem; background: #eee; border-radius: 4px; overflow: hidden; }
+    .progress-bar { height: 100%; background: #0a0; transition: width 0.2s; width: 0%; }
+    .progress-bar.failed { background: #c00; }
+    .status { margin-top: 0.5rem; font-size: 0.9rem; color: #444; }
+    .error { color: #c00; }
+  </style>
+</head>
+<body>
+  <h1>PGN load progress</h1>
+  <label>Path to PGN file or folder:</label>
+  <input type="text" id="path" placeholder="Path from appsettings (or override)" />
+  <button id="start">Start load</button>
+
+  <div class="progress-wrap" id="wrap" style="display: none;">
+    <div class="progress-bar" id="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+  </div>
+  <div class="status" id="status"></div>
+
+  <script>
+    (function () {
+      const pathInput = document.getElementById('path');
+      const startBtn = document.getElementById('start');
+      const wrap = document.getElementById('wrap');
+      const bar = document.getElementById('bar');
+      const statusEl = document.getElementById('status');
+
+      const base = window.location.origin;
+      const api = base + '/Analyser';
+
+      fetch(api + '/DefaultPgnPath')
+        .then(function (r) { return r.ok ? r.json() : null; })
+        .then(function (data) {
+          if (data && data.defaultFilePath) pathInput.value = data.defaultFilePath;
+        })
+        .catch(function () {});
+
+      function setProgress(percent, status, message) {
+        wrap.style.display = 'block';
+        bar.style.width = (percent ?? 0) + '%';
+        bar.setAttribute('aria-valuenow', percent ?? 0);
+        bar.classList.toggle('failed', status === 'Failed');
+        let t = status || '';
+        if (message) t += (t ? ': ' : '') + message;
+        statusEl.textContent = t;
+        statusEl.className = 'status' + (status === 'Failed' ? ' error' : '');
+      }
+
+      function parseJsonSafe(response) {
+        return response.text().then(function (text) {
+          if (!text || text.trim() === '') return null;
+          try {
+            return JSON.parse(text);
+          } catch (_) {
+            return null;
+          }
+        });
+      }
+
+      function poll() {
+        return fetch(api + '/LoadGamesProgress')
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            return parseJsonSafe(r);
+          })
+          .then(function (data) {
+            if (!data) return;
+            setProgress(data.percentComplete, data.status, data.message);
+            if (data.currentFileName != null)
+              statusEl.textContent = (data.status || '') + ' — File ' + (data.currentFileIndex + 1) + '/' + data.totalFiles
+                + ' ' + (data.currentFileName || '')
+                + ', game ' + data.currentGameIndex + '/' + data.totalGamesInCurrentFile
+                + ' — ' + (data.totalGamesProcessed || 0) + ' persisted';
+            if (data.status === 'Running') return new Promise(r => setTimeout(r, 500)).then(poll);
+            if (data.status === 'Completed') setProgress(100, 'Completed', null);
+          })
+          .catch(e => {
+            statusEl.textContent = 'Error: ' + e.message;
+            statusEl.className = 'status error';
+          });
+      }
+
+      startBtn.addEventListener('click', function () {
+        const path = pathInput.value.trim();
+        if (!path) return;
+        startBtn.disabled = true;
+        setProgress(0, 'Starting…', null);
+        fetch(api + '/LoadGames', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ filePath: path, displayBoardPosition: false })
+        })
+          .then(function (r) {
+            if (!r.ok) return r.text().then(t => { throw new Error(r.status + ' ' + r.statusText + (t ? ': ' + t : '')); });
+            return poll();
+          })
+          .catch(e => {
+            statusEl.textContent = 'Error: ' + e.message;
+            statusEl.className = 'status error';
+          })
+          .finally(() => { startBtn.disabled = false; });
+      });
+    })();
+  </script>
+</body>
+</html>

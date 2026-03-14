@@ -26,6 +26,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Interfaces\Interfaces.csproj" />
+    <ProjectReference Include="..\..\src\Repositories\Repositories.csproj" />
     <ProjectReference Include="..\..\src\Services\Services.csproj" />
   </ItemGroup>
 
@@ -38,6 +39,15 @@
     </None>
     <None Update="TestData\test_pgn_expected_2.pgn">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </None>
+    <None Include="..\..\docs\checkmate.pgn" Link="TestData\Integration\checkmate.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\king-side-castling-with-numerics.pgn" Link="TestData\Integration\king-side-castling-with-numerics.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\promotion.pgn" Link="TestData\Integration\promotion.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\queen-side-castling-with-numerics.pgn" Link="TestData\Integration\queen-side-castling-with-numerics.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\en-passant.pgn" Link="TestData\Integration\en-passant.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Include="..\..\docs\Alekhine.pgn" Link="TestData\Integration\Alekhine.pgn" CopyToOutputDirectory="PreserveNewest" />
+    <None Update="TestData\Integration\etl_progress_sample.pgn">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
   </ItemGroup>
 

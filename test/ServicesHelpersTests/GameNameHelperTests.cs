@@ -1,4 +1,4 @@
-﻿namespace ServicesHelpersTests
+namespace ServicesHelpersTests
 {
     public class GameNameHelperTests
     {
@@ -38,6 +38,24 @@
             var actualGameName = Services.Helpers.GameNameHelper.GetGameName(tagDictionary);
             // Assert
             Assert.Equal(expectedGameName, actualGameName);
+        }
+
+        [Fact]
+        public void GetGameName_WhenTagValueIsQuestionMarkOrEmpty_UsesDash()
+        {
+            var tagDictionary = new Dictionary<string, string>
+            {
+                { "event", "?" },
+                { "site", "  ?  " },
+                { "date", "1904.??.??" },
+                { "round", "" },
+                { "white", "Giese" },
+                { "black", "Alekhine, Alexander A" },
+                { "result", "0-1" },
+                { "eco", "C33" }
+            };
+            var actual = Services.Helpers.GameNameHelper.GetGameName(tagDictionary);
+            Assert.Equal("-|-|1904.??.??|-|Giese|Alekhine, Alexander A|0-1|C33", actual);
         }
     }
 }

@@ -106,12 +106,12 @@ namespace Services.Helpers
                 piece = Constants.Pieces['P']; // is a pawn move
                 ply.PromotionPiece = PieceRetriever.GetSafePiece(promotionPiece); // get the promotion piece safely
             }
-            else if (rawMove == "O-O-O")
+            else if (rawMove == "O-O-O" || rawMove == "0-0-0")
             {
                 piece = Constants.Pieces['C']; // is a castling move
                 ply.IsQueensideCastling = true;
             }
-            else if (rawMove == "O-O")
+            else if (rawMove == "O-O" || rawMove == "0-0")
             {
                 piece = Constants.Pieces['C']; // is a castling move
                 ply.IsKingsideCastling = true;

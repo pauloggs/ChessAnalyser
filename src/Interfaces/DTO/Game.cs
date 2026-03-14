@@ -47,6 +47,22 @@ namespace Interfaces.DTO
 
         public string Winner { get; set; }
 
+        /// <summary>ID of the player who played White. Resolved from PGN [White] tag.</summary>
+        public int? WhitePlayerId { get; set; }
+
+        /// <summary>ID of the player who played Black. Resolved from PGN [Black] tag.</summary>
+        public int? BlackPlayerId { get; set; }
+
+        /// <summary>
+        /// Source PGN file name (when loaded from file). Used for error reporting during parsing.
+        /// </summary>
+        public string? SourcePgnFileName { get; set; }
+
+        /// <summary>
+        /// 1-based index of this game within the source PGN file. Used for error reporting during parsing.
+        /// </summary>
+        public int? GameIndexInFile { get; set; }
+
         public Game()
         {
             Tags = [];

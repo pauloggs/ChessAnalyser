@@ -19,7 +19,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelper,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             int expectedSourceSquareIndex = 30; // g4
@@ -85,7 +86,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelperMock.Object,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
             var previousBoardPosition = new BoardPosition();
 
@@ -137,7 +139,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelperMock.Object,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
 
 
             // Instantiate the SUT (PieceMoveInterpreter) with the ISourceSquareHelper MOCK
@@ -202,7 +205,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelperMock.Object,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             // Expected Source Square: B1 (Rank 0, File 1, Index 1)
@@ -263,7 +267,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelperMock.Object,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelperMock.Object, pieceSourceFinderService);
 
             var ply = new Ply
@@ -306,7 +311,8 @@ namespace ServicesTests.Helpers
             IPieceSourceFinderService pieceSourceFinderService = new PieceSourceFinderService(
                 sourceSquareHelper,
                 rankAndFileHelper,
-                bitBoardManipulatorMock.Object);
+                bitBoardManipulatorMock.Object,
+                new LegalMoveChecker(bitBoardManipulatorMock.Object));
             var pieceMoveInterpreter = new PieceMoveInterpreter(sourceSquareHelper, pieceSourceFinderService);
 
             var previousBoardPosition = new BoardPosition();

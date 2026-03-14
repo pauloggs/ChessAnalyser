@@ -8,9 +8,11 @@ namespace Services
     {
         /// <summary>
         /// Set the board positions for all the games provided.
+        /// Games that fail to parse (illegal/ambiguous move, invalid PGN) are removed from the list.
         /// </summary>
-        /// <param name="games"></param>
-        void SetBoardPositions(List<Game> games);
+        /// <param name="games">Games to process; invalid games are removed in place.</param>
+        /// <param name="parseErrors">Optional. When provided, each failed game is recorded here (source file, index, name, message) for persistence.</param>
+        void SetBoardPositions(List<Game> games, List<GameParseError>? parseErrors = null);
     }
 
     /// <summary>
@@ -28,35 +30,61 @@ namespace Services
             this.boardPositionsHelper = boardPositionsHelper;
         }
 
-        public void SetBoardPositions(List<Game> games)
+        public void SetBoardPositions(List<Game> games, List<GameParseError>? parseErrors = null)
         {
+            var invalidGames = new List<Game>();
+
             foreach (var game in games)
             {
-                Console.WriteLine($"Setting board positions for game '{game.Name}'");
-
-                // initialize the starting position
-                var startingBoardPosition = boardPositionsHelper.GetStartingBoardPosition();
-                game.InitialBoardPosition = startingBoardPosition;
-
-                // Maintain legacy index -1 for compatibility with any existing code/tests.
-                game.BoardPositions[-1] = startingBoardPosition;
-
-                var numberOfPlies = game.Plies.Keys.Count;
-
-                for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
+                try
                 {
-                    Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
-                    if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
+                    Console.WriteLine($"Setting board positions for game '{game.Name}'");
 
-                    var boardPositionFromPly = boardPositionsHelper.GetBoardPositionForPly(
-                        game,
-                        plyIndex);
+                    // Set winner from PGN Result tag so it is correct even if result is not the last ply token
+                    if (game.Tags != null &&
+                        game.Tags.TryGetValue("result", out var resultValue) &&
+                        Constants.GameEndConditions.TryGetValue(resultValue.Trim(), out var winner))
+                    {
+                        game.Winner = winner;
+                    }
 
-                    game.BoardPositions[plyIndex] = boardPositionFromPly;
+                    var startingBoardPosition = boardPositionsHelper.GetStartingBoardPosition();
+                    game.InitialBoardPosition = startingBoardPosition;
 
-                    PrintBoardPosition.Print(boardPositionFromPly);
+                    game.BoardPositions[-1] = startingBoardPosition;
+
+                    var numberOfPlies = game.Plies.Keys.Count;
+
+                    for (var plyIndex = 0; plyIndex < numberOfPlies; plyIndex++)
+                    {
+                        //Console.WriteLine($"\nPly {plyIndex}, move {(plyIndex / 2) + 1}, {game.Plies[plyIndex].Colour}, {game.Plies[plyIndex].RawMove}");
+                        if (boardPositionsHelper.SetWinner(game, plyIndex)) break;
+
+                        var boardPositionFromPly = boardPositionsHelper.GetBoardPositionForPly(
+                            game,
+                            plyIndex);
+
+                        game.BoardPositions[plyIndex] = boardPositionFromPly;
+
+                        if (Constants.DisplayBoardPositions) PrintBoardPosition.Print(boardPositionFromPly);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    // Any parse failure (invalid move, illegal/ambiguous move): omit this game and optionally record for persistence.
+                    invalidGames.Add(game);
+                    parseErrors?.Add(new GameParseError
+                    {
+                        SourcePgnFileName = game.SourcePgnFileName,
+                        GameIndexInFile = game.GameIndexInFile,
+                        GameName = game.Name,
+                        ErrorMessage = ex.Message
+                    });
                 }
             }
+
+            foreach (var g in invalidGames)
+                games.Remove(g);
         }
     }
 }

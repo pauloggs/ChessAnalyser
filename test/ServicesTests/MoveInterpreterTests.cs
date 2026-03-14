@@ -1,4 +1,4 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using Moq;
 using Services;
 using Services.Helpers;
@@ -38,7 +38,7 @@ namespace ServicesTests
             Colour colour = Colour.W;
 
             // Act & Assert
-            var exception = Assert.Throws<Exception>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply));
+            var exception = Assert.Throws<InvalidOperationException>(() => sut.GetSourceAndDestinationSquares(previousBoardPosition, ply));
             Assert.Contains("invalid move", exception.Message);
         }
 

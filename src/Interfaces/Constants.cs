@@ -4,6 +4,8 @@ namespace Interfaces
 {
     public static class Constants
     {
+        public static bool DisplayBoardPositions { get; set; } = false;
+
         /// <summary>
         /// A list of standard PGN game tag identifiers, such as 'event', 'site', 'date', etc.
         /// </summary>

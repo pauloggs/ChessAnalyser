@@ -1,4 +1,4 @@
-﻿using Interfaces.DTO;
+using Interfaces.DTO;
 using Services.Helpers;
 
 namespace Services
@@ -32,7 +32,7 @@ namespace Services
             // basic validation
             if (string.IsNullOrEmpty(ply.RawMove) || ply.RawMove.Length < 2)
             {
-                throw new Exception($"MoveInterpreter > GetSourceAndDestinationSquares: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} invalid move");
+                throw new InvalidOperationException($"MoveInterpreter > GetSourceAndDestinationSquares: {ply.MoveNumber}, {ply.Colour}, {ply.RawMove} invalid move");
             }
 
             // remove any '+' at the end of the move

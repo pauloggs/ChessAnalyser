@@ -125,6 +125,17 @@ namespace Services.Helpers
                         previousBoardPosition,
                         ply);
 
+            var parsingContext = BuildParsingContext(game, plyIndex);
+
+            if (sourceSquare < 0 && ply.IsPieceMove && destinationSquare >= 0)
+            {
+                string message = piece.Name == 'K'
+                    ? "King move: no king found adjacent to destination, or move would leave the king in check (illegal)."
+                    : $"Ambiguous move: multiple {piece.Name}s can reach the same square; PGN must disambiguate (e.g. by file Nce4 or rank N4e4).";
+                throw new InvalidOperationException(
+                    (string.IsNullOrEmpty(parsingContext) ? message : $"{message} ({parsingContext})"));
+            }
+
             // Update the ply with the piece and squares
             ply.Piece = piece;
             ply.SourceSquare = sourceSquare;
@@ -133,7 +144,23 @@ namespace Services.Helpers
             // Get and return the new board position after applying the move
             return boardPositionCalculator.GetBoardPositionFromPly(
                 previousBoardPosition,
-                ply);
+                ply,
+                parsingContext);
+        }
+
+        private static string? BuildParsingContext(Game game, int plyIndex)
+        {
+            if (game == null) return null;
+            var parts = new List<string>();
+            if (!string.IsNullOrEmpty(game.SourcePgnFileName))
+                parts.Add($"PGN file: {game.SourcePgnFileName}");
+            if (game.GameIndexInFile.HasValue)
+                parts.Add($"Game #{game.GameIndexInFile}");
+            if (!string.IsNullOrEmpty(game.Name))
+                parts.Add($"\"{game.Name}\"");
+            var moveText = game.Plies.TryGetValue(plyIndex, out var p) ? p.RawMove : "?";
+            parts.Add($"Ply {plyIndex} (move {moveText})");
+            return parts.Count > 0 ? string.Join(", ", parts) : null;
         }
 
         public bool SetWinner(Game game, int plyIndex)
