@@ -16,7 +16,8 @@ namespace ControllerTests
             etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>())).Returns(Task.CompletedTask);
 
             var controller = new Analyser.Controllers.Analyser(chessRepoMock.Object, etlServiceMock.Object);
-            var result = await controller.LoadGames("C:\\PGN\\");
+            var loadGamesDto = new LoadGamesDto { FilePath = "C:\\PGN\\" };
+            var result = await controller.LoadGames(loadGamesDto);
 
             etlServiceMock.Verify(e => e.LoadGamesToDatabase("C:\\PGN\\"), Times.Once);
             Assert.IsType<OkResult>(result);
@@ -30,7 +31,8 @@ namespace ControllerTests
             etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>())).ThrowsAsync(new InvalidOperationException("ETL failed"));
 
             var controller = new Analyser.Controllers.Analyser(chessRepoMock.Object, etlServiceMock.Object);
-            var result = await controller.LoadGames("C:\\PGN");
+            var loadGamesDto = new LoadGamesDto { FilePath = "C:\\PGN\\" };
+            var result = await controller.LoadGames(loadGamesDto);
 
             var statusResult = Assert.IsType<ObjectResult>(result);
             Assert.Equal(500, statusResult.StatusCode);

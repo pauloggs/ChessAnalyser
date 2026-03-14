@@ -142,8 +142,8 @@ namespace Services.Helpers
             string pawnKey = attackerColour == Colour.W ? "WP" : "BP";
             if (!position.PiecePositions.TryGetValue(pawnKey, out ulong pawnBb) || pawnBb == 0)
                 return false;
-            // White pawns attack (tr-1, tf-1) and (tr-1, tf+1). Black pawns attack (tr+1, tf-1), (tr+1, tf+1).
-            int dr = attackerColour == Colour.W ? -1 : 1;
+            // White pawns (moving toward rank 7) sit at (tr-1, tf±1) and attack (tr,tf). Black pawns (moving toward rank 0) sit at (tr+1, tf±1).
+            int dr = attackerColour == Colour.W ? 1 : -1;
             int pr1 = tr - dr;
             if (pr1 >= 0 && pr1 <= 7)
             {

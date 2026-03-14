@@ -1,3 +1,5 @@
+using Interfaces;
+using Interfaces.DTO;
 using Microsoft.AspNetCore.Mvc;
 using Repositories;
 using Services;
@@ -14,14 +16,15 @@ public class Analyser(IChessRepository chessRepository, IEtlService etlService) 
     /// <summary>
     /// Load PGN files and persist to database. For Windows, try C:\PGN\ path.
     /// </summary>
-    [HttpGet("LoadGames")]
-    public async Task<IActionResult> LoadGames(string filePath = "/Library/PGN")
+    [HttpPost("LoadGames")]
+    public async Task<IActionResult> LoadGames([FromBody] LoadGamesDto loadGamesDto)
     {
         try
         {
             Console.Write("\f\u001bc\x1b[3J");
             Console.WriteLine($"Controller > LoadGames");
-            await etlService.LoadGamesToDatabase(filePath);
+            Constants.DisplayBoardPositions = loadGamesDto.DisplayBoardPosition;
+            await etlService.LoadGamesToDatabase(loadGamesDto.FilePath);
             return Ok();
         }
         catch (Exception ex)

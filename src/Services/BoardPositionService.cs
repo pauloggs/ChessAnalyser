@@ -57,6 +57,8 @@ namespace Services
                             plyIndex);
 
                         game.BoardPositions[plyIndex] = boardPositionFromPly;
+
+                        if (Constants.DisplayBoardPositions) PrintBoardPosition.Print(boardPositionFromPly);
                     }
                 }
                 catch (Exception ex)
