@@ -81,5 +81,26 @@ namespace ServicesTests
             Assert.Equal(12, sourceSquare);
             Assert.Equal(28, destinationSquare);
         }
+
+        [Fact(DisplayName = "GetSourceAndDestinationSquares_SamePositionAndPly_InvokedMultipleTimes_ReturnsSameResult_Determinism")]
+        public void GetSourceAndDestinationSquares_SamePositionAndPly_InvokedMultipleTimes_ReturnsSameResult_Determinism()
+        {
+            var sut = CreateMoveInterpreterWithRealChain();
+            var board = GetStartingPosition();
+            var ply = new Ply { RawMove = "Nf3", Colour = Colour.W };
+
+            var (piece1, source1, dest1) = sut.GetSourceAndDestinationSquares(board, ply);
+            var (piece2, source2, dest2) = sut.GetSourceAndDestinationSquares(board, ply);
+            var (piece3, source3, dest3) = sut.GetSourceAndDestinationSquares(board, ply);
+
+            Assert.Equal(piece1.Name, piece2.Name);
+            Assert.Equal(piece2.Name, piece3.Name);
+            Assert.Equal(source1, source2);
+            Assert.Equal(source2, source3);
+            Assert.Equal(dest1, dest2);
+            Assert.Equal(dest2, dest3);
+            Assert.Equal(Squares.G1, source1);
+            Assert.Equal(21, dest1);
+        }
     }
 }

@@ -280,5 +280,181 @@ namespace ServicesHelpersTests
 
             Assert.Equal(d1, source);
         }
+
+        // ----- Determinism and ambiguous-move tests (no tie-breaking; PGN must disambiguate) -----
+
+        [Fact(DisplayName = "FindKnightSource_WhenTwoKnightsCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound")]
+        public void FindKnightSource_WhenTwoKnightsCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound()
+        {
+            // Two white knights on c3 and g3; both can legally move to e4. PGN "Ne4" has no file/rank → ambiguous; parser must not guess.
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+
+            int c3 = 2 * 8 + 2;   // 18
+            int g3 = 2 * 8 + 6;   // 22
+            var board = CreateBoardWithWhiteKnightsOn(c3, g3);
+            var ply = new Ply
+            {
+                RawMove = "Ne4",
+                DestinationRank = 3,
+                DestinationFile = 4,
+                Piece = Constants.Pieces['N'],
+                Colour = Colour.W
+            };
+
+            int source = sut.FindKnightSource(board, ply, -1, -1);
+
+            Assert.Equal(MoveNotFound, source);
+        }
+
+        [Fact(DisplayName = "FindRookSource_WhenTwoRooksCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound")]
+        public void FindRookSource_WhenTwoRooksCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound()
+        {
+            // Two white rooks on e1 and e7; both can move to e4 (no blocks). "Re4" with no disambiguation → ambiguous.
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+
+            int e1 = 0 * 8 + 4;   // 4
+            int e7 = 6 * 8 + 4;   // 52
+            var board = new BoardPosition();
+            board.PiecePositions["WR"] = (1UL << e1) | (1UL << e7);
+            var ply = new Ply
+            {
+                RawMove = "Re4",
+                DestinationRank = 3,
+                DestinationFile = 4,
+                Piece = Constants.Pieces['R'],
+                Colour = Colour.W
+            };
+
+            int source = sut.FindRookSource(board, ply, -1, -1);
+
+            Assert.Equal(MoveNotFound, source);
+        }
+
+        [Fact(DisplayName = "FindBishopSource_WhenTwoBishopsCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound")]
+        public void FindBishopSource_WhenTwoBishopsCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound()
+        {
+            // Two white bishops on a3 and c1 (same diagonal); both attack b2. "Bb2" with no disambiguation → ambiguous.
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+
+            int a3 = 2 * 8 + 0;   // 16
+            int c1 = 0 * 8 + 2;   // 2
+            var board = new BoardPosition();
+            board.PiecePositions["WB"] = (1UL << a3) | (1UL << c1);
+            var ply = new Ply
+            {
+                RawMove = "Bb2",
+                DestinationRank = 1,
+                DestinationFile = 1,
+                Piece = Constants.Pieces['B'],
+                Colour = Colour.W
+            };
+
+            int source = sut.FindBishopSource(board, ply, -1, -1);
+
+            Assert.Equal(MoveNotFound, source);
+        }
+
+        [Fact(DisplayName = "FindQueenSource_WhenTwoQueensCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound")]
+        public void FindQueenSource_WhenTwoQueensCanLegallyReachSameSquare_NoDisambiguation_ReturnsMoveNotFound()
+        {
+            // Two white queens on d1 and d5; both can move to d3 (clear file). "Qd3" with no disambiguation → ambiguous.
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+
+            int d1 = 0 * 8 + 3;   // 3
+            int d5 = 4 * 8 + 3;   // 35
+            var board = new BoardPosition();
+            board.PiecePositions["WQ"] = (1UL << d1) | (1UL << d5);
+            var ply = new Ply
+            {
+                RawMove = "Qd3",
+                DestinationRank = 2,
+                DestinationFile = 3,
+                Piece = Constants.Pieces['Q'],
+                Colour = Colour.W
+            };
+
+            int source = sut.FindQueenSource(board, ply, -1, -1);
+
+            Assert.Equal(MoveNotFound, source);
+        }
+
+        [Fact(DisplayName = "FindKnightSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism")]
+        public void FindKnightSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism()
+        {
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+            var board = CreateBoardWithWhiteKnightOn(Squares.G1);
+            var ply = new Ply { RawMove = "Nf3", DestinationRank = 2, DestinationFile = 5, Piece = Constants.Pieces['N'], Colour = Colour.W };
+
+            int first = sut.FindKnightSource(board, ply, -1, -1);
+            int second = sut.FindKnightSource(board, ply, -1, -1);
+            int third = sut.FindKnightSource(board, ply, -1, -1);
+
+            Assert.Equal(first, second);
+            Assert.Equal(second, third);
+            Assert.Equal(Squares.G1, first);
+        }
+
+        [Fact(DisplayName = "FindRookSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism")]
+        public void FindRookSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism()
+        {
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+            var board = CreateBoardWithWhiteRookOn(0); // a1
+            var ply = new Ply { RawMove = "Ra4", DestinationRank = 3, DestinationFile = 0, Piece = Constants.Pieces['R'], Colour = Colour.W };
+
+            int first = sut.FindRookSource(board, ply, -1, -1);
+            int second = sut.FindRookSource(board, ply, -1, -1);
+
+            Assert.Equal(first, second);
+            Assert.Equal(0, first);
+        }
+
+        [Fact(DisplayName = "FindKingSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism")]
+        public void FindKingSource_SameInputInvokedMultipleTimes_ReturnsSameResult_Determinism()
+        {
+            var helper = new BitBoardManipulatorHelper();
+            var manipulator = new BitBoardManipulator(helper);
+            var sourceSquareHelper = new SourceSquareHelper(manipulator);
+            var rankAndFileHelper = new RankAndFileHelper();
+            var legalMoveChecker = new LegalMoveChecker(manipulator);
+            var sut = new PieceSourceFinderService(sourceSquareHelper, rankAndFileHelper, manipulator, legalMoveChecker);
+            var board = CreateBoardWithBlackKingOn(Squares.G8);
+            var ply = new Ply { RawMove = "Kh8", DestinationRank = 7, DestinationFile = 7, Piece = Constants.Pieces['K'], Colour = Colour.B };
+
+            int first = sut.FindKingSource(board, ply);
+            int second = sut.FindKingSource(board, ply);
+
+            Assert.Equal(first, second);
+            Assert.Equal(Squares.G8, first);
+        }
     }
 }

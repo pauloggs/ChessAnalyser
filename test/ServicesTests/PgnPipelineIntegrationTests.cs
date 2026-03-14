@@ -213,5 +213,44 @@ namespace ServicesTests
             const int e4 = 28;
             Assert.True((wnBb & (1UL << e4)) != 0, "After 15.Ne4 (ply 28), a white knight must be on e4 (square 28).");
         }
+
+        [Fact(DisplayName = "FullPipeline_SamePgnParsedAndProcessedTwice_ProducesIdenticalResult_Determinism")]
+        public void FullPipeline_SamePgnParsedAndProcessedTwice_ProducesIdenticalResult_Determinism()
+        {
+            var path = GetIntegrationTestDataPath("checkmate.pgn");
+            if (!File.Exists(path))
+                path = Path.GetFullPath(Path.Combine(AppContext.BaseDirectory, "..", "..", "..", "..", "..", "docs", "checkmate.pgn"));
+            Assert.True(File.Exists(path), "checkmate.pgn not found");
+
+            var (fileHandler, pgnParser, boardPositionService) = BuildPipeline();
+            var pgnFiles = fileHandler.LoadPgnFiles(path);
+            Assert.NotEmpty(pgnFiles);
+
+            var games1 = pgnParser.GetGamesFromPgnFile(pgnFiles[0]);
+            var games2 = pgnParser.GetGamesFromPgnFile(pgnFiles[0]);
+            Assert.Equal(games1.Count, games2.Count);
+
+            boardPositionService.SetBoardPositions(games1);
+            boardPositionService.SetBoardPositions(games2);
+
+            Assert.Equal(games1.Count, games2.Count);
+            for (int i = 0; i < games1.Count; i++)
+            {
+                var g1 = games1[i];
+                var g2 = games2[i];
+                Assert.Equal(g1.GameId, g2.GameId);
+                Assert.Equal(g1.BoardPositions.Count, g2.BoardPositions.Count);
+                foreach (var kv in g1.BoardPositions)
+                {
+                    Assert.True(g2.BoardPositions.TryGetValue(kv.Key, out var pos2), "Same ply index must exist in second run");
+                    var pos1 = kv.Value;
+                    foreach (var key in pos1.PiecePositions.Keys)
+                    {
+                        Assert.True(pos2.PiecePositions.TryGetValue(key, out var bb2), "Same piece key must exist");
+                        Assert.Equal(pos1.PiecePositions[key], bb2);
+                    }
+                }
+            }
+        }
     }
 }
