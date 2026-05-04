@@ -1,6 +1,6 @@
 # ChessAnalyser — Board-position analytics framework (DESIGN)
 
-**Document status:** Stage 1 revised — stakeholder answers to §8 incorporated. **Stage 2:** see [PLAN.md](./PLAN.md).  
+**Document status:** Stage 1 revised — stakeholder answers to §8 incorporated. **Stage 2:** see [PLAN.md](./PLAN.md). **Agent continuity:** [docs/HANDOVER.md](./docs/HANDOVER.md). **Global DPI skill:** `~/.cursor/skills/dpi-workflow/` (name: `dpi-workflow`).  
 **Scope:** Analytics and statistics over **persisted** board positions (bitboards) and related dimensions, after PGN parse/load.  
 **Out of scope for this design:** Changing the PGN parser, ETL orchestration, or persistence schema unless explicitly required for analytics.
 
