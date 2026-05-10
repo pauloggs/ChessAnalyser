@@ -1,9 +1,9 @@
 using Dapper;
+using Interfaces.Analytics;
 using Interfaces.DTO;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
-using System.Data;
 using System.Linq;
 
 namespace Repositories
@@ -52,6 +52,22 @@ namespace Repositories
         Task<List<GameMoveFact>> GetGameMovesForGame(int gameId);
 
         Task<List<GamePositionSummary>> GetGamePositionSummariesForGame(int gameId);
+
+        /// <summary>
+        /// Average white/black material from <c>GamePositionSummary</c> at <paramref name="plyIndex"/>,
+        /// grouped by <c>Game.GameYear</c> (games with null year excluded).
+        /// </summary>
+        Task<IReadOnlyList<MaterialAverageByYearRow>> GetMaterialAveragesByYearAtPlyAsync(
+            AnalyticsQuery query,
+            int plyIndex,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Counts knight moves by <c>ToSquare</c> with optional game filters.
+        /// </summary>
+        Task<IReadOnlyList<KnightDestinationCountRow>> GetKnightDestinationCountsAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
     }
 
     public class ChessRepository : IChessRepository
@@ -401,6 +417,54 @@ namespace Repositories
                 new { GameId = gameId })).ToList();
 
             return list;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<MaterialAverageByYearRow>> GetMaterialAveragesByYearAtPlyAsync(
+            AnalyticsQuery query,
+            int plyIndex,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<MaterialAverageByYearRow>(
+                new CommandDefinition(
+                    SqlStatements.GetMaterialAveragesByYearAtPly,
+                    new
+                    {
+                        PlyIndex = plyIndex,
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        WhitePlayerId = query.WhitePlayerId,
+                        BlackPlayerId = query.BlackPlayerId,
+                        Eco = query.Eco
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<KnightDestinationCountRow>> GetKnightDestinationCountsAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<KnightDestinationCountRow>(
+                new CommandDefinition(
+                    SqlStatements.GetKnightDestinationCounts,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        WhitePlayerId = query.WhitePlayerId,
+                        BlackPlayerId = query.BlackPlayerId,
+                        Eco = query.Eco
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
         }
 
         private static GameMoveFact Map(GameMoveRow r) =>
