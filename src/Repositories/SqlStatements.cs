@@ -55,6 +55,48 @@ namespace Repositories
             INSERT INTO dbo.GameParseError (SourcePgnFileName, GameIndexInFile, GameName, ErrorMessage)
             VALUES (@SourcePgnFileName, @GameIndexInFile, @GameName, @ErrorMessage);
             """;
+
+        public static string DeleteGameMovesForGame =>
+            "DELETE FROM dbo.GameMove WHERE GameId = @GameId;";
+
+        public static string InsertGameMove =>
+            """
+            INSERT INTO dbo.GameMove
+            (GameId, PlyIndex, MovingSide, FromSquare, ToSquare, MovedPiece, CapturedPiece, PromotionPiece, IsCastlingKingside, IsCastlingQueenside)
+            VALUES (@GameId, @PlyIndex, @MovingSide, @FromSquare, @ToSquare, @MovedPiece, @CapturedPiece, @PromotionPiece, @IsCastlingKingside, @IsCastlingQueenside);
+            """;
+
+        public static string GetGameMovesForGame =>
+            """
+            SELECT GameId, PlyIndex, MovingSide, FromSquare, ToSquare, MovedPiece, CapturedPiece, PromotionPiece, IsCastlingKingside, IsCastlingQueenside
+            FROM dbo.GameMove
+            WHERE GameId = @GameId
+            ORDER BY PlyIndex;
+            """;
+
+        public static string DeleteGamePositionSummariesForGame =>
+            "DELETE FROM dbo.GamePositionSummary WHERE GameId = @GameId;";
+
+        public static string InsertGamePositionSummary =>
+            """
+            INSERT INTO dbo.GamePositionSummary
+            (GameId, PlyIndex, WhiteMaterial, BlackMaterial,
+             WhitePawnCount, WhiteKnightCount, WhiteBishopCount, WhiteRookCount, WhiteQueenCount, WhiteKingCount,
+             BlackPawnCount, BlackKnightCount, BlackBishopCount, BlackRookCount, BlackQueenCount, BlackKingCount)
+            VALUES (@GameId, @PlyIndex, @WhiteMaterial, @BlackMaterial,
+             @WhitePawnCount, @WhiteKnightCount, @WhiteBishopCount, @WhiteRookCount, @WhiteQueenCount, @WhiteKingCount,
+             @BlackPawnCount, @BlackKnightCount, @BlackBishopCount, @BlackRookCount, @BlackQueenCount, @BlackKingCount);
+            """;
+
+        public static string GetGamePositionSummariesForGame =>
+            """
+            SELECT GameId, PlyIndex, WhiteMaterial, BlackMaterial,
+             WhitePawnCount, WhiteKnightCount, WhiteBishopCount, WhiteRookCount, WhiteQueenCount, WhiteKingCount,
+             BlackPawnCount, BlackKnightCount, BlackBishopCount, BlackRookCount, BlackQueenCount, BlackKingCount
+            FROM dbo.GamePositionSummary
+            WHERE GameId = @GameId
+            ORDER BY PlyIndex;
+            """;
     }
 }
 

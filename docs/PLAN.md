@@ -239,7 +239,7 @@ Use this as the working backlog for stage 3 (IMPLEMENT).
 5. [x] Implement header/year/ECO mapping from `Tags` during parse or immediately before insert (single place).
 6. [x] Implement `IPieceValues` + `GamePositionSummaryFactory` + tests.
 7. [x] Implement `GameMoveDeriver` + tests.
-8. [ ] Add repository insert/read methods + `SqlStatements` entries + tests (mock or integration).
+8. [x] Add repository insert/read methods + `SqlStatements` entries + tests (mock or integration).
 9. [ ] Implement `IAnalyticsMaterializationService`; wire into `PersistenceService` / ETL path after board insert.
 10. [ ] Implement `IMetricRegistry` + two reference metric executors + tests.
 11. [ ] Implement optional `IAnalyticsBackfillService` + CLI or admin entry point (could be a simple `dotnet run` mode on `Analyser` or a one-off console flag — decide at implement time).

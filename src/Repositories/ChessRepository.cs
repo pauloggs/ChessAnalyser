@@ -38,6 +38,20 @@ namespace Repositories
         /// Inserts a parse error record for diagnostics. Does not reference Game (failed games are not inserted).
         /// </summary>
         Task InsertGameParseError(GameParseError error);
+
+        /// <summary>
+        /// Replaces all <c>dbo.GameMove</c> rows for a game (delete then insert). Pass an empty list to clear only.
+        /// </summary>
+        Task ReplaceGameMovesForGame(int gameId, IReadOnlyList<GameMoveFact> rows);
+
+        /// <summary>
+        /// Replaces all <c>dbo.GamePositionSummary</c> rows for a game (delete then insert).
+        /// </summary>
+        Task ReplaceGamePositionSummariesForGame(int gameId, IReadOnlyList<GamePositionSummary> rows);
+
+        Task<List<GameMoveFact>> GetGameMovesForGame(int gameId);
+
+        Task<List<GamePositionSummary>> GetGamePositionSummariesForGame(int gameId);
     }
 
     public class ChessRepository : IChessRepository
@@ -273,6 +287,158 @@ namespace Repositories
                     error.GameName,
                     error.ErrorMessage
                 });
+        }
+
+        /// <inheritdoc />
+        public async Task ReplaceGameMovesForGame(int gameId, IReadOnlyList<GameMoveFact> rows)
+        {
+            rows ??= Array.Empty<GameMoveFact>();
+
+            using var connection = GetOpenConnection();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                await connection.ExecuteAsync(
+                    SqlStatements.DeleteGameMovesForGame,
+                    new { GameId = gameId },
+                    transaction);
+
+                foreach (var r in rows.OrderBy(x => x.PlyIndex))
+                {
+                    await connection.ExecuteAsync(
+                        SqlStatements.InsertGameMove,
+                        new
+                        {
+                            GameId = gameId,
+                            r.PlyIndex,
+                            MovingSide = r.MovingSide.ToString(),
+                            r.FromSquare,
+                            r.ToSquare,
+                            MovedPiece = r.MovedPiece.ToString(),
+                            CapturedPiece = r.CapturedPiece?.ToString(),
+                            PromotionPiece = r.PromotionPiece?.ToString(),
+                            r.IsCastlingKingside,
+                            r.IsCastlingQueenside
+                        },
+                        transaction);
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task ReplaceGamePositionSummariesForGame(int gameId, IReadOnlyList<GamePositionSummary> rows)
+        {
+            rows ??= Array.Empty<GamePositionSummary>();
+
+            using var connection = GetOpenConnection();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                await connection.ExecuteAsync(
+                    SqlStatements.DeleteGamePositionSummariesForGame,
+                    new { GameId = gameId },
+                    transaction);
+
+                foreach (var r in rows.OrderBy(x => x.PlyIndex))
+                {
+                    await connection.ExecuteAsync(
+                        SqlStatements.InsertGamePositionSummary,
+                        new
+                        {
+                            GameId = gameId,
+                            r.PlyIndex,
+                            r.WhiteMaterial,
+                            r.BlackMaterial,
+                            r.WhitePawnCount,
+                            r.WhiteKnightCount,
+                            r.WhiteBishopCount,
+                            r.WhiteRookCount,
+                            r.WhiteQueenCount,
+                            r.WhiteKingCount,
+                            r.BlackPawnCount,
+                            r.BlackKnightCount,
+                            r.BlackBishopCount,
+                            r.BlackRookCount,
+                            r.BlackQueenCount,
+                            r.BlackKingCount
+                        },
+                        transaction);
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<List<GameMoveFact>> GetGameMovesForGame(int gameId)
+        {
+            using var connection = GetOpenConnection();
+            var raw = (await connection.QueryAsync<GameMoveRow>(
+                SqlStatements.GetGameMovesForGame,
+                new { GameId = gameId })).ToList();
+
+            return raw.Select(Map).ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<List<GamePositionSummary>> GetGamePositionSummariesForGame(int gameId)
+        {
+            using var connection = GetOpenConnection();
+            var list = (await connection.QueryAsync<GamePositionSummary>(
+                SqlStatements.GetGamePositionSummariesForGame,
+                new { GameId = gameId })).ToList();
+
+            return list;
+        }
+
+        private static GameMoveFact Map(GameMoveRow r) =>
+            new()
+            {
+                GameId = r.GameId,
+                PlyIndex = r.PlyIndex,
+                MovingSide = string.IsNullOrEmpty(r.MovingSide) ? '\0' : r.MovingSide[0],
+                FromSquare = r.FromSquare,
+                ToSquare = r.ToSquare,
+                MovedPiece = string.IsNullOrEmpty(r.MovedPiece) ? '\0' : r.MovedPiece[0],
+                CapturedPiece = string.IsNullOrEmpty(r.CapturedPiece) ? null : r.CapturedPiece[0],
+                PromotionPiece = string.IsNullOrEmpty(r.PromotionPiece) ? null : r.PromotionPiece[0],
+                IsCastlingKingside = r.IsCastlingKingside,
+                IsCastlingQueenside = r.IsCastlingQueenside
+            };
+
+        private sealed class GameMoveRow
+        {
+            public int GameId { get; set; }
+
+            public int PlyIndex { get; set; }
+
+            public string MovingSide { get; set; } = "";
+
+            public byte FromSquare { get; set; }
+
+            public byte ToSquare { get; set; }
+
+            public string MovedPiece { get; set; } = "";
+
+            public string? CapturedPiece { get; set; }
+
+            public string? PromotionPiece { get; set; }
+
+            public bool IsCastlingKingside { get; set; }
+
+            public bool IsCastlingQueenside { get; set; }
         }
     }
 }
