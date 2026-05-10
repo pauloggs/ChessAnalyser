@@ -9,7 +9,7 @@
 - **PGN parsing** — Games, headers (tags), SAN plies, and error capture for bad or incomplete games.
 - **Board replay** — Derives `BoardPosition` snapshots per ply (including the initial position at `PlyIndex -1`).
 - **Persistence** — `Game`, `BoardPosition`, `Player`, and parse-error tables via Dapper.
-- **Planned (see docs)** — Board-position **analytics** framework: derived **move** facts, rollups, and internal metrics APIs, specified in [DESIGN.md](./DESIGN.md) and [PLAN.md](./PLAN.md) (implementation checklist not yet completed).
+- **Planned (see docs)** — Board-position **analytics** framework: derived **move** facts, rollups, and internal metrics APIs, specified in [docs/DESIGN.md](docs/DESIGN.md) and [docs/PLAN.md](docs/PLAN.md) (implementation checklist not yet completed).
 
 ---
 
@@ -87,9 +87,9 @@ On every **pull request** and on **pushes** to `main` or `master`, [.github/work
 
 | Document | Purpose |
 |----------|---------|
-| [DESIGN.md](./DESIGN.md) | Requirements and locked decisions for **board-position analytics** (facts, dimensions, C# vs SQL, rollups). |
-| [PLAN.md](./PLAN.md) | Implementation plan, migrations outline, and **§11 checklist** for analytics work. |
-| [docs/HANDOVER.md](docs/HANDOVER.md) | Agent/human handover: where analytics implementation left off. |
+| [docs/DESIGN.md](docs/DESIGN.md) | Requirements and locked decisions for **board-position analytics** (facts, dimensions, C# vs SQL, rollups). |
+| [docs/PLAN.md](docs/PLAN.md) | Implementation plan, migrations outline, and **§11 checklist** for analytics work. |
+| [docs/AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) | Session handoff for agents: current progress and **recommended next step**. |
 | [docs/](docs/) | Additional notes (coverage gaps, audits, reviews). |
 
 **Process:** larger features follow **Design → Plan → Implement (DPI)** with most effort on design and plan. A personal Cursor skill `dpi-workflow` can enforce the same habit across repos (`~/.cursor/skills/dpi-workflow/`).
@@ -100,7 +100,7 @@ On every **pull request** and on **pushes** to `main` or `master`, [.github/work
 
 - Prefer **parameterized** SQL (existing pattern in `Repositories`).
 - New database changes: add numbered scripts under `src/Migrations/Scripts/` and document them in `src/Migrations/README.md`.
-- For analytics work, align with [PLAN.md](./PLAN.md) before changing schema or ETL in ways that conflict with [DESIGN.md](./DESIGN.md).
+- For analytics work, align with [docs/PLAN.md](docs/PLAN.md) before changing schema or ETL in ways that conflict with [docs/DESIGN.md](docs/DESIGN.md).
 
 ---
 

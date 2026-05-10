@@ -1,5 +1,6 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
+**Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
 **Document status:** Stage 2 of DPI — implementation guide.  
 **Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
@@ -223,7 +224,7 @@ Per game (unchanged high-level flow until persistence):
 ## 10. Documentation updates (same PR wave as implementation)
 
 - **`src/Migrations/README.md`:** add rows for scripts `006`–`008` and describe `GameMove` / `GamePositionSummary`.
-- **`DESIGN.md`:** only if decisions drift; otherwise no change.
+- **`docs/DESIGN.md`:** only if decisions drift; otherwise no change.
 
 ---
 
