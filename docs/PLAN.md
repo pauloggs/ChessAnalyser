@@ -240,7 +240,7 @@ Use this as the working backlog for stage 3 (IMPLEMENT).
 6. [x] Implement `IPieceValues` + `GamePositionSummaryFactory` + tests.
 7. [x] Implement `GameMoveDeriver` + tests.
 8. [x] Add repository insert/read methods + `SqlStatements` entries + tests (mock or integration).
-9. [ ] Implement `IAnalyticsMaterializationService`; wire into `PersistenceService` / ETL path after board insert.
+9. [x] Implement `IAnalyticsMaterializationService`; wire into `PersistenceService` / ETL path after board insert.
 10. [ ] Implement `IMetricRegistry` + two reference metric executors + tests.
 11. [ ] Implement optional `IAnalyticsBackfillService` + CLI or admin entry point (could be a simple `dotnet run` mode on `Analyser` or a one-off console flag — decide at implement time).
 12. [ ] Performance smoke: note approximate rows/sec for materialization on your machine (DESIGN NFR-3).

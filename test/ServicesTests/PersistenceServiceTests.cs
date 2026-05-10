@@ -1,3 +1,4 @@
+using Interfaces.Analytics;
 using Interfaces.DTO;
 using Moq;
 using Repositories;
@@ -11,8 +12,9 @@ namespace ServicesTests
         public async Task GetUnprocessedGames_WhenNoProcessedIds_ReturnsAllGames()
         {
             var repoMock = new Mock<IChessRepository>();
+            var matMock = new Mock<IAnalyticsMaterializationService>();
             repoMock.Setup(r => r.GetProcessedGameIds()).ReturnsAsync(new List<string>());
-            var sut = new PersistenceService(repoMock.Object);
+            var sut = new PersistenceService(repoMock.Object, matMock.Object);
             var games = new List<Game>
             {
                 new Game { GameId = "id1", Name = "G1", Plies = new Dictionary<int, Ply>() },
@@ -28,8 +30,9 @@ namespace ServicesTests
         public async Task GetUnprocessedGames_WhenSomeProcessed_FiltersThemOut()
         {
             var repoMock = new Mock<IChessRepository>();
+            var matMock = new Mock<IAnalyticsMaterializationService>();
             repoMock.Setup(r => r.GetProcessedGameIds()).ReturnsAsync(new List<string> { "id1" });
-            var sut = new PersistenceService(repoMock.Object);
+            var sut = new PersistenceService(repoMock.Object, matMock.Object);
             var games = new List<Game>
             {
                 new Game { GameId = "id1", Name = "G1", Plies = new Dictionary<int, Ply>() },
@@ -48,7 +51,10 @@ namespace ServicesTests
             var repoMock = new Mock<IChessRepository>();
             repoMock.Setup(r => r.InsertGame(It.IsAny<Game>())).ReturnsAsync(42);
             repoMock.Setup(r => r.InsertBoardPositions(It.IsAny<Game>(), It.IsAny<int>())).Returns(Task.CompletedTask);
-            var sut = new PersistenceService(repoMock.Object);
+            var matMock = new Mock<IAnalyticsMaterializationService>();
+            matMock.Setup(m => m.MaterializeAfterGamePersistedAsync(It.IsAny<Game>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+                .Returns(Task.CompletedTask);
+            var sut = new PersistenceService(repoMock.Object, matMock.Object);
             var games = new List<Game>
             {
                 new Game { GameId = "id1", Name = "G1", Plies = new Dictionary<int, Ply>(), BoardPositions = new Dictionary<int, BoardPosition>() },
@@ -59,6 +65,7 @@ namespace ServicesTests
 
             repoMock.Verify(r => r.InsertGame(It.IsAny<Game>()), Times.Exactly(2));
             repoMock.Verify(r => r.InsertBoardPositions(It.IsAny<Game>(), 42), Times.Exactly(2));
+            matMock.Verify(m => m.MaterializeAfterGamePersistedAsync(It.IsAny<Game>(), 42, It.IsAny<CancellationToken>()), Times.Exactly(2));
         }
     }
 }
