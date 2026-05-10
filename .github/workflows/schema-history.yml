@@ -1,0 +1,130 @@
+# Applies migrations to an ephemeral SQL Server, re-exports schema snapshots, and fails if
+# src/Migrations/History/current drifts from what is committed (same idea as export-db-history.ps1, Linux/CI-friendly).
+# Every PR runs a cheap path filter first; the SQL service container runs only when src/Migrations/Scripts/** changes
+# (or on workflow_dispatch), so this workflow can be a required check without stalling unrelated PRs.
+name: Schema history
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [main, master]
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  detect-migration-changes:
+    name: Detect migration script changes
+    runs-on: ubuntu-latest
+    outputs:
+      migrations: ${{ steps.pick.outputs.migrations }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Filter paths
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            migrations:
+              - 'src/Migrations/Scripts/**'
+
+      - name: Decide whether to run SQL verification
+        id: pick
+        run: |
+          if [ "${{ github.event_name }}" = "workflow_dispatch" ]; then
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+            echo "Manual run: will verify schema history."
+          elif [ "${{ steps.filter.outputs.migrations }}" = "true" ]; then
+            echo "migrations=true" >> "$GITHUB_OUTPUT"
+            echo "Migration scripts changed: will verify schema history."
+          else
+            echo "migrations=false" >> "$GITHUB_OUTPUT"
+            echo "No migration script changes: skipping SQL verification."
+          fi
+
+  verify-schema-history:
+    name: Verify schema history matches migrations
+    needs: detect-migration-changes
+    if: needs.detect-migration-changes.outputs.migrations == 'true'
+    runs-on: ubuntu-22.04
+    env:
+      SA_PASSWORD: 'Ci_Schema_Hist_Test_1!'
+      CHESS_CONNECTION_STRING: 'Server=127.0.0.1,1433;Database=Chess;User Id=sa;Password=Ci_Schema_Hist_Test_1!;TrustServerCertificate=True;'
+    services:
+      sqlserver:
+        image: mcr.microsoft.com/mssql/server:2022-latest
+        ports:
+          - 1433:1433
+        env:
+          ACCEPT_EULA: Y
+          MSSQL_SA_PASSWORD: 'Ci_Schema_Hist_Test_1!'
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install sqlcmd (mssql-tools18)
+        run: |
+          curl -fsSL https://packages.microsoft.com/keys/microsoft.asc | sudo gpg --dearmor -o /usr/share/keyrings/microsoft-prod.gpg
+          echo "deb [arch=amd64 signed-by=/usr/share/keyrings/microsoft-prod.gpg] https://packages.microsoft.com/ubuntu/22.04/prod jammy main" | sudo tee /etc/apt/sources.list.d/microsoft-prod.list
+          sudo apt-get update
+          sudo ACCEPT_EULA=Y apt-get install -y mssql-tools18 unixodbc-dev
+          echo "/opt/mssql-tools18/bin" >> "$GITHUB_PATH"
+
+      - name: Wait for SQL Server
+        run: |
+          set -e
+          for i in $(seq 1 60); do
+            if sqlcmd -S 127.0.0.1,1433 -U sa -P "$SA_PASSWORD" -C -Q "SELECT 1" >/dev/null 2>&1; then
+              echo "SQL Server is ready."
+              exit 0
+            fi
+            echo "Waiting for SQL Server ($i/60)..."
+            sleep 2
+          done
+          echo "SQL Server did not become ready in time."
+          exit 1
+
+      - name: Create Chess database
+        run: |
+          sqlcmd -S 127.0.0.1,1433 -U sa -P "$SA_PASSWORD" -C -Q "IF NOT EXISTS (SELECT 1 FROM sys.databases WHERE name = N'Chess') CREATE DATABASE Chess;"
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: 8.x
+
+      - name: Restore
+        run: dotnet restore ChessAnalyser.sln
+
+      - name: Build migrations and SchemaHistoryExporter
+        run: |
+          dotnet build src/Migrations/Migrations.csproj -c Release --no-restore
+          dotnet build src/SchemaHistoryExporter/SchemaHistoryExporter.csproj -c Release --no-restore
+
+      - name: Apply migrations
+        env:
+          ConnectionStrings__ChessConnection: ${{ env.CHESS_CONNECTION_STRING }}
+        run: dotnet run --project src/Migrations/Migrations.csproj -c Release --no-build
+
+      - name: Export schema history
+        run: |
+          dotnet run --project src/SchemaHistoryExporter/SchemaHistoryExporter.csproj -c Release --no-build -- \
+            --connection-string "${CHESS_CONNECTION_STRING}" \
+            --repo-root "${GITHUB_WORKSPACE}"
+
+      - name: Verify no drift in History/current
+        run: |
+          if ! git diff --exit-code -- src/Migrations/History/current; then
+            echo "::error::Schema history is out of date. Run tools/export-db-history.ps1 or SchemaHistoryExporter, then commit src/Migrations/History/current."
+            git diff -- src/Migrations/History/current
+            exit 1
+          fi
