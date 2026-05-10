@@ -25,6 +25,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\..\src\Analyser\Analyser.csproj" />
+    <ProjectReference Include="..\..\src\Interfaces\Interfaces.csproj" />
   </ItemGroup>
 
 </Project>

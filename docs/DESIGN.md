@@ -48,7 +48,7 @@ The framework should make it **easy to add new metrics** and **efficient to run 
 | ID | Requirement | Notes |
 |----|-------------|--------|
 | F-8 | **Immutability of primary facts** | **Query** execution must not mutate `Game`, `BoardPosition`, `Player`, or other **primary** ingest facts. **Rollup / move-fact** tables may be written only by **explicit batch jobs** (post-load or on-demand), not as a side effect of ad-hoc reads. |
-| F-9 | **Programmatic API** | **Internal only (v1):** C# services + tests; strongly-typed **metric + filters + group-by**; no REST/OpenAPI requirement for v1. |
+| F-9 | **Programmatic API** | **Primary:** strongly-typed **metric + filters** in C# (`IMetricRegistry`, `AnalyticsQuery`, `AnalyticsTableResult`) for services and tests. **Optional:** the `Analyser` host exposes read-only JSON for **registered metrics only** under `/api/analytics/metrics` (PLAN §12); treat as **integrator / dev** surface until authentication and rate limits are applied. |
 | F-10 | **Rollups / secondary facts** | **Required direction of travel:** summary and rollup tables (and the **derived move** fact table) populated **after load** (or on demand) so reports do not always scan raw bitboards. Exact tables belong in PLAN.md. |
 
 ### 3.3 Dimensions (initial catalogue)
@@ -142,7 +142,7 @@ Detailed interfaces belong in PLAN.md; this section captures the **design intent
 | **Q4** | “Material” / board metrics | Metrics over **state on the board** at a ply: total values, counts by piece type, splits by White/Black, combinable with dimensions (e.g. player, ply, year when present). “Material gained since start” is **out of scope** unless later added as a **separate** metric. |
 | **Q5** | Rollups | **Yes** — summary/rollup tables (and derived move storage) are **in scope**. |
 | **Q6** | SQL vs C# | **Chess and analytics logic in C#** (see §8.5). |
-| **Q7** | API | **Internal only** for v1 (C# + tests); no REST/OpenAPI requirement. |
+| **Q7** | API | **Primary:** internal C# contracts for v1. **Supplementary:** small REST JSON surface on `Analyser` for metric discovery and execution is **in scope** as an optional consumer path (not a replacement for the internal API). |
 | **Q8** | `Game` schema | **Yes** — **explicit columns** on `Game` for year, ECO, players, etc., for indexing and filters. |
 
 ### 8.5 SQL vs C# — design stance (Q6)

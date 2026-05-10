@@ -1,8 +1,8 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 active** (§12 — metrics HTTP API).  
-**Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change. **Note:** DESIGN [F-9](./DESIGN.md) / Q7 currently describe metrics as internal-only for v1; adopting §12 implies a **deliberate** scope extension — update DESIGN in the same PR wave as the API or immediately after so traceability stays true.
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment).  
+**Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
 ---
 
@@ -274,11 +274,11 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 ### 12.2 Implementation checklist (ordered)
 
-1. [ ] Add API request/response DTOs (Analyser or small shared project — avoid pulling web types into `Interfaces` unless you already do).
-2. [ ] Add controller (e.g. **`AnalyticsMetricsController`**) calling **`IMetricRegistry.ExecuteAsync`** and mapping results.
-3. [ ] Add discovery endpoint listing keys from **`IMetricRegistry`**.
-4. [ ] Add **`ControllerTests`** (or existing test host pattern) with **`IMetricRegistry`** mocked — assert status codes and JSON shape for at least one known key.
-5. [ ] Update **DESIGN.md** F-9 / Q7 to reflect “HTTP available for metrics” (or equivalent wording) in the **same** or **immediately following** PR.
+1. [x] Add API request/response DTOs (Analyser or small shared project — avoid pulling web types into `Interfaces` unless you already do).
+2. [x] Add controller (e.g. **`AnalyticsMetricsController`**) calling **`IMetricRegistry.ExecuteAsync`** and mapping results.
+3. [x] Add discovery endpoint listing keys from **`IMetricRegistry`**.
+4. [x] Add **`ControllerTests`** (or existing test host pattern) with **`IMetricRegistry`** mocked — assert status codes and JSON shape for at least one known key.
+5. [x] Update **DESIGN.md** F-9 / Q7 to reflect “HTTP available for metrics” (or equivalent wording) in the **same** or **immediately following** PR.
 
 ### 12.3 Testing additions
 
