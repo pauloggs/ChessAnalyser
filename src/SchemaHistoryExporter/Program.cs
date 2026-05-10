@@ -8,9 +8,9 @@ namespace SchemaHistoryExporter;
 
 internal static class Program
 {
-    private static readonly Regex ScriptDateHeaderRegex = new(
+    private static readonly Regex ScriptDateHeaderLineRegex = new(
         @"^\uFEFF?/\*{6}\s+Object:\s+.*?Script Date:.*?\*{6}/\s*$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
 
     public static async Task<int> Main(string[] args)
     {
@@ -168,10 +168,26 @@ internal static class Program
                 sb.AppendLine(line);
             }
 
-            var normalized = ScriptDateHeaderRegex.Replace(sb.ToString(), string.Empty)
+            var allLines = sb.ToString()
                 .Replace("\r\n", "\n")
-                .TrimEnd('\n', '\r')
-                .Replace("\n", Environment.NewLine);
+                .Replace("\r", "\n")
+                .Split('\n');
+
+            var keptLines = new List<string>(allLines.Length);
+            foreach (var raw in allLines)
+            {
+                if (ScriptDateHeaderLineRegex.IsMatch(raw))
+                    continue;
+                keptLines.Add(raw);
+            }
+
+            while (keptLines.Count > 0 && string.IsNullOrWhiteSpace(keptLines[^1]))
+                keptLines.RemoveAt(keptLines.Count - 1);
+
+            while (keptLines.Count > 0 && string.IsNullOrWhiteSpace(keptLines[0]))
+                keptLines.RemoveAt(0);
+
+            var normalized = string.Join(Environment.NewLine, keptLines);
 
             var body = normalized + Environment.NewLine;
             var path = Path.Combine(groupDir, SafeFileName(schema, name));
