@@ -97,6 +97,45 @@ namespace Repositories
             WHERE GameId = @GameId
             ORDER BY PlyIndex;
             """;
+
+        /// <summary>
+        /// Year-based games only (<c>GameYear IS NOT NULL</c>); averages material at one ply (PLAN §5.3.4).
+        /// </summary>
+        public static string GetMaterialAveragesByYearAtPly =>
+            """
+            SELECT g.GameYear AS GameYear,
+                   AVG(CAST(s.WhiteMaterial AS FLOAT)) AS AvgWhiteMaterial,
+                   AVG(CAST(s.BlackMaterial AS FLOAT)) AS AvgBlackMaterial,
+                   COUNT(*) AS GameCount
+            FROM dbo.Game g
+            INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+            WHERE g.GameYear IS NOT NULL
+              AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
+              AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
+              AND (@WhitePlayerId IS NULL OR g.WhitePlayerId = @WhitePlayerId)
+              AND (@BlackPlayerId IS NULL OR g.BlackPlayerId = @BlackPlayerId)
+              AND (@Eco IS NULL OR g.Eco = @Eco)
+            GROUP BY g.GameYear
+            ORDER BY g.GameYear;
+            """;
+
+        /// <summary>
+        /// Knight half-moves grouped by destination square; optional filters on <c>Game</c> (PLAN §5.3.4).
+        /// </summary>
+        public static string GetKnightDestinationCounts =>
+            """
+            SELECT m.ToSquare AS ToSquare, COUNT(*) AS MoveCount
+            FROM dbo.GameMove m
+            INNER JOIN dbo.Game g ON g.Id = m.GameId
+            WHERE m.MovedPiece = 'N'
+              AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+              AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+              AND (@WhitePlayerId IS NULL OR g.WhitePlayerId = @WhitePlayerId)
+              AND (@BlackPlayerId IS NULL OR g.BlackPlayerId = @BlackPlayerId)
+              AND (@Eco IS NULL OR g.Eco = @Eco)
+            GROUP BY m.ToSquare
+            ORDER BY MoveCount DESC, m.ToSquare;
+            """;
     }
 }
 
