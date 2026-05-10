@@ -48,6 +48,8 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 `src/Migrations/History/current/` contains a generated snapshot of current SQL object definitions (tables, views, procedures, functions, and user-defined table types).
 
+**CI:** the “Schema history” GitHub workflow uses `SchemaHistoryExporter`; when you refresh `History/current` for a PR, regenerate with that project too so output matches CI.
+
 Generate/update it from repo root:
 
 ```powershell
