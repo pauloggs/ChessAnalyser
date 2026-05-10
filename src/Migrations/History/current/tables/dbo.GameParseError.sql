@@ -1,4 +1,4 @@
-﻿/****** Object:  Table [dbo].[GameParseError]    Script Date: 10/05/2026 12:09:39 ******/
+﻿/****** Object:  Table [dbo].[GameParseError]    Script Date: 10/05/2026 16:17:21 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[GameParseError](
