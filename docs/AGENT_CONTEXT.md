@@ -30,9 +30,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** Pick the next product slice outside §11 (e.g. expose metrics via API, add metrics, or operational dashboards). Optionally record a fresh **games/s** line from `--profile-materialization` on your hardware in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md).
+**Do next:** [PLAN.md §12](./PLAN.md) **Stage 4** — analytics metrics HTTP API on `Analyser` (`IMetricRegistry`, DTOs, controller tests). Optionally record a fresh **games/s** line from `--profile-materialization` in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md).
 
-**Why this order:** Schema, ETL materialization, metrics, backfill, perf smoke, and Migrations README are aligned with DESIGN/PLAN for v1 analytics groundwork.
+**Why this order:** §11 is closed; §12 is the active checklist. When the API lands, update **DESIGN.md** F-9 / Q7 in the same or follow-up PR (PLAN header note).
 
 ---
 

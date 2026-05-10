@@ -1,8 +1,8 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 of DPI — implementation guide.  
-**Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 active** (§12 — metrics HTTP API).  
+**Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change. **Note:** DESIGN [F-9](./DESIGN.md) / Q7 currently describe metrics as internal-only for v1; adopting §12 implies a **deliberate** scope extension — update DESIGN in the same PR wave as the API or immediately after so traceability stays true.
 
 ---
 
@@ -15,6 +15,7 @@
 | F-1 … F-10, NFR-* | §5–§9 |
 | §8 Q3 (year omitted if unknown) | §5.1, §7.2 |
 | §8.5 C# domain logic; SQL for access / trivial aggregates | §5.4, §8 |
+| F-9 / Q7 (programmatic access) | §12 (Stage 4 — HTTP surface for existing registry) |
 
 ---
 
@@ -246,24 +247,64 @@ Use this as the working backlog for stage 3 (IMPLEMENT).
 12. [x] Performance smoke: note approximate rows/sec for materialization on your machine (DESIGN NFR-3).
 13. [x] Update `Migrations/README.md`.
 
+### 11.1 Stage 3 closure
+
+Items **1–13** are **complete** in source for the board-position analytics groundwork: migrations through `010`, ETL materialization, **`IMetricRegistry`** and reference executors, backfill and perf CLIs on `Analyser`, and `Migrations/README.md` / [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md). **§11 is frozen** as the historical implementation checklist.
+
+**Active backlog:** use **§12** below. For session handoff text, prefer [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).
+
 ---
 
-## 12. Risks and mitigations
+## 12. Stage 4 — Analytics metrics HTTP API (`Analyser`)
+
+**Goal:** Expose the existing **`IMetricRegistry`** (and **`AnalyticsQuery`** filters) over HTTP so external clients, UI, and integration tests can run registered metrics without referencing `Services` assemblies directly.
+
+**Non-goals for the first API slice:** full generic “analytics query language”, ad-hoc SQL from clients, or bitboard exposure over HTTP (keep tabular scalar results only).
+
+### 12.1 API shape (v1 proposal — adjust names to match repo conventions)
+
+| Concern | Decision |
+|---------|----------|
+| Execute | **`POST /api/analytics/metrics/execute`** (or `…/run`) with body `{ "metricKey": "…", "query": { … } }` mapping to **`AnalyticsQuery`** (`MinGameYear`, `MaxGameYear`, `WhitePlayerId`, `BlackPlayerId`, `Eco`, `SummaryPlyIndex`). |
+| Discovery | **`GET /api/analytics/metrics`** returning **`IMetricRegistry.MetricKeys`** (and optional short descriptions from a static map or XML comments). |
+| Response | JSON projection of **`AnalyticsTableResult`**: `columnNames` + `rows` (array of arrays, or array of objects keyed by column — pick one and document). |
+| Errors | **404** or **400** for unknown **`metricKey`**; **400** for malformed filters. |
+| Auth | **Out of scope for first slice** unless the repo already has a standard middleware — document “open in dev; lock down before production” in controller remarks or README. |
+| OpenAPI | Reuse Swashbuckle; ensure DTOs use public properties for usable schemas. |
+
+### 12.2 Implementation checklist (ordered)
+
+1. [ ] Add API request/response DTOs (Analyser or small shared project — avoid pulling web types into `Interfaces` unless you already do).
+2. [ ] Add controller (e.g. **`AnalyticsMetricsController`**) calling **`IMetricRegistry.ExecuteAsync`** and mapping results.
+3. [ ] Add discovery endpoint listing keys from **`IMetricRegistry`**.
+4. [ ] Add **`ControllerTests`** (or existing test host pattern) with **`IMetricRegistry`** mocked — assert status codes and JSON shape for at least one known key.
+5. [ ] Update **DESIGN.md** F-9 / Q7 to reflect “HTTP available for metrics” (or equivalent wording) in the **same** or **immediately following** PR.
+
+### 12.3 Testing additions
+
+| Layer | Tests |
+|-------|-------|
+| API | Happy path + unknown metric key + optional filter passthrough (mock registry). |
+
+---
+
+## 13. Risks and mitigations
 
 | Risk | Mitigation |
 |------|------------|
 | Move derivation fails on edge games | Tests + soft-fail (skip row, log); optional `GameMoveQuality` column later. |
 | Large DB backfill time | Process game-by-game; optional parallelism with cap. |
 | Transaction size for huge games | Batch inserts inside per-game transaction or chunk by N plies (rare games > 500 plies). |
+| Unauthenticated metrics HTTP endpoint | Rate-limit, auth, or network restriction before production; document dev default in §12. |
 
 ---
 
-## 13. Out of scope for first implementation slice
+## 14. Out of scope (product backlog — not §12 v1)
 
-- REST/OpenAPI (DESIGN F-9).
 - “Material gained since opening” as a separate metric (DESIGN §9).
 - Unknown-year bucket (DESIGN §9).
+- Arbitrary SQL / raw table dumps from HTTP clients (keep **registered metrics + parameterized repository reads** only).
 
 ---
 
-*End of PLAN.md. Stage 3: implement against §11 checklist with continuous alignment to [DESIGN.md](./DESIGN.md).*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 follows **§12** with continuous alignment to [DESIGN.md](./DESIGN.md).*
