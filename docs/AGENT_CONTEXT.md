@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-05-10 (PLAN §12 Stage 4: metrics HTTP API on `Analyser`; DESIGN F-9 / Q7; `AnalyticsMetricsControllerTests`).
+**Last updated:** 2026-05-10 (PLAN **§12.4**: metrics extension prioritized; HTTP auth **deferred** for local-only use — see [PLAN.md §12.4](./PLAN.md).)
 
 ---
 
@@ -13,7 +13,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 | File | Role |
 |------|------|
 | [DESIGN.md](./DESIGN.md) | Requirements and locked decisions (facts, dimensions, C# vs SQL, rollups, year rules). |
-| [PLAN.md](./PLAN.md) | Implementation plan; **§11** (closed) + **§12** (metrics HTTP API). |
+| [PLAN.md](./PLAN.md) | Implementation plan; **§11** (closed) + **§12** (metrics HTTP API) + **§12.4** (current suggested slice). |
 | **AGENT_CONTEXT.md** (this file) | Current progress and **recommended next small step**. |
 
 **Global process skill:** `~/.cursor/skills/dpi-workflow/` (`dpi-workflow`) — 80/20 DESIGN+PLAN vs IMPLEMENT; applies in any repo.
@@ -24,15 +24,15 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
-- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). Further work is product-driven (auth, more metrics, UI).
+- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4). Further work is product-driven (**more metrics + catalog**, UI, or deployment hardening if plans change).
 
 ---
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** Harden **`AnalyticsMetricsController`** for production (authentication, rate limits, or reverse-proxy only) if the host is internet-facing. Optionally add more **`IMetricExecutor`** registrations and extend **`MetricCatalog`** descriptions. Record a fresh **games/s** line in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) when you change deriver/summary hot paths.
+**Do next:** Follow **[PLAN.md §12.4](./PLAN.md):** add **`IMetricExecutor`** implementations you care about, register them in **`IMetricRegistry`**, and improve **`GET /api/analytics/metrics`** discovery text (descriptions / hints). Add executor + API tests per new metric. Optionally refresh [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) if you change deriver or summary hot paths.
 
-**Why this order:** §12 checklist is complete; remaining risk is unauthenticated HTTP (PLAN §13).
+**Do not prioritize yet:** Dedicated HTTP **auth / rate limits** for `AnalyticsMetricsController` — **out of scope** until there is a **deployment or network exposure** plan (then treat as blocking; update PLAN §12.1 / §13). Optional hygiene: bind the dev host to **localhost** only.
 
 ---
 
@@ -61,7 +61,7 @@ Sync this subsection when items complete (or rely on `PLAN.md` checkboxes only �
 
 **CLI (Analyser, no web host):** `--backfill-analytics` (optional `--max-games N`); `--profile-materialization` (optional `--iterations N`, default 5000). Both exit after console output.
 
-**HTTP (Analyser web host):** `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute` — **no auth in v1 slice**; see controller remarks.
+**HTTP (Analyser web host):** `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute` — **no auth** while local-only; **defer** auth/rate limits until deployment (PLAN §12.4 / §13); see controller remarks.
 
 ---
 
