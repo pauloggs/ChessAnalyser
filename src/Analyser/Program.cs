@@ -23,13 +23,17 @@ builder.Services.AddSwaggerGen(options =>
     {
         Version = "v1",
         Title = "Chess Analyser",
-        Description = "An ASP.NET Core Web API for parsing and analysing PGN files.",
+        Description =
+            "An ASP.NET Core Web API for parsing and analysing PGN files. " +
+            "Analytics metrics: Swagger group AnalyticsMetrics; routes GET /api/analytics/metrics and POST /api/analytics/metrics/execute. " +
+            "This host binds http://localhost:5000 and https://localhost:5001 via ConfigureKestrel (launch profiles are aligned to these ports).",
         TermsOfService = new Uri("https://example.com/terms")
     });
 
-    // using System.Reflection;
     var xmlFilename = $"{Assembly.GetExecutingAssembly().GetName().Name}.xml";
-    options.IncludeXmlComments(Path.Combine(AppContext.BaseDirectory, xmlFilename));
+    var xmlPath = Path.Combine(AppContext.BaseDirectory, xmlFilename);
+    if (File.Exists(xmlPath))
+        options.IncludeXmlComments(xmlPath);
 });
 
 // Use this more permissive policy for debugging to rule out port issues:
