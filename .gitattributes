@@ -1,0 +1,2 @@
+# Schema snapshots are produced on Linux in CI; normalize line endings so git diff stays clean.
+src/Migrations/History/**/*.sql text eol=lf
