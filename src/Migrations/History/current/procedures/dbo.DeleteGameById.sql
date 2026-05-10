@@ -1,4 +1,3 @@
-﻿/****** Object:  StoredProcedure [dbo].[DeleteGameById]    Script Date: 10/05/2026 16:33:05 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 -- Explicit delete path for a game and dependent rows.
@@ -30,4 +29,3 @@ BEGIN
 
     COMMIT TRANSACTION;
 END
-

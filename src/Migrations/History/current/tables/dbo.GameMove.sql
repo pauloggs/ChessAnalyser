@@ -1,4 +1,3 @@
-﻿/****** Object:  Table [dbo].[GameMove]    Script Date: 10/05/2026 16:33:04 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[GameMove](
@@ -21,7 +20,6 @@ CREATE TABLE [dbo].[GameMove](
 
 SET ANSI_PADDING ON
 
-/****** Object:  Index [IX_GameMove_ToSquare_MovedPiece]    Script Date: 10/05/2026 16:33:04 ******/
 CREATE NONCLUSTERED INDEX [IX_GameMove_ToSquare_MovedPiece] ON [dbo].[GameMove]
 (
 	[ToSquare] ASC,
@@ -45,4 +43,3 @@ ALTER TABLE [dbo].[GameMove]  WITH CHECK ADD  CONSTRAINT [CK_GameMove_PromotionP
 ALTER TABLE [dbo].[GameMove] CHECK CONSTRAINT [CK_GameMove_PromotionPiece]
 ALTER TABLE [dbo].[GameMove]  WITH CHECK ADD  CONSTRAINT [CK_GameMove_ToSquare] CHECK  (([ToSquare]>=(0) AND [ToSquare]<=(63)))
 ALTER TABLE [dbo].[GameMove] CHECK CONSTRAINT [CK_GameMove_ToSquare]
-
