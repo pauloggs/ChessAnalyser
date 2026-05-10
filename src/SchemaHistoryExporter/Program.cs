@@ -8,6 +8,10 @@ namespace SchemaHistoryExporter;
 
 internal static class Program
 {
+    private static readonly Regex ScriptDateHeaderRegex = new(
+        @"^/\*{6}\s+Object:.*Script Date:.*\*{6}/\s*$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     public static async Task<int> Main(string[] args)
     {
         var argv = args.ToList();
@@ -156,14 +160,20 @@ internal static class Program
             if (scriptParts == null || scriptParts.Count == 0)
                 continue;
 
-            var sb = new StringBuilder();
+            var lines = new List<string>();
             foreach (string? line in scriptParts)
             {
-                if (line != null)
-                    sb.AppendLine(line);
+                if (line == null)
+                    continue;
+                if (ScriptDateHeaderRegex.IsMatch(line))
+                    continue;
+                lines.Add(line);
             }
 
-            var body = sb.ToString().TrimEnd() + Environment.NewLine;
+            while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[^1]))
+                lines.RemoveAt(lines.Count - 1);
+
+            var body = string.Join(Environment.NewLine, lines) + Environment.NewLine;
             var path = Path.Combine(groupDir, SafeFileName(schema, name));
             File.WriteAllText(path, body, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }
