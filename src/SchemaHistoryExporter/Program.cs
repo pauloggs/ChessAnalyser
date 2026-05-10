@@ -9,8 +9,8 @@ namespace SchemaHistoryExporter;
 internal static class Program
 {
     private static readonly Regex ScriptDateHeaderRegex = new(
-        @"^/\*{6}\s+Object:.*Script Date:.*\*{6}/\s*$",
-        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+        @"^\uFEFF?/\*{6}\s+Object:\s+.*?Script Date:.*?\*{6}/\s*$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant | RegexOptions.Multiline);
 
     public static async Task<int> Main(string[] args)
     {
@@ -160,20 +160,20 @@ internal static class Program
             if (scriptParts == null || scriptParts.Count == 0)
                 continue;
 
-            var lines = new List<string>();
+            var sb = new StringBuilder();
             foreach (string? line in scriptParts)
             {
                 if (line == null)
                     continue;
-                if (ScriptDateHeaderRegex.IsMatch(line))
-                    continue;
-                lines.Add(line);
+                sb.AppendLine(line);
             }
 
-            while (lines.Count > 0 && string.IsNullOrWhiteSpace(lines[^1]))
-                lines.RemoveAt(lines.Count - 1);
+            var normalized = ScriptDateHeaderRegex.Replace(sb.ToString(), string.Empty)
+                .Replace("\r\n", "\n")
+                .TrimEnd('\n', '\r')
+                .Replace("\n", Environment.NewLine);
 
-            var body = string.Join(Environment.NewLine, lines) + Environment.NewLine;
+            var body = normalized + Environment.NewLine;
             var path = Path.Combine(groupDir, SafeFileName(schema, name));
             File.WriteAllText(path, body, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }

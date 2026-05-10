@@ -1,4 +1,4 @@
-﻿/****** Object:  Table [dbo].[GameMove]    Script Date: 10/05/2026 16:17:21 ******/
+﻿/****** Object:  Table [dbo].[GameMove]    Script Date: 10/05/2026 16:24:34 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[GameMove](
@@ -21,7 +21,7 @@ CREATE TABLE [dbo].[GameMove](
 
 SET ANSI_PADDING ON
 
-/****** Object:  Index [IX_GameMove_ToSquare_MovedPiece]    Script Date: 10/05/2026 16:17:21 ******/
+/****** Object:  Index [IX_GameMove_ToSquare_MovedPiece]    Script Date: 10/05/2026 16:24:34 ******/
 CREATE NONCLUSTERED INDEX [IX_GameMove_ToSquare_MovedPiece] ON [dbo].[GameMove]
 (
 	[ToSquare] ASC,
