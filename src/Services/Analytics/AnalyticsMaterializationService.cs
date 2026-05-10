@@ -19,12 +19,23 @@ public sealed class AnalyticsMaterializationService(
     public async Task MaterializeAfterGamePersistedAsync(Game game, int databaseGameId, CancellationToken cancellationToken = default)
     {
         ArgumentNullException.ThrowIfNull(game);
+        var ordered = BuildOrderedPositions(game);
+        await MaterializeFromOrderedPliesAsync(databaseGameId, ordered, cancellationToken).ConfigureAwait(false);
+    }
+
+    public async Task<AnalyticsMaterializationOutcome> MaterializeFromOrderedPliesAsync(
+        int databaseGameId,
+        IReadOnlyList<(int PlyIndex, BoardPosition Position)> orderedPositions,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(orderedPositions);
+        if (orderedPositions.Count == 0)
+            return AnalyticsMaterializationOutcome.SkippedNoPositions;
 
         try
         {
-            var ordered = BuildOrderedPositions(game);
-            if (ordered.Count == 0)
-                return;
+            var ordered = orderedPositions as List<(int PlyIndex, BoardPosition Position)>
+                          ?? orderedPositions.ToList();
 
             for (var i = 1; i < ordered.Count; i++)
             {
@@ -32,7 +43,7 @@ public sealed class AnalyticsMaterializationService(
                 {
                     Console.WriteLine(
                         $"Analytics materialization skipped for game db id {databaseGameId}: non-contiguous ply sequence {ordered[i - 1].PlyIndex} -> {ordered[i].PlyIndex}.");
-                    return;
+                    return AnalyticsMaterializationOutcome.SkippedInvalidSequence;
                 }
             }
 
@@ -41,7 +52,7 @@ public sealed class AnalyticsMaterializationService(
             {
                 Console.WriteLine(
                     $"Analytics materialization skipped for game db id {databaseGameId}: ply -1 (initial position) is required when deriving moves.");
-                return;
+                return AnalyticsMaterializationOutcome.SkippedInvalidSequence;
             }
 
             var summaries = new List<GamePositionSummary>(ordered.Count);
@@ -61,8 +72,9 @@ public sealed class AnalyticsMaterializationService(
                 moves.Add(_moveDeriver.Derive(databaseGameId, nextPly, previous, current));
             }
 
-            await _chessRepository.ReplaceGamePositionSummariesForGame(databaseGameId, summaries);
-            await _chessRepository.ReplaceGameMovesForGame(databaseGameId, moves);
+            await _chessRepository.ReplaceGamePositionSummariesForGame(databaseGameId, summaries).ConfigureAwait(false);
+            await _chessRepository.ReplaceGameMovesForGame(databaseGameId, moves).ConfigureAwait(false);
+            return AnalyticsMaterializationOutcome.Success;
         }
         catch (OperationCanceledException)
         {
@@ -71,6 +83,7 @@ public sealed class AnalyticsMaterializationService(
         catch (Exception ex)
         {
             Console.WriteLine($"Analytics materialization failed for game db id {databaseGameId}: {ex.Message}");
+            return AnalyticsMaterializationOutcome.Failed;
         }
     }
 

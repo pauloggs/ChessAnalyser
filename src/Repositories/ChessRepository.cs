@@ -68,6 +68,18 @@ namespace Repositories
         Task<IReadOnlyList<KnightDestinationCountRow>> GetKnightDestinationCountsAsync(
             AnalyticsQuery query,
             CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
+        /// </summary>
+        Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Loads all <c>dbo.BoardPosition</c> rows for a game ordered by <c>PlyIndex</c>.
+        /// </summary>
+        Task<IReadOnlyList<(int PlyIndex, BoardPosition Position)>> GetBoardPositionsForGameOrderedAsync(
+            int gameId,
+            CancellationToken cancellationToken = default);
     }
 
     public class ChessRepository : IChessRepository
@@ -467,6 +479,53 @@ namespace Repositories
             return rows;
         }
 
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return (await connection.QueryAsync<int>(
+                new CommandDefinition(
+                    SqlStatements.GetGameIdsNeedingAnalyticsBackfill,
+                    cancellationToken: cancellationToken))).ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<(int PlyIndex, BoardPosition Position)>> GetBoardPositionsForGameOrderedAsync(
+            int gameId,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<BoardPositionDbRow>(
+                new CommandDefinition(
+                    SqlStatements.GetBoardPositionsForGameOrdered,
+                    new { GameId = gameId },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows.Select(r => (r.PlyIndex, MapBoardPosition(r))).ToList();
+        }
+
+        private static BoardPosition MapBoardPosition(BoardPositionDbRow r)
+        {
+            var bp = new BoardPosition();
+            bp.PiecePositions["WP"] = (ulong)r.WP;
+            bp.PiecePositions["WN"] = (ulong)r.WN;
+            bp.PiecePositions["WB"] = (ulong)r.WB;
+            bp.PiecePositions["WR"] = (ulong)r.WR;
+            bp.PiecePositions["WQ"] = (ulong)r.WQ;
+            bp.PiecePositions["WK"] = (ulong)r.WK;
+            bp.PiecePositions["BP"] = (ulong)r.BP;
+            bp.PiecePositions["BN"] = (ulong)r.BN;
+            bp.PiecePositions["BB"] = (ulong)r.BB;
+            bp.PiecePositions["BR"] = (ulong)r.BR;
+            bp.PiecePositions["BQ"] = (ulong)r.BQ;
+            bp.PiecePositions["BK"] = (ulong)r.BK;
+
+            if (!string.IsNullOrWhiteSpace(r.EnPassantTargetFile))
+                bp.EnPassantTargetFile = char.ToUpperInvariant(r.EnPassantTargetFile.Trim()[0]);
+
+            return bp;
+        }
+
         private static GameMoveFact Map(GameMoveRow r) =>
             new()
             {
@@ -481,6 +540,37 @@ namespace Repositories
                 IsCastlingKingside = r.IsCastlingKingside,
                 IsCastlingQueenside = r.IsCastlingQueenside
             };
+
+        private sealed class BoardPositionDbRow
+        {
+            public int PlyIndex { get; set; }
+
+            public long WP { get; set; }
+
+            public long WN { get; set; }
+
+            public long WB { get; set; }
+
+            public long WR { get; set; }
+
+            public long WQ { get; set; }
+
+            public long WK { get; set; }
+
+            public long BP { get; set; }
+
+            public long BN { get; set; }
+
+            public long BB { get; set; }
+
+            public long BR { get; set; }
+
+            public long BQ { get; set; }
+
+            public long BK { get; set; }
+
+            public string? EnPassantTargetFile { get; set; }
+        }
 
         private sealed class GameMoveRow
         {

@@ -85,6 +85,31 @@ public class AnalyticsMaterializationServiceTests
     }
 
     [Fact]
+    public async Task MaterializeFromOrderedPliesAsync_ValidSequence_ReturnsSuccess()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.ReplaceGameMovesForGame(It.IsAny<int>(), It.IsAny<IReadOnlyList<GameMoveFact>>())).Returns(Task.CompletedTask);
+        repo.Setup(r => r.ReplaceGamePositionSummariesForGame(It.IsAny<int>(), It.IsAny<IReadOnlyList<GamePositionSummary>>()))
+            .Returns(Task.CompletedTask);
+
+        var sut = new AnalyticsMaterializationService(
+            new GameMoveDeriver(),
+            new GamePositionSummaryFactory(new ClassicalPieceValues()),
+            repo.Object);
+
+        var prev = EmptyBoard();
+        Set(prev, "WP", Sq('e', 2));
+        var curr = Clone(prev);
+        Move(curr, "WP", Sq('e', 2), Sq('e', 4));
+        var ordered = new List<(int PlyIndex, BoardPosition Position)> { (-1, prev), (0, curr) };
+
+        var outcome = await sut.MaterializeFromOrderedPliesAsync(5, ordered);
+
+        Assert.Equal(AnalyticsMaterializationOutcome.Success, outcome);
+        repo.Verify(r => r.ReplaceGameMovesForGame(5, It.IsAny<IReadOnlyList<GameMoveFact>>()), Times.Once);
+    }
+
+    [Fact]
     public async Task MaterializeAfterGamePersistedAsync_NonContiguousPly_DoesNotCallReplace()
     {
         var repo = new Mock<IChessRepository>();

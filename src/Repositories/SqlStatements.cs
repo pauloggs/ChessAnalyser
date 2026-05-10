@@ -136,6 +136,26 @@ namespace Repositories
             GROUP BY m.ToSquare
             ORDER BY MoveCount DESC, m.ToSquare;
             """;
+
+        /// <summary>
+        /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
+        /// </summary>
+        public static string GetGameIdsNeedingAnalyticsBackfill =>
+            """
+            SELECT g.Id
+            FROM dbo.Game g
+            WHERE EXISTS (SELECT 1 FROM dbo.BoardPosition bp WHERE bp.GameId = g.Id)
+              AND NOT EXISTS (SELECT 1 FROM dbo.GameMove gm WHERE gm.GameId = g.Id)
+            ORDER BY g.Id;
+            """;
+
+        public static string GetBoardPositionsForGameOrdered =>
+            """
+            SELECT PlyIndex, WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK, EnPassantTargetFile
+            FROM dbo.BoardPosition
+            WHERE GameId = @GameId
+            ORDER BY PlyIndex;
+            """;
     }
 }
 
