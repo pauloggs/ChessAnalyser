@@ -101,23 +101,51 @@ public class AnalyserController(
 
     /// <summary>
     /// Get one page of games from the database (ordered by Id). Defaults: page 1, page 50; pageSize is capped at 500.
+    /// Optional filters combine with AND. Games with null <c>GameYear</c> are excluded when a year bound is set.
     /// </summary>
     /// <param name="page">1-based page number.</param>
     /// <param name="pageSize">Rows per page (1–500).</param>
+    /// <param name="minGameYear">Lower bound on <c>GameYear</c> (inclusive).</param>
+    /// <param name="maxGameYear">Upper bound on <c>GameYear</c> (inclusive).</param>
+    /// <param name="whitePlayerId">Exact match on <c>WhitePlayerId</c>.</param>
+    /// <param name="blackPlayerId">Exact match on <c>BlackPlayerId</c>.</param>
+    /// <param name="eco">Exact match on persisted <c>Eco</c> (trimmed, max 16 characters).</param>
     /// <param name="cancellationToken">Propagates cancellation from the client.</param>
     [HttpGet("GetGames")]
     [Produces("application/json")]
     public async Task<IActionResult> GetGames(
         [FromQuery] int page = 1,
         [FromQuery] int pageSize = 50,
+        [FromQuery] short? minGameYear = null,
+        [FromQuery] short? maxGameYear = null,
+        [FromQuery] int? whitePlayerId = null,
+        [FromQuery] int? blackPlayerId = null,
+        [FromQuery] string? eco = null,
         CancellationToken cancellationToken = default)
     {
         if (page < 1)
             return BadRequest("page must be >= 1.");
         if (pageSize < 1 || pageSize > 500)
             return BadRequest("pageSize must be between 1 and 500.");
+        if (minGameYear.HasValue && maxGameYear.HasValue && minGameYear.Value > maxGameYear.Value)
+            return BadRequest("minGameYear must be <= maxGameYear when both are set.");
 
-        var pageResult = await _chessRepository.GetGamesPage(page, pageSize, cancellationToken).ConfigureAwait(false);
+        var ecoTrimmed = string.IsNullOrWhiteSpace(eco) ? null : eco.Trim();
+        if (ecoTrimmed != null && ecoTrimmed.Length > 16)
+            return BadRequest("eco must be at most 16 characters after trimming.");
+
+        GamePageFilters? filters = minGameYear.HasValue || maxGameYear.HasValue || whitePlayerId.HasValue || blackPlayerId.HasValue || ecoTrimmed != null
+            ? new GamePageFilters
+            {
+                MinGameYear = minGameYear,
+                MaxGameYear = maxGameYear,
+                WhitePlayerId = whitePlayerId,
+                BlackPlayerId = blackPlayerId,
+                Eco = ecoTrimmed
+            }
+            : null;
+
+        var pageResult = await _chessRepository.GetGamesPage(page, pageSize, filters, cancellationToken).ConfigureAwait(false);
         return Ok(pageResult);
     }
 }

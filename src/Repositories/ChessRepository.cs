@@ -15,9 +15,14 @@ namespace Repositories
 
         /// <summary>
         /// One page of rows from <c>dbo.Game</c> ordered by <c>Id</c>, plus total row count.
+        /// Optional <paramref name="filters"/> apply with AND semantics (see <see cref="GamePageFilters"/>).
         /// Honors <paramref name="cancellationToken"/> and uses a bounded command timeout.
         /// </summary>
-        Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, CancellationToken cancellationToken = default);
+        Task<PagedResult<Game>> GetGamesPage(
+            int page,
+            int pageSize,
+            GamePageFilters? filters,
+            CancellationToken cancellationToken = default);
 
         Task<List<string>> GetProcessedGameIds();
 
@@ -99,7 +104,11 @@ namespace Repositories
         public IConfiguration Configuration => throw new NotImplementedException();
 
         /// <inheritdoc />
-        public async Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, CancellationToken cancellationToken = default)
+        public async Task<PagedResult<Game>> GetGamesPage(
+            int page,
+            int pageSize,
+            GamePageFilters? filters,
+            CancellationToken cancellationToken = default)
         {
             var connectionString = _config.GetConnectionString("ChessConnection")
                 ?? throw new InvalidOperationException("Connection string 'ChessConnection' is not configured.");
@@ -107,20 +116,46 @@ namespace Repositories
             await using var connection = new SqlConnection(connectionString);
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
+            var offset = (page - 1) * pageSize;
+            var eco = NormalizeEco(filters?.Eco);
+            var filterParams = new
+            {
+                MinGameYear = filters?.MinGameYear,
+                MaxGameYear = filters?.MaxGameYear,
+                WhitePlayerId = filters?.WhitePlayerId,
+                BlackPlayerId = filters?.BlackPlayerId,
+                Eco = eco,
+                Offset = offset,
+                PageSize = pageSize
+            };
+
+            const string whereClause =
+                """
+                WHERE (@MinGameYear IS NULL OR [GameYear] >= @MinGameYear)
+                  AND (@MaxGameYear IS NULL OR [GameYear] <= @MaxGameYear)
+                  AND (@WhitePlayerId IS NULL OR [WhitePlayerId] = @WhitePlayerId)
+                  AND (@BlackPlayerId IS NULL OR [BlackPlayerId] = @BlackPlayerId)
+                  AND (@Eco IS NULL OR [Eco] = @Eco)
+                """;
+
+            var countSql = "SELECT COUNT(1) FROM dbo.[Game] " + whereClause;
             var countCmd = new CommandDefinition(
-                "SELECT COUNT(1) FROM dbo.[Game]",
+                countSql,
+                filterParams,
                 commandTimeout: 120,
                 cancellationToken: cancellationToken);
             var totalCount = await connection.ExecuteScalarAsync<int>(countCmd).ConfigureAwait(false);
 
-            var offset = (page - 1) * pageSize;
-            var pageCmd = new CommandDefinition(
+            var pageSql =
                 """
                 SELECT * FROM dbo.[Game]
+                """ + whereClause + """
                 ORDER BY [Id]
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
-                """,
-                new { Offset = offset, PageSize = pageSize },
+                """;
+            var pageCmd = new CommandDefinition(
+                pageSql,
+                filterParams,
                 commandTimeout: 120,
                 cancellationToken: cancellationToken);
             var rows = (await connection.QueryAsync<Game>(pageCmd).ConfigureAwait(false)).ToList();
@@ -132,6 +167,14 @@ namespace Repositories
                 PageSize = pageSize,
                 TotalCount = totalCount
             };
+        }
+
+        private static string? NormalizeEco(string? eco)
+        {
+            if (string.IsNullOrWhiteSpace(eco))
+                return null;
+            var t = eco.Trim();
+            return t.Length == 0 ? null : t;
         }
 
         /// <summary>

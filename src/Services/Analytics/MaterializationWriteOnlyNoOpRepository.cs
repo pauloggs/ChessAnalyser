@@ -14,7 +14,7 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
     public IConfiguration Configuration =>
         throw new InvalidOperationException($"{nameof(MaterializationWriteOnlyNoOpRepository)} does not expose configuration.");
 
-    public Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, CancellationToken cancellationToken = default) =>
+    public Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, GamePageFilters? filters, CancellationToken cancellationToken = default) =>
         Throw<PagedResult<Game>>();
 
     public Task<List<string>> GetProcessedGameIds() => Throw<List<string>>();

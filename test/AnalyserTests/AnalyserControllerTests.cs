@@ -100,7 +100,7 @@ namespace ControllerTests
             };
             var chessRepoMock = new Mock<IChessRepository>();
             chessRepoMock
-                .Setup(r => r.GetGamesPage(1, 50, It.IsAny<CancellationToken>()))
+                .Setup(r => r.GetGamesPage(1, 50, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(page);
             var etlServiceMock = new Mock<IEtlService>();
             var progressStoreMock = new Mock<IEtlProgressStore>();
@@ -115,12 +115,107 @@ namespace ControllerTests
                 pgnOptions);
             var result = await controller.GetGames();
 
-            chessRepoMock.Verify(r => r.GetGamesPage(1, 50, It.IsAny<CancellationToken>()), Times.Once);
+            chessRepoMock.Verify(r => r.GetGamesPage(1, 50, null, It.IsAny<CancellationToken>()), Times.Once);
             var okResult = Assert.IsType<OkObjectResult>(result);
             var returned = Assert.IsType<PagedResult<Game>>(okResult.Value);
             Assert.Single(returned.Items);
             Assert.Equal("G", returned.Items[0].Name);
             Assert.Equal(1, returned.TotalCount);
+        }
+
+        [Fact]
+        public async Task GetGames_WithFilters_PassesFiltersToRepository()
+        {
+            var page = new PagedResult<Game> { Items = [], Page = 1, PageSize = 10, TotalCount = 0 };
+            var chessRepoMock = new Mock<IChessRepository>();
+            chessRepoMock
+                .Setup(r => r.GetGamesPage(
+                    1,
+                    10,
+                    It.Is<GamePageFilters>(f =>
+                        f != null
+                        && f.MinGameYear == 1990
+                        && f.MaxGameYear == 2000
+                        && f.WhitePlayerId == 3
+                        && f.BlackPlayerId == 7
+                        && f.Eco == "B90"),
+                    It.IsAny<CancellationToken>()))
+                .ReturnsAsync(page);
+            var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
+
+            var controller = new Analyser.Controllers.AnalyserController(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+
+            await controller.GetGames(1, 10, 1990, 2000, 3, 7, "B90");
+
+            chessRepoMock.Verify(
+                r => r.GetGamesPage(
+                    1,
+                    10,
+                    It.Is<GamePageFilters>(f =>
+                        f != null
+                        && f.MinGameYear == 1990
+                        && f.MaxGameYear == 2000
+                        && f.WhitePlayerId == 3
+                        && f.BlackPlayerId == 7
+                        && f.Eco == "B90"),
+                    It.IsAny<CancellationToken>()),
+                Times.Once);
+        }
+
+        [Fact]
+        public async Task GetGames_WhenMinYearGreaterThanMaxYear_ReturnsBadRequest()
+        {
+            var chessRepoMock = new Mock<IChessRepository>();
+            var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
+
+            var controller = new Analyser.Controllers.AnalyserController(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+
+            var result = await controller.GetGames(1, 50, 2010, 2000);
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            chessRepoMock.Verify(
+                r => r.GetGamesPage(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<GamePageFilters?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
+        }
+
+        [Fact]
+        public async Task GetGames_WhenEcoTooLong_ReturnsBadRequest()
+        {
+            var chessRepoMock = new Mock<IChessRepository>();
+            var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
+
+            var controller = new Analyser.Controllers.AnalyserController(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+
+            var result = await controller.GetGames(1, 50, eco: new string('A', 17));
+
+            Assert.IsType<BadRequestObjectResult>(result);
+            chessRepoMock.Verify(
+                r => r.GetGamesPage(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<GamePageFilters?>(), It.IsAny<CancellationToken>()),
+                Times.Never);
         }
     }
 }
