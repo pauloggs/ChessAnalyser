@@ -1,7 +1,7 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.4 (extend metrics catalog and executors; HTTP auth **deferred** while the app stays local-only / undeployed).  
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.4 (first: **unified `wwwroot` web UI** for local daily use; then metrics catalog extension; HTTP auth **deferred** while the app stays local-only / undeployed).  
 **Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
 ---
@@ -292,9 +292,10 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 **Suggested next work (PR-sized, in order of value):**
 
-1. **Extend the metrics surface** — add **`IMetricExecutor`** implementations for additional questions you care about (same patterns as the two reference metrics: parameterized repository reads, tabular `AnalyticsTableResult` only). Register them in **`IMetricRegistry`** / DI.
-2. **Improve discovery** — enrich **`GET /api/analytics/metrics`** with clearer descriptions (and optional parameter hints) so Swagger and future UI stay usable as the catalog grows.
-3. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for new keys), following §12.3.
+1. **Unified local web UI (`wwwroot`)** — make the static app the **primary** surface for solo use: PGN path, **LoadGames**, progress polling, **CancelLoad** (already partly on `index.html`); add sections that call existing JSON APIs for **metrics discovery + execute** (`GET/POST /api/analytics/metrics/…`) and **paged GetGames** (`GET /Analyser/GetGames` with filters) so routine work does not require Swagger. Keep **Swagger** as an optional dev “API docs” link, not part of the default workflow.
+2. **Extend the metrics surface** — add **`IMetricExecutor`** implementations for additional questions you care about (same patterns as the two reference metrics: parameterized repository reads, tabular `AnalyticsTableResult` only). Register them in **`IMetricRegistry`** / DI.
+3. **Improve discovery** — enrich **`GET /api/analytics/metrics`** with clearer descriptions (and optional parameter hints) so the web UI and Swagger stay usable as the catalog grows.
+4. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for new keys), following §12.3; add light **Playwright** or manual test notes for the unified web UI if you introduce non-trivial client script.
 
 **Optional:** Record a fresh materialization throughput line in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) when you change hot paths in the deriver or summary factory.
 
@@ -321,4 +322,4 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** for the current suggested metrics work until deployment plans change.*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** (unified web UI first, then metrics extension) until deployment plans change.*
