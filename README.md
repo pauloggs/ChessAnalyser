@@ -62,6 +62,12 @@ Swagger is available when enabled in development (Swashbuckle).
 dotnet test ChessAnalyser.sln
 ```
 
+### Continuous integration (GitHub Actions)
+
+On every **pull request** and on **pushes** to `main` or `master`, [.github/workflows/dotnet-test.yml](.github/workflows/dotnet-test.yml) runs `dotnet test` on **ubuntu-latest** with .NET **8.x** and **9.x**.
+
+**Branch protection:** In the repository **Settings → Branches → Branch protection rule** for your default branch, enable **Require status checks to pass before merging** and select the check named **`dotnet test`** (the job name from the workflow). That blocks merges when any test fails.
+
 ---
 
 ## Solution layout
