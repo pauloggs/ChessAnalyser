@@ -19,7 +19,7 @@ namespace ControllerTests
             var scopeFactoryMock = new Mock<IServiceScopeFactory>();
             var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(
+            var controller = new Analyser.Controllers.AnalyserController(
                 chessRepoMock.Object,
                 etlServiceMock.Object,
                 progressStoreMock.Object,
@@ -49,7 +49,7 @@ namespace ControllerTests
             scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
             var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(
+            var controller = new Analyser.Controllers.AnalyserController(
                 chessRepoMock.Object,
                 etlServiceMock.Object,
                 progressStoreMock.Object,
@@ -73,7 +73,7 @@ namespace ControllerTests
             var scopeFactoryMock = new Mock<IServiceScopeFactory>();
             var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(
+            var controller = new Analyser.Controllers.AnalyserController(
                 chessRepoMock.Object,
                 etlServiceMock.Object,
                 progressStoreMock.Object,
@@ -88,17 +88,26 @@ namespace ControllerTests
         }
 
         [Fact]
-        public async Task GetGames_CallsRepositoryAndReturnsOkWithGames()
+        public async Task GetGames_CallsRepositoryAndReturnsOkWithPagedGames()
         {
             var games = new List<Game> { new Game { Name = "G", GameId = "1", Plies = new Dictionary<int, Ply>() } };
+            var page = new PagedResult<Game>
+            {
+                Items = games,
+                Page = 1,
+                PageSize = 50,
+                TotalCount = 1
+            };
             var chessRepoMock = new Mock<IChessRepository>();
-            chessRepoMock.Setup(r => r.GetGames()).ReturnsAsync(games);
+            chessRepoMock
+                .Setup(r => r.GetGamesPage(1, 50, It.IsAny<CancellationToken>()))
+                .ReturnsAsync(page);
             var etlServiceMock = new Mock<IEtlService>();
             var progressStoreMock = new Mock<IEtlProgressStore>();
             var scopeFactoryMock = new Mock<IServiceScopeFactory>();
             var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.Analyser(
+            var controller = new Analyser.Controllers.AnalyserController(
                 chessRepoMock.Object,
                 etlServiceMock.Object,
                 progressStoreMock.Object,
@@ -106,11 +115,12 @@ namespace ControllerTests
                 pgnOptions);
             var result = await controller.GetGames();
 
-            chessRepoMock.Verify(r => r.GetGames(), Times.Once);
+            chessRepoMock.Verify(r => r.GetGamesPage(1, 50, It.IsAny<CancellationToken>()), Times.Once);
             var okResult = Assert.IsType<OkObjectResult>(result);
-            var returnedGames = Assert.IsAssignableFrom<List<Game>>(okResult.Value);
-            Assert.Single(returnedGames);
-            Assert.Equal("G", returnedGames[0].Name);
+            var returned = Assert.IsType<PagedResult<Game>>(okResult.Value);
+            Assert.Single(returned.Items);
+            Assert.Equal("G", returned.Items[0].Name);
+            Assert.Equal(1, returned.TotalCount);
         }
     }
 }

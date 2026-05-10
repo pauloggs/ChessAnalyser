@@ -4,6 +4,7 @@ using Interfaces.DTO;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
+using System.Collections.Generic;
 using System.Linq;
 
 namespace Repositories
@@ -12,7 +13,11 @@ namespace Repositories
     {
         IConfiguration Configuration { get; }
 
-        Task<List<Game>> GetGames();
+        /// <summary>
+        /// One page of rows from <c>dbo.Game</c> ordered by <c>Id</c>, plus total row count.
+        /// Honors <paramref name="cancellationToken"/> and uses a bounded command timeout.
+        /// </summary>
+        Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, CancellationToken cancellationToken = default);
 
         Task<List<string>> GetProcessedGameIds();
 
@@ -93,23 +98,40 @@ namespace Repositories
 
         public IConfiguration Configuration => throw new NotImplementedException();
 
-        /// <summary>
-        /// Retrieves all games from the database.
-        /// </summary>
-        public async Task<List<Game>> GetGames()
+        /// <inheritdoc />
+        public async Task<PagedResult<Game>> GetGamesPage(int page, int pageSize, CancellationToken cancellationToken = default)
         {
-            var returnValue = new List<Game>();
+            var connectionString = _config.GetConnectionString("ChessConnection")
+                ?? throw new InvalidOperationException("Connection string 'ChessConnection' is not configured.");
 
-            var connection = GetOpenConnection();
+            await using var connection = new SqlConnection(connectionString);
+            await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
-            using(connection)
+            var countCmd = new CommandDefinition(
+                "SELECT COUNT(1) FROM dbo.[Game]",
+                commandTimeout: 120,
+                cancellationToken: cancellationToken);
+            var totalCount = await connection.ExecuteScalarAsync<int>(countCmd).ConfigureAwait(false);
+
+            var offset = (page - 1) * pageSize;
+            var pageCmd = new CommandDefinition(
+                """
+                SELECT * FROM dbo.[Game]
+                ORDER BY [Id]
+                OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
+                """,
+                new { Offset = offset, PageSize = pageSize },
+                commandTimeout: 120,
+                cancellationToken: cancellationToken);
+            var rows = (await connection.QueryAsync<Game>(pageCmd).ConfigureAwait(false)).ToList();
+
+            return new PagedResult<Game>
             {
-                var queryResult = await connection.QueryAsync<Game>("SELECT * FROM dbo.[Game]");
-
-                returnValue = queryResult.ToList();
-            }
-            
-            return returnValue;
+                Items = rows,
+                Page = page,
+                PageSize = pageSize,
+                TotalCount = totalCount
+            };
         }
 
         /// <summary>

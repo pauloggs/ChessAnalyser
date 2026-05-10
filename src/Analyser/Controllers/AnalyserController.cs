@@ -9,7 +9,7 @@ namespace Analyser.Controllers;
 
 [ApiController]
 [Route("[controller]")]
-public class Analyser(
+public class AnalyserController(
     IChessRepository chessRepository,
     IEtlService etlService,
     IEtlProgressStore progressStore,
@@ -100,12 +100,24 @@ public class Analyser(
     }
 
     /// <summary>
-    /// Get games from database.
+    /// Get one page of games from the database (ordered by Id). Defaults: page 1, page 50; pageSize is capped at 500.
     /// </summary>
+    /// <param name="page">1-based page number.</param>
+    /// <param name="pageSize">Rows per page (1–500).</param>
+    /// <param name="cancellationToken">Propagates cancellation from the client.</param>
     [HttpGet("GetGames")]
-    public async Task<IActionResult> GetGames()
+    [Produces("application/json")]
+    public async Task<IActionResult> GetGames(
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
     {
-        var games = await _chessRepository.GetGames();
-        return Ok(games);
+        if (page < 1)
+            return BadRequest("page must be >= 1.");
+        if (pageSize < 1 || pageSize > 500)
+            return BadRequest("pageSize must be between 1 and 500.");
+
+        var pageResult = await _chessRepository.GetGamesPage(page, pageSize, cancellationToken).ConfigureAwait(false);
+        return Ok(pageResult);
     }
 }
