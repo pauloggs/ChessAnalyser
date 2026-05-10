@@ -6,6 +6,7 @@ using Services;
 using Services.Analytics;
 using Services.Helpers;
 using System.Reflection;
+using System.Linq;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -80,8 +81,28 @@ builder.Services.AddScoped<IAnalyticsMaterializationService, AnalyticsMaterializ
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialByYearAndColourExecutor>();
 builder.Services.AddScoped<IMetricExecutor, KnightMoveDestinationFrequencyExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
+builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 
 var app = builder.Build();
+
+if (args.Any(a => string.Equals(a, "--backfill-analytics", StringComparison.OrdinalIgnoreCase)))
+{
+    int? maxGames = null;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (string.Equals(args[i], "--max-games", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(args[i + 1], out var parsed)
+            && parsed > 0)
+            maxGames = parsed;
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var backfill = scope.ServiceProvider.GetRequiredService<IAnalyticsBackfillService>();
+    var outcome = await backfill.BackfillMissingAnalyticsAsync(new AnalyticsBackfillOptions { MaxGames = maxGames });
+    Console.WriteLine(
+        $"Analytics backfill: considered={outcome.GamesConsidered}, materialized={outcome.GamesMaterialized}, skipped={outcome.GamesSkipped}, failed={outcome.GamesFailed}.");
+    return;
+}
 
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
