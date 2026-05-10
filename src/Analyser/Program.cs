@@ -1,7 +1,9 @@
 using Analyser;
+using Interfaces.Analytics;
 using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
+using Services.Analytics;
 using Services.Helpers;
 using System.Reflection;
 
@@ -71,6 +73,8 @@ builder.Services.AddScoped<IPgnParser, PgnParser>();
 builder.Services.AddScoped<IEtlService, EtlService>();
 builder.Services.AddSingleton<IEtlProgressStore, EtlProgressStore>();
 builder.Services.AddScoped<IChessRepository, ChessRepository>();
+builder.Services.AddSingleton<IPieceValues, ClassicalPieceValues>();
+builder.Services.AddScoped<IGamePositionSummaryFactory, GamePositionSummaryFactory>();
 
 var app = builder.Build();
 
