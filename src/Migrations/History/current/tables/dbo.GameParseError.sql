@@ -1,4 +1,3 @@
-﻿/****** Object:  Table [dbo].[GameParseError]    Script Date: 10/05/2026 12:09:39 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[GameParseError](
@@ -15,4 +14,3 @@ CREATE TABLE [dbo].[GameParseError](
 ) ON [PRIMARY] TEXTIMAGE_ON [PRIMARY]
 
 ALTER TABLE [dbo].[GameParseError] ADD  DEFAULT (sysutcdatetime()) FOR [RecordedAt]
-

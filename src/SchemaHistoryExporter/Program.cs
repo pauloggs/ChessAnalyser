@@ -8,6 +8,10 @@ namespace SchemaHistoryExporter;
 
 internal static class Program
 {
+    private static readonly Regex ScriptDateHeaderLineRegex = new(
+        @"^\uFEFF?/\*{6}\s+Object:\s+.*?Script Date:.*?\*{6}/\s*$",
+        RegexOptions.Compiled | RegexOptions.CultureInvariant);
+
     public static async Task<int> Main(string[] args)
     {
         var argv = args.ToList();
@@ -31,13 +35,12 @@ internal static class Program
 
         ClearHistoryOutput(outputRoot);
 
-        await using (var probe = new SqlConnection(connectionString))
-        {
-            await probe.OpenAsync();
-        }
+        await using var sqlConnection = new SqlConnection(connectionString);
+        await sqlConnection.OpenAsync();
 
-        var serverConnection = new ServerConnection(connectionString);
-        serverConnection.Connect();
+        // In CI/Linux, SMO is more reliable when bound to an open SqlConnection
+        // instead of parsing the raw connection string itself.
+        var serverConnection = new ServerConnection(sqlConnection);
         var server = new Server(serverConnection);
 
         var db = server.Databases[builder.InitialCatalog];
@@ -160,11 +163,33 @@ internal static class Program
             var sb = new StringBuilder();
             foreach (string? line in scriptParts)
             {
-                if (line != null)
-                    sb.AppendLine(line);
+                if (line == null)
+                    continue;
+                sb.AppendLine(line);
             }
 
-            var body = sb.ToString().TrimEnd() + Environment.NewLine;
+            var allLines = sb.ToString()
+                .Replace("\r\n", "\n")
+                .Replace("\r", "\n")
+                .Split('\n');
+
+            var keptLines = new List<string>(allLines.Length);
+            foreach (var raw in allLines)
+            {
+                if (ScriptDateHeaderLineRegex.IsMatch(raw))
+                    continue;
+                keptLines.Add(raw);
+            }
+
+            while (keptLines.Count > 0 && string.IsNullOrWhiteSpace(keptLines[^1]))
+                keptLines.RemoveAt(keptLines.Count - 1);
+
+            while (keptLines.Count > 0 && string.IsNullOrWhiteSpace(keptLines[0]))
+                keptLines.RemoveAt(0);
+
+            var normalized = string.Join(Environment.NewLine, keptLines);
+
+            var body = normalized + Environment.NewLine;
             var path = Path.Combine(groupDir, SafeFileName(schema, name));
             File.WriteAllText(path, body, new UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
         }

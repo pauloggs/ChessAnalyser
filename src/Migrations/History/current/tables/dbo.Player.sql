@@ -1,4 +1,3 @@
-﻿/****** Object:  Table [dbo].[Player]    Script Date: 10/05/2026 12:09:39 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[Player](
@@ -17,4 +16,3 @@ CREATE TABLE [dbo].[Player](
 ) ON [PRIMARY]
 
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
-

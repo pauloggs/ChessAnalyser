@@ -1,4 +1,3 @@
-﻿/****** Object:  Table [dbo].[Game]    Script Date: 10/05/2026 12:09:39 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[Game](
@@ -25,14 +24,12 @@ CREATE TABLE [dbo].[Game](
 
 SET ANSI_PADDING ON
 
-/****** Object:  Index [IX_Game_Eco]    Script Date: 10/05/2026 12:09:39 ******/
 CREATE NONCLUSTERED INDEX [IX_Game_Eco] ON [dbo].[Game]
 (
 	[Eco] ASC
 )
 WHERE ([Eco] IS NOT NULL)
 WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-/****** Object:  Index [IX_Game_GameYear]    Script Date: 10/05/2026 12:09:39 ******/
 CREATE NONCLUSTERED INDEX [IX_Game_GameYear] ON [dbo].[Game]
 (
 	[GameYear] ASC
@@ -46,4 +43,3 @@ ALTER TABLE [dbo].[Game] CHECK CONSTRAINT [FK_Game_BlackPlayer]
 ALTER TABLE [dbo].[Game]  WITH CHECK ADD  CONSTRAINT [FK_Game_WhitePlayer] FOREIGN KEY([WhitePlayerId])
 REFERENCES [dbo].[Player] ([Id])
 ALTER TABLE [dbo].[Game] CHECK CONSTRAINT [FK_Game_WhitePlayer]
-

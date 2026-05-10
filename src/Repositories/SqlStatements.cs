@@ -25,8 +25,8 @@ namespace Repositories
         """
         IF (NOT EXISTS (SELECT TOP 1 Id FROM dbo.Game WHERE GameId = @GameId))
         BEGIN
-            INSERT INTO dbo.Game (Name, GameId, Winner, WhitePlayerId, BlackPlayerId)
-            VALUES (@Name, @GameId, @Winner, @WhitePlayerId, @BlackPlayerId);
+            INSERT INTO dbo.Game (Name, GameId, Winner, WhitePlayerId, BlackPlayerId, Event, Site, DateTag, GameYear, Eco)
+            VALUES (@Name, @GameId, @Winner, @WhitePlayerId, @BlackPlayerId, @Event, @Site, @DateTag, @GameYear, @Eco);
         END;
         SELECT Id FROM dbo.Game WHERE GameId = @GameId;
         """;

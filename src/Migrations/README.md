@@ -33,10 +33,16 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 | `004_CreatePlayerTable.sql` | Creates `dbo.Player` (Surname, Forenames). |
 | `005_AddPlayerRefsToGame.sql` | Adds `WhitePlayerId`, `BlackPlayerId` FKs to `dbo.Game`. |
 | `006_AddGameAnalyticsColumns.sql` | Adds nullable analytics columns on `dbo.Game`: `Event`, `Site`, `DateTag`, `GameYear`, `Eco`; filtered indexes on `GameYear` and `Eco`. |
+| `007_CreateGameMoveTable.sql` | Creates `dbo.GameMove` secondary fact table (one row per ply) with side/from/to/piece flags and an index for destination-piece frequency queries. |
+| `008_CreateGamePositionSummaryTable.sql` | Creates `dbo.GamePositionSummary` rollup table (material + piece-count scalars per ply) for analytics reads without bitboard decoding. |
+| `009_CreateDeleteGameStoredProcedure.sql` | Creates `dbo.DeleteGameById` to delete a game and dependent rows in one explicit transaction (instead of FK cascades on analytics tables). |
+| `010_RemoveCascadeDeletesFromGameDependencies.sql` | Enforces strict no-cascade FKs from `BoardPosition`, `GameMove`, and `GamePositionSummary` to `Game` (drops/recreates FK if cascade is present). |
 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 
-`Game` analytics columns are populated by application code in a later change (see `docs/PLAN.md` §11); until then they remain NULL for existing rows.
+`Game` analytics columns are populated by application code before insert (`PgnGameHeaderMapper` in `Services`); older rows may still have NULL values unless backfilled.
+
+`GameMove` and `GamePositionSummary` are created in schema first and are intended to be populated by a follow-up analytics materialization step in application code (see `docs/PLAN.md` §11).
 
 ## Schema history snapshot
 

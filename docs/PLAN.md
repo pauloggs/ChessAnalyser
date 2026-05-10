@@ -233,10 +233,10 @@ Per game (unchanged high-level flow until persistence):
 Use this as the working backlog for stage 3 (IMPLEMENT).
 
 1. [x] Add `006_AddGameAnalyticsColumns.sql`; run DbUp on dev DB.
-2. [ ] Add `007_CreateGameMoveTable.sql`; run DbUp.
-3. [ ] Add `008_CreateGamePositionSummaryTable.sql`; run DbUp.
-4. [ ] Extend `Game` DTO + `InsertGame` SQL + `ChessRepository.InsertGame` parameters.
-5. [ ] Implement header/year/ECO mapping from `Tags` during parse or immediately before insert (single place).
+2. [x] Add `007_CreateGameMoveTable.sql`; run DbUp.
+3. [x] Add `008_CreateGamePositionSummaryTable.sql`; run DbUp.
+4. [x] Extend `Game` DTO + `InsertGame` SQL + `ChessRepository.InsertGame` parameters.
+5. [x] Implement header/year/ECO mapping from `Tags` during parse or immediately before insert (single place).
 6. [ ] Implement `IPieceValues` + `GamePositionSummaryFactory` + tests.
 7. [ ] Implement `GameMoveDeriver` + tests.
 8. [ ] Add repository insert/read methods + `SqlStatements` entries + tests (mock or integration).

@@ -172,7 +172,12 @@ namespace Repositories
                         game.GameId,
                         Winner = game.Winner ?? "None",
                         game.WhitePlayerId,
-                        game.BlackPlayerId
+                        game.BlackPlayerId,
+                        game.Event,
+                        game.Site,
+                        game.DateTag,
+                        game.GameYear,
+                        game.Eco
                     };
 
                     var gameId = await connection.ExecuteScalarAsync<int>(sql, parameters);

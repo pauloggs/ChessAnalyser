@@ -53,6 +53,21 @@ namespace Interfaces.DTO
         /// <summary>ID of the player who played Black. Resolved from PGN [Black] tag.</summary>
         public int? BlackPlayerId { get; set; }
 
+        /// <summary>PGN [Event] header for analytics filters.</summary>
+        public string? Event { get; set; }
+
+        /// <summary>PGN [Site] header for analytics filters.</summary>
+        public string? Site { get; set; }
+
+        /// <summary>Raw PGN [Date] tag (e.g. <c>1934.01.01</c> or <c>????.??.??</c>).</summary>
+        public string? DateTag { get; set; }
+
+        /// <summary>Four-digit year when fully known from <see cref="DateTag"/>; otherwise null (DESIGN Q3).</summary>
+        public short? GameYear { get; set; }
+
+        /// <summary>PGN [ECO] opening code (max 16 chars in DB).</summary>
+        public string? Eco { get; set; }
+
         /// <summary>
         /// Source PGN file name (when loaded from file). Used for error reporting during parsing.
         /// </summary>
