@@ -3,45 +3,175 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>PGN Load</title>
+  <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
+  <title>Chess Analyser</title>
   <style>
-    body { font-family: system-ui, sans-serif; max-width: 32rem; margin: 2rem auto; padding: 0 1rem; }
-    h1 { font-size: 1.25rem; }
-    label { display: block; margin-top: 1rem; }
-    input[type="text"] { width: 100%; padding: 0.5rem; box-sizing: border-box; }
-    button { margin-top: 0.5rem; padding: 0.5rem 1rem; cursor: pointer; }
-    .progress-wrap { margin: 1rem 0; height: 1.5rem; background: #eee; border-radius: 4px; overflow: hidden; }
-    .progress-bar { height: 100%; background: #0a0; transition: width 0.2s; width: 0%; }
+    :root { color-scheme: light dark; }
+    body { font-family: system-ui, sans-serif; max-width: 52rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; line-height: 1.45; }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid #ccc; padding-bottom: 0.75rem; margin-bottom: 1rem; }
+    header h1 { font-size: 1.35rem; margin: 0; }
+    nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.9rem; }
+    nav a { color: #06c; }
+    section { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #ddd; scroll-margin-top: 0.75rem; }
+    .section-strip { margin: 0.75rem 0 1.25rem; padding: 0.6rem 0.75rem; background: #f4f4f4; border-radius: 6px; font-size: 0.92rem; border: 1px solid #ddd; }
+    .section-strip a { font-weight: 600; margin: 0 0.15rem; }
+    section h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
+    .hint { font-size: 0.85rem; color: #555; margin: 0 0 0.75rem; }
+    label { display: block; margin-top: 0.65rem; font-size: 0.9rem; }
+    input[type="text"], input[type="number"], select { width: 100%; max-width: 28rem; padding: 0.45rem 0.5rem; box-sizing: border-box; }
+    .row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; margin-top: 0.5rem; }
+    .row label { margin-top: 0; flex: 1 1 8rem; min-width: 0; }
+    .row label input, .row label select { max-width: none; width: 100%; }
+    button { margin-top: 0.65rem; padding: 0.45rem 1rem; cursor: pointer; }
+    button:disabled { cursor: not-allowed; opacity: 0.65; }
+    .progress-wrap { margin: 0.75rem 0; height: 1.35rem; background: #eee; border-radius: 4px; overflow: hidden; max-width: 28rem; }
+    .progress-bar { height: 100%; background: #080; transition: width 0.2s; width: 0%; }
     .progress-bar.failed { background: #c00; }
-    .status { margin-top: 0.5rem; font-size: 0.9rem; color: #444; }
+    .status { margin-top: 0.5rem; font-size: 0.88rem; color: #444; white-space: pre-wrap; }
     .error { color: #c00; }
+    pre.raw { background: #f5f5f5; padding: 0.75rem; overflow: auto; max-height: 14rem; font-size: 0.8rem; border-radius: 4px; margin-top: 0.5rem; }
+    table.data { border-collapse: collapse; width: 100%; font-size: 0.82rem; margin-top: 0.5rem; }
+    table.data th, table.data td { border: 1px solid #ccc; padding: 0.35rem 0.45rem; text-align: left; vertical-align: top; }
+    table.data th { background: #f0f0f0; }
+    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #555; }
+    .checkbox-row { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
+    .checkbox-row input { width: auto; }
+    #metricList { min-height: 2rem; }
   </style>
 </head>
 <body>
-  <h1>PGN Load</h1>
-  <label>Path to PGN file or folder:</label>
-  <input type="text" id="path" placeholder="Path from appsettings (or override)" />
-  <button id="start">Start load</button>
-  <button id="cancel" style="display: none;">Cancel</button>
+  <header>
+    <h1>Chess Analyser</h1>
+    <nav>
+      <a href="#etl">PGN load</a>
+      <a href="#metrics">Metrics</a>
+      <a href="#games">Games</a>
+      <a href="/swagger" target="_blank" rel="noopener">API docs (Swagger)</a>
+    </nav>
+  </header>
 
-  <div class="progress-wrap" id="wrap" style="display: none;">
-    <div class="progress-bar" id="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+  <div class="section-strip" role="navigation" aria-label="Page sections">
+    <strong>Sections on this page</strong> (scroll down if you do not see them all):
+    <a href="#etl">PGN load</a> ·
+    <a href="#metrics">Metrics</a> ·
+    <a href="#games">Games</a>
   </div>
-  <div class="status" id="status"></div>
+
+  <p class="hint">Use this page at the same origin as the API (e.g. <code>https://localhost:5001/</code>), not via <code>file://</code>. If you still see an old one-section layout, use a hard refresh (<kbd>Ctrl</kbd>+<kbd>F5</kbd>) or clear cache for this origin.</p>
+
+  <section id="etl">
+    <h2>PGN load</h2>
+    <p class="hint">Starts <code>POST /Analyser/LoadGames</code> and polls <code>GET /Analyser/LoadGamesProgress</code>. Cancel requests <code>POST /Analyser/CancelLoad</code>.</p>
+    <label>Path to PGN file or folder</label>
+    <input type="text" id="path" placeholder="Path (or use default from configuration)" autocomplete="off" />
+    <div class="checkbox-row">
+      <input type="checkbox" id="displayBoard" />
+      <label for="displayBoard" style="display:inline; margin:0;">Display board positions (verbose)</label>
+    </div>
+    <button type="button" id="start">Start load</button>
+    <button type="button" id="cancel" style="display: none;">Cancel load</button>
+    <div class="progress-wrap" id="wrap" style="display: none;">
+      <div class="progress-bar" id="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="status" id="status"></div>
+  </section>
+
+  <section id="metrics">
+    <h2>Analytics metrics</h2>
+    <p class="hint">Discovery: <code>GET /api/analytics/metrics</code>. Execute: <code>POST /api/analytics/metrics/execute</code>.</p>
+    <button type="button" id="refreshMetrics">Refresh metric list</button>
+    <div id="metricList" class="status"></div>
+    <label>Metric key</label>
+    <select id="metricKey"></select>
+    <div class="row">
+      <label>minGameYear <input type="number" id="qMinYear" placeholder="optional" step="1" /></label>
+      <label>maxGameYear <input type="number" id="qMaxYear" placeholder="optional" step="1" /></label>
+      <label>whitePlayerId <input type="number" id="qWhite" placeholder="optional" step="1" /></label>
+      <label>blackPlayerId <input type="number" id="qBlack" placeholder="optional" step="1" /></label>
+    </div>
+    <label>eco (exact)</label>
+    <input type="text" id="qEco" maxlength="16" placeholder="optional" />
+    <label>summaryPlyIndex (average-material metric)</label>
+    <input type="number" id="qPly" placeholder="default 4 if empty" step="1" />
+    <button type="button" id="runMetric">Run metric</button>
+    <div class="status" id="metricStatus"></div>
+    <div id="metricTableWrap"></div>
+  </section>
+
+  <section id="games">
+    <h2>Games (paged)</h2>
+    <p class="hint"><code>GET /Analyser/GetGames</code> with optional filters.</p>
+    <div class="row">
+      <label>page <input type="number" id="gPage" value="1" min="1" step="1" /></label>
+      <label>pageSize <input type="number" id="gPageSize" value="50" min="1" max="500" step="1" /></label>
+    </div>
+    <div class="row">
+      <label>minGameYear <input type="number" id="gMinYear" placeholder="optional" step="1" /></label>
+      <label>maxGameYear <input type="number" id="gMaxYear" placeholder="optional" step="1" /></label>
+      <label>whitePlayerId <input type="number" id="gWhite" placeholder="optional" step="1" /></label>
+      <label>blackPlayerId <input type="number" id="gBlack" placeholder="optional" step="1" /></label>
+    </div>
+    <label>eco</label>
+    <input type="text" id="gEco" maxlength="16" placeholder="optional" />
+    <button type="button" id="fetchGames">Fetch page</button>
+    <div class="status" id="gamesStatus"></div>
+    <div id="gamesTableWrap"></div>
+    <details id="gamesRawWrap" style="margin-top:0.75rem;display:none;">
+      <summary style="cursor:pointer;font-size:0.9rem;">Raw JSON (large if many games)</summary>
+      <pre class="raw" id="gamesRaw"></pre>
+    </details>
+  </section>
+
+  <footer>
+    <a href="/swagger" target="_blank" rel="noopener">OpenAPI (Swagger)</a> for trying any endpoint. This page covers the usual local workflows only.
+  </footer>
 
   <script>
     (function () {
-      const pathInput = document.getElementById('path');
-      const startBtn = document.getElementById('start');
-      const cancelBtn = document.getElementById('cancel');
-      const wrap = document.getElementById('wrap');
-      const bar = document.getElementById('bar');
-      const statusEl = document.getElementById('status');
+      var base = window.location.origin;
+      var analyser = base + '/Analyser';
+      var analytics = base + '/api/analytics/metrics';
 
-      const base = window.location.origin;
-      const api = base + '/Analyser';
+      function parseJsonSafe(response) {
+        return response.text().then(function (text) {
+          if (!text || text.trim() === '') return null;
+          try { return JSON.parse(text); } catch (_) { return null; }
+        });
+      }
 
-      fetch(api + '/DefaultPgnPath')
+      function escapeHtml(s) {
+        if (s == null || s === '') return '';
+        return String(s)
+          .replace(/&/g, '&amp;')
+          .replace(/</g, '&lt;')
+          .replace(/>/g, '&gt;')
+          .replace(/"/g, '&quot;');
+      }
+
+      function numVal(id) {
+        var el = document.getElementById(id);
+        if (!el || el.value === '' || el.value == null) return null;
+        var n = Number(el.value);
+        return isNaN(n) ? null : n;
+      }
+
+      function strVal(id) {
+        var el = document.getElementById(id);
+        if (!el) return null;
+        var t = (el.value || '').trim();
+        return t === '' ? null : t;
+      }
+
+      /* PGN load */
+      var pathInput = document.getElementById('path');
+      var displayBoard = document.getElementById('displayBoard');
+      var startBtn = document.getElementById('start');
+      var cancelBtn = document.getElementById('cancel');
+      var wrap = document.getElementById('wrap');
+      var bar = document.getElementById('bar');
+      var statusEl = document.getElementById('status');
+
+      fetch(analyser + '/DefaultPgnPath')
         .then(function (r) { return r.ok ? r.json() : null; })
         .then(function (data) {
           if (data && data.defaultFilePath) pathInput.value = data.defaultFilePath;
@@ -51,34 +181,24 @@
       function setLoading(loading) {
         startBtn.disabled = loading;
         pathInput.disabled = loading;
+        displayBoard.disabled = loading;
         cancelBtn.style.display = loading ? 'inline-block' : 'none';
         cancelBtn.disabled = false;
       }
 
       function setProgress(percent, status, message) {
         wrap.style.display = 'block';
-        bar.style.width = (percent ?? 0) + '%';
-        bar.setAttribute('aria-valuenow', percent ?? 0);
+        bar.style.width = (percent != null ? percent : 0) + '%';
+        bar.setAttribute('aria-valuenow', percent != null ? percent : 0);
         bar.classList.toggle('failed', status === 'Failed' || status === 'Cancelled');
-        let t = status || '';
+        var t = status || '';
         if (message) t += (t ? ': ' : '') + message;
         statusEl.textContent = t;
         statusEl.className = 'status' + (status === 'Failed' || status === 'Cancelled' ? ' error' : '');
       }
 
-      function parseJsonSafe(response) {
-        return response.text().then(function (text) {
-          if (!text || text.trim() === '') return null;
-          try {
-            return JSON.parse(text);
-          } catch (_) {
-            return null;
-          }
-        });
-      }
-
       function poll() {
-        return fetch(api + '/LoadGamesProgress')
+        return fetch(analyser + '/LoadGamesProgress')
           .then(function (r) {
             if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
             return parseJsonSafe(r);
@@ -114,14 +234,18 @@
       }
 
       startBtn.addEventListener('click', function () {
-        const path = pathInput.value.trim();
-        if (!path) return;
+        var path = pathInput.value.trim();
+        if (!path) {
+          statusEl.textContent = 'Enter a path to the PGN file or folder.';
+          statusEl.className = 'status error';
+          return;
+        }
         setLoading(true);
         setProgress(0, 'Starting…', null);
-        fetch(api + '/LoadGames', {
+        fetch(analyser + '/LoadGames', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ filePath: path, displayBoardPosition: false })
+          body: JSON.stringify({ filePath: path, displayBoardPosition: !!displayBoard.checked })
         })
           .then(function (r) {
             if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + r.statusText + (t ? ': ' + t : '')); });
@@ -136,8 +260,177 @@
 
       cancelBtn.addEventListener('click', function () {
         cancelBtn.disabled = true;
-        fetch(api + '/CancelLoad', { method: 'POST' }).catch(function () {});
+        fetch(analyser + '/CancelLoad', { method: 'POST' }).catch(function () {});
       });
+
+      /* Metrics */
+      var metricKeySel = document.getElementById('metricKey');
+      var metricList = document.getElementById('metricList');
+      var metricStatus = document.getElementById('metricStatus');
+      var metricTableWrap = document.getElementById('metricTableWrap');
+
+      function buildQuery() {
+        var q = {};
+        var a = numVal('qMinYear');
+        var b = numVal('qMaxYear');
+        var w = numVal('qWhite');
+        var bl = numVal('qBlack');
+        var eco = strVal('qEco');
+        var ply = numVal('qPly');
+        if (a != null) q.minGameYear = a;
+        if (b != null) q.maxGameYear = b;
+        if (w != null) q.whitePlayerId = w;
+        if (bl != null) q.blackPlayerId = bl;
+        if (eco != null) q.eco = eco;
+        if (ply != null) q.summaryPlyIndex = ply;
+        return Object.keys(q).length ? q : undefined;
+      }
+
+      document.getElementById('refreshMetrics').addEventListener('click', function () {
+        metricList.textContent = 'Loading…';
+        metricStatus.textContent = '';
+        metricTableWrap.innerHTML = '';
+        fetch(analytics)
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            return r.json();
+          })
+          .then(function (list) {
+            metricKeySel.innerHTML = '';
+            if (!list || !list.length) {
+              metricList.textContent = 'No metrics registered.';
+              return;
+            }
+            metricList.innerHTML = '<ul style="margin:0.25rem 0;padding-left:1.2rem;">' +
+              list.map(function (m) {
+                return '<li><strong>' + escapeHtml(m.metricKey) + '</strong>' +
+                  (m.description ? ' — ' + escapeHtml(m.description) : '') + '</li>';
+              }).join('') + '</ul>';
+            list.forEach(function (m) {
+              var opt = document.createElement('option');
+              opt.value = m.metricKey;
+              opt.textContent = m.metricKey;
+              metricKeySel.appendChild(opt);
+            });
+          })
+          .catch(function (e) {
+            metricList.textContent = 'Error: ' + e.message;
+          });
+      });
+
+      document.getElementById('runMetric').addEventListener('click', function () {
+        var key = (metricKeySel.value || '').trim();
+        if (!key) {
+          metricStatus.textContent = 'Select a metric key (refresh list first).';
+          metricStatus.className = 'status error';
+          return;
+        }
+        var query = buildQuery();
+        var body = { metricKey: key };
+        if (query) body.query = query;
+        metricStatus.textContent = 'Running…';
+        metricStatus.className = 'status';
+        metricTableWrap.innerHTML = '';
+        fetch(analytics + '/execute', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(body)
+        })
+          .then(function (r) {
+            return parseJsonSafe(r).then(function (data) {
+              if (!r.ok) {
+                var msg = (data && (data.title || data.detail)) ? JSON.stringify(data) : (r.status + ' ' + r.statusText);
+                throw new Error(msg);
+              }
+              return data;
+            });
+          })
+          .then(function (data) {
+            metricStatus.textContent = 'Rows: ' + (data.rows ? data.rows.length : 0);
+            if (!data.columnNames || !data.rows) {
+              metricTableWrap.innerHTML = '<p class="hint">Unexpected response shape.</p>';
+              return;
+            }
+            var th = data.columnNames.map(function (c) { return '<th>' + escapeHtml(c) + '</th>'; }).join('');
+            var trs = data.rows.map(function (row) {
+              var tds = data.columnNames.map(function (_, i) {
+                var v = row[i];
+                return '<td>' + escapeHtml(v === null || v === undefined ? '' : v) + '</td>';
+              }).join('');
+              return '<tr>' + tds + '</tr>';
+            }).join('');
+            metricTableWrap.innerHTML = '<table class="data"><thead><tr>' + th + '</tr></thead><tbody>' + trs + '</tbody></table>';
+          })
+          .catch(function (e) {
+            metricStatus.textContent = 'Error: ' + e.message;
+            metricStatus.className = 'status error';
+          });
+      });
+
+      /* Games */
+      var gamesStatus = document.getElementById('gamesStatus');
+      var gamesTableWrap = document.getElementById('gamesTableWrap');
+      var gamesRaw = document.getElementById('gamesRaw');
+      var gamesRawWrap = document.getElementById('gamesRawWrap');
+
+      document.getElementById('fetchGames').addEventListener('click', function () {
+        var page = numVal('gPage') || 1;
+        var pageSize = numVal('gPageSize') || 50;
+        var params = new URLSearchParams();
+        params.set('page', String(page));
+        params.set('pageSize', String(pageSize));
+        var my = numVal('gMinYear');
+        var Mx = numVal('gMaxYear');
+        var gw = numVal('gWhite');
+        var gb = numVal('gBlack');
+        var ge = strVal('gEco');
+        if (my != null) params.set('minGameYear', String(my));
+        if (Mx != null) params.set('maxGameYear', String(Mx));
+        if (gw != null) params.set('whitePlayerId', String(gw));
+        if (gb != null) params.set('blackPlayerId', String(gb));
+        if (ge != null) params.set('eco', ge);
+        gamesStatus.textContent = 'Loading…';
+        gamesStatus.className = 'status';
+        gamesTableWrap.innerHTML = '';
+        gamesRawWrap.style.display = 'none';
+        gamesRaw.textContent = '';
+        fetch(analyser + '/GetGames?' + params.toString())
+          .then(function (r) {
+            return parseJsonSafe(r).then(function (data) {
+              if (!r.ok) throw new Error((data && data.detail) ? data.detail : r.status + ' ' + r.statusText);
+              return data;
+            });
+          })
+          .then(function (data) {
+            gamesStatus.textContent = 'Page ' + data.page + ' of size ' + data.pageSize + ' — totalCount ' + data.totalCount + ' — items ' + (data.items ? data.items.length : 0);
+            if (!data.items || !data.items.length) {
+              gamesTableWrap.innerHTML = '<p class="hint">No rows.</p>';
+              return;
+            }
+            var cols = ['id', 'name', 'gameYear', 'eco', 'event', 'whitePlayerId', 'blackPlayerId', 'gameId'];
+            var th = cols.map(function (c) { return '<th>' + c + '</th>'; }).join('');
+            var trs = data.items.map(function (g) {
+              var tds = cols.map(function (c) {
+                var v = g[c];
+                return '<td>' + escapeHtml(v === null || v === undefined ? '' : v) + '</td>';
+              }).join('');
+              return '<tr>' + tds + '</tr>';
+            }).join('');
+            gamesTableWrap.innerHTML = '<table class="data"><thead><tr>' + th + '</tr></thead><tbody>' + trs + '</tbody></table>';
+            gamesRaw.textContent = JSON.stringify(data, null, 2);
+            gamesRawWrap.style.display = 'block';
+          })
+          .catch(function (e) {
+            gamesStatus.textContent = 'Error: ' + e.message;
+            gamesStatus.className = 'status error';
+          });
+      });
+
+      try {
+        setTimeout(function () { document.getElementById('refreshMetrics').click(); }, 0);
+      } catch (e) {
+        console.error(e);
+      }
     })();
   </script>
 </body>

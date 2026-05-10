@@ -138,7 +138,18 @@ if (app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 
 app.UseDefaultFiles();
-app.UseStaticFiles();
+app.UseStaticFiles(new StaticFileOptions
+{
+    OnPrepareResponse = ctx =>
+    {
+        // Avoid stale index.html when iterating on wwwroot (F5 / hard-refresh confusion in Development).
+        if (app.Environment.IsDevelopment()
+            && ctx.File.Name.EndsWith(".html", StringComparison.OrdinalIgnoreCase))
+        {
+            ctx.Context.Response.Headers.Append("Cache-Control", "no-cache, no-store, must-revalidate");
+        }
+    }
+});
 
 app.UseRouting();
 
