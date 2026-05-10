@@ -31,13 +31,12 @@ internal static class Program
 
         ClearHistoryOutput(outputRoot);
 
-        await using (var probe = new SqlConnection(connectionString))
-        {
-            await probe.OpenAsync();
-        }
+        await using var sqlConnection = new SqlConnection(connectionString);
+        await sqlConnection.OpenAsync();
 
-        var serverConnection = new ServerConnection(connectionString);
-        serverConnection.Connect();
+        // In CI/Linux, SMO is more reliable when bound to an open SqlConnection
+        // instead of parsing the raw connection string itself.
+        var serverConnection = new ServerConnection(sqlConnection);
         var server = new Server(serverConnection);
 
         var db = server.Databases[builder.InitialCatalog];
