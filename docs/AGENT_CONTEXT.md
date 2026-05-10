@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-05-10 (PLAN **§12.4**: metrics extension prioritized; HTTP auth **deferred** for local-only use — see [PLAN.md §12.4](./PLAN.md).)
+**Last updated:** 2026-05-10 (PLAN **§12.4** item 1: **unified `wwwroot` web UI** next; then metrics extension; HTTP auth **deferred** — see [PLAN.md §12.4](./PLAN.md).)
 
 ---
 
@@ -24,13 +24,15 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
-- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4). Further work is product-driven (**more metrics + catalog**, UI, or deployment hardening if plans change).
+- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4). **Next product slice:** single **`wwwroot`** web experience for ETL + metrics + game browse (PLAN §12.4 item 1); then more metrics / catalog.
 
 ---
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** Follow **[PLAN.md §12.4](./PLAN.md):** add **`IMetricExecutor`** implementations you care about, register them in **`IMetricRegistry`**, and improve **`GET /api/analytics/metrics`** discovery text (descriptions / hints). Add executor + API tests per new metric. Optionally refresh [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) if you change deriver or summary hot paths.
+**Do next:** **[PLAN.md §12.4](./PLAN.md) item 1 — unified `wwwroot` web UI:** extend **`src/Analyser/wwwroot`** (e.g. `index.html` or a small multi-section layout) so **all routine workflows** run in the browser: ETL path + load + progress + cancel (already started), plus **metrics** (discovery + execute against existing APIs) and **paged games** (`GetGames` with query params). Treat Swagger as optional “API docs” via a link, not the default path.
+
+**Then:** §12.4 items 2–4 (more **`IMetricExecutor`**s, richer discovery text, tests). Optionally refresh [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) if deriver/summary hot paths change.
 
 **Do not prioritize yet:** Dedicated HTTP **auth / rate limits** for `AnalyticsMetricsController` — **out of scope** until there is a **deployment or network exposure** plan (then treat as blocking; update PLAN §12.1 / §13). Optional hygiene: bind the dev host to **localhost** only.
 
