@@ -75,6 +75,7 @@ builder.Services.AddSingleton<IEtlProgressStore, EtlProgressStore>();
 builder.Services.AddScoped<IChessRepository, ChessRepository>();
 builder.Services.AddSingleton<IPieceValues, ClassicalPieceValues>();
 builder.Services.AddScoped<IGamePositionSummaryFactory, GamePositionSummaryFactory>();
+builder.Services.AddScoped<IGameMoveDeriver, GameMoveDeriver>();
 
 var app = builder.Build();
 
