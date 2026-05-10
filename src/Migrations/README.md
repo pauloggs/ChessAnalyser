@@ -42,7 +42,12 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 `Game` analytics columns are populated by application code before insert (`PgnGameHeaderMapper` in `Services`); older rows may still have NULL values unless backfilled.
 
-`GameMove` and `GamePositionSummary` are created in schema first and are intended to be populated by a follow-up analytics materialization step in application code (see `docs/PLAN.md` §11).
+`GameMove` and `GamePositionSummary` are populated after `BoardPosition` by **`IAnalyticsMaterializationService`** on ETL insert and by **`IAnalyticsBackfillService`** for legacy rows (see `docs/PLAN.md` §11 and `docs/AGENT_CONTEXT.md`).
+
+### Application tooling (same scripts, no new migrations)
+
+- **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
+- **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
 
 ## Schema history snapshot
 

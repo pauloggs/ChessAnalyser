@@ -104,6 +104,26 @@ if (args.Any(a => string.Equals(a, "--backfill-analytics", StringComparison.Ordi
     return;
 }
 
+if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison.OrdinalIgnoreCase)))
+{
+    var iterations = 5000;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (string.Equals(args[i], "--iterations", StringComparison.OrdinalIgnoreCase)
+            && int.TryParse(args[i + 1], out var parsed)
+            && parsed > 0)
+            iterations = parsed;
+    }
+
+    var result = await MaterializationPerfHarness.RunAsync(iterations);
+    Console.WriteLine(
+        $"Materialization perf (in-memory, no DB): iterations={result.Iterations}, wall={result.ElapsedMilliseconds:F1} ms, " +
+        $"{result.GamesPerSecond:F0} games/s, {result.DerivedRowsPerSecond:F0} summary+move rows/s " +
+        $"({result.SummaryRowsPerIteration} summaries + {result.MoveRowsPerIteration} move per game). " +
+        $"See docs/ANALYTICS_MATERIALIZATION_PERF.md for methodology (PLAN §11 item 12 / DESIGN NFR-3).");
+    return;
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {
