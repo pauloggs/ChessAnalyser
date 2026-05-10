@@ -1,5 +1,6 @@
 using Interfaces.DTO;
 using Repositories;
+using Services.Helpers;
 using System.Threading.Tasks;
 
 namespace Services
@@ -67,6 +68,7 @@ namespace Services
         {
             foreach (var game in games)
             {
+                PgnGameHeaderMapper.ApplyFromTags(game);
                 var gameId = await chessRepository.InsertGame(game);
                 await chessRepository.InsertBoardPositions(game, gameId);
             }
