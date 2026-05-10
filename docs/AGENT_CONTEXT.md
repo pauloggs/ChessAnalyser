@@ -23,6 +23,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 ## 2. Product state (high level)
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
+- **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
 - **In progress (analytics):** DESIGN and PLAN are complete; **PLAN §11 item 1** is implemented (`006_AddGameAnalyticsColumns.sql` + `Migrations/README.md`). ETL still does not populate the new `Game` columns — next is **items 4–5** (DTO, `InsertGame`, header mapping from `Tags`).
 
 ---

@@ -37,3 +37,17 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 
 `Game` analytics columns are populated by application code in a later change (see `docs/PLAN.md` §11); until then they remain NULL for existing rows.
+
+## Schema history snapshot
+
+`src/Migrations/History/current/` contains a generated snapshot of current SQL object definitions (tables, views, procedures, functions, and user-defined table types).
+
+Generate/update it from repo root:
+
+```powershell
+powershell -ExecutionPolicy Bypass -File .\tools\export-db-history.ps1
+```
+
+The script reads `ConnectionStrings:ChessConnection` from `src/Migrations/appsettings.json` by default, or accepts an explicit `-ConnectionString`.
+
+Whenever migrations change, regenerate `History/current` and commit those files in the same PR so migration intent and resulting schema stay aligned.
