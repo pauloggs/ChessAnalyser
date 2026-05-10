@@ -76,6 +76,7 @@ builder.Services.AddScoped<IChessRepository, ChessRepository>();
 builder.Services.AddSingleton<IPieceValues, ClassicalPieceValues>();
 builder.Services.AddScoped<IGamePositionSummaryFactory, GamePositionSummaryFactory>();
 builder.Services.AddScoped<IGameMoveDeriver, GameMoveDeriver>();
+builder.Services.AddScoped<IAnalyticsMaterializationService, AnalyticsMaterializationService>();
 
 var app = builder.Build();
 

@@ -1,3 +1,4 @@
+using Interfaces.Analytics;
 using Interfaces.DTO;
 using Repositories;
 using Services.Helpers;
@@ -30,9 +31,10 @@ namespace Services
         Task InsertParseErrors(List<GameParseError> parseErrors);
 	}
 
-	public class PersistenceService(IChessRepository chessRepository) : IPersistenceService
+	public class PersistenceService(IChessRepository chessRepository, IAnalyticsMaterializationService analyticsMaterialization) : IPersistenceService
     {
         private readonly IChessRepository chessRepository = chessRepository;
+        private readonly IAnalyticsMaterializationService analyticsMaterialization = analyticsMaterialization;
 
         /// <summary>
         /// Returns the list of GameIds already in the database.
@@ -71,6 +73,7 @@ namespace Services
                 PgnGameHeaderMapper.ApplyFromTags(game);
                 var gameId = await chessRepository.InsertGame(game);
                 await chessRepository.InsertBoardPositions(game, gameId);
+                await analyticsMaterialization.MaterializeAfterGamePersistedAsync(game, gameId);
             }
         }
 
