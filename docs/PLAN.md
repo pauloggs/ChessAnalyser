@@ -1,7 +1,7 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment).  
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.4 (extend metrics catalog and executors; HTTP auth **deferred** while the app stays local-only / undeployed).  
 **Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
 ---
@@ -251,7 +251,7 @@ Use this as the working backlog for stage 3 (IMPLEMENT).
 
 Items **1–13** are **complete** in source for the board-position analytics groundwork: migrations through `010`, ETL materialization, **`IMetricRegistry`** and reference executors, backfill and perf CLIs on `Analyser`, and `Migrations/README.md` / [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md). **§11 is frozen** as the historical implementation checklist.
 
-**Active backlog:** use **§12** below. For session handoff text, prefer [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).
+**Active backlog:** use **§12** below (including **§12.4** for the current suggested slice). For session handoff text, prefer [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).
 
 ---
 
@@ -269,7 +269,7 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 | Discovery | **`GET /api/analytics/metrics`** returning **`IMetricRegistry.MetricKeys`** (and optional short descriptions from a static map or XML comments). |
 | Response | JSON projection of **`AnalyticsTableResult`**: `columnNames` + `rows` (array of arrays, or array of objects keyed by column — pick one and document). |
 | Errors | **404** or **400** for unknown **`metricKey`**; **400** for malformed filters. |
-| Auth | **Out of scope for first slice** unless the repo already has a standard middleware — document “open in dev; lock down before production” in controller remarks or README. |
+| Auth | **Deferred** while the host is **solo, local-only, and not deployed** for shared or internet access — no dedicated auth work in the current phase. If the API is later exposed on a network or to other users, add auth (e.g. API key or reverse proxy) + rate limits and update §13. Until then, optional hygiene: bind the web host to **localhost** only in run configuration. |
 | OpenAPI | Reuse Swashbuckle; ensure DTOs use public properties for usable schemas. |
 
 ### 12.2 Implementation checklist (ordered)
@@ -286,6 +286,20 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 |-------|-------|
 | API | Happy path + unknown metric key + optional filter passthrough (mock registry). |
 
+### 12.4 Recommended next implementation slice (post–§12)
+
+**Decision (2026):** The maintainer uses the application **only on a local machine** with **no current plan** to deploy it or grant controlled network access. Under that threat model, **HTTP authentication and rate-limiting for `AnalyticsMetricsController` are not the next priority.**
+
+**Suggested next work (PR-sized, in order of value):**
+
+1. **Extend the metrics surface** — add **`IMetricExecutor`** implementations for additional questions you care about (same patterns as the two reference metrics: parameterized repository reads, tabular `AnalyticsTableResult` only). Register them in **`IMetricRegistry`** / DI.
+2. **Improve discovery** — enrich **`GET /api/analytics/metrics`** with clearer descriptions (and optional parameter hints) so Swagger and future UI stay usable as the catalog grows.
+3. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for new keys), following §12.3.
+
+**Optional:** Record a fresh materialization throughput line in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) when you change hot paths in the deriver or summary factory.
+
+**When auth becomes relevant:** If you deploy the host or open it beyond localhost, treat **auth + rate limits** (or documented reverse-proxy-only access) as a **blocking** task before wider use; update §12.1, §13, and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).
+
 ---
 
 ## 13. Risks and mitigations
@@ -295,7 +309,7 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 | Move derivation fails on edge games | Tests + soft-fail (skip row, log); optional `GameMoveQuality` column later. |
 | Large DB backfill time | Process game-by-game; optional parallelism with cap. |
 | Transaction size for huge games | Batch inserts inside per-game transaction or chunk by N plies (rare games > 500 plies). |
-| Unauthenticated metrics HTTP endpoint | Rate-limit, auth, or network restriction before production; document dev default in §12. |
+| Unauthenticated metrics HTTP endpoint | **Accepted for local-only solo use** (see §12.1, §12.4). Before **deployment or network exposure**, add rate limits, auth, or strict network restriction and document the chosen approach. |
 
 ---
 
@@ -307,4 +321,4 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 follows **§12** with continuous alignment to [DESIGN.md](./DESIGN.md).*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** for the current suggested metrics work until deployment plans change.*

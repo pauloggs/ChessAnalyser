@@ -5,7 +5,7 @@ using Microsoft.AspNetCore.Mvc;
 namespace Analyser.Controllers;
 
 /// <summary>
-/// HTTP surface for registered analytics metrics (<see cref="IMetricRegistry"/>). **No authentication in this slice** — restrict by network or add auth before production (PLAN §12 / §13).
+/// HTTP surface for registered analytics metrics (<see cref="IMetricRegistry"/>). **No authentication** while the host is local-only; add auth / rate limits before network deployment (see PLAN §12.1, §12.4, §13).
 /// </summary>
 [ApiController]
 [Route("api/analytics/metrics")]
