@@ -1,4 +1,4 @@
-﻿/****** Object:  Table [dbo].[GamePositionSummary]    Script Date: 10/05/2026 16:24:34 ******/
+﻿/****** Object:  Table [dbo].[GamePositionSummary]    Script Date: 10/05/2026 16:33:04 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[GamePositionSummary](
@@ -25,7 +25,7 @@ CREATE TABLE [dbo].[GamePositionSummary](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
-/****** Object:  Index [IX_GamePositionSummary_PlyIndex]    Script Date: 10/05/2026 16:24:34 ******/
+/****** Object:  Index [IX_GamePositionSummary_PlyIndex]    Script Date: 10/05/2026 16:33:04 ******/
 CREATE NONCLUSTERED INDEX [IX_GamePositionSummary_PlyIndex] ON [dbo].[GamePositionSummary]
 (
 	[PlyIndex] ASC

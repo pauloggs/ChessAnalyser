@@ -1,4 +1,4 @@
-﻿/****** Object:  Table [dbo].[SchemaVersions]    Script Date: 10/05/2026 16:24:35 ******/
+﻿/****** Object:  Table [dbo].[SchemaVersions]    Script Date: 10/05/2026 16:33:05 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[SchemaVersions](

@@ -1,4 +1,4 @@
-﻿/****** Object:  Table [dbo].[Player]    Script Date: 10/05/2026 16:24:34 ******/
+﻿/****** Object:  Table [dbo].[Player]    Script Date: 10/05/2026 16:33:04 ******/
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [dbo].[Player](
