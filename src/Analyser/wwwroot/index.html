@@ -53,6 +53,8 @@
     footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--muted); }
     .checkbox-row { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
     .checkbox-row input { width: auto; }
+    .metric-fields { margin-top: 0.75rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f9fafb; }
+    .metric-fields[hidden] { display: none; }
     #metricList { min-height: 2rem; }
   </style>
 </head>
@@ -104,14 +106,37 @@
       <label>minGameYear <input type="number" id="qMinYear" placeholder="optional" step="1" /></label>
       <label>maxGameYear <input type="number" id="qMaxYear" placeholder="optional" step="1" /></label>
     </div>
-    <div class="row">
-      <label>White player <select id="qWhite"></select></label>
-      <label>Black player <select id="qBlack"></select></label>
-    </div>
     <label>eco (exact)</label>
     <input type="text" id="qEco" maxlength="16" placeholder="optional" />
-    <label>summaryPlyIndex (average-material metric)</label>
-    <input type="number" id="qPly" placeholder="default 4 if empty" step="1" />
+    <div id="sidePlayerFilters" class="metric-fields">
+      <p class="hint">Optional side filters for metrics that operate on games or moves.</p>
+      <div class="row">
+        <label>White player <select id="qWhite"></select></label>
+        <label>Black player <select id="qBlack"></select></label>
+      </div>
+    </div>
+    <div id="sideMaterialFields" class="metric-fields">
+      <p class="hint">This corpus trend averages White-side and Black-side material in the selected game set. It is not a player comparison.</p>
+      <label>summaryPlyIndex</label>
+      <input type="number" id="qPly" placeholder="default 4 if empty" step="1" />
+    </div>
+    <div id="playerComparisonFields" class="metric-fields" hidden>
+      <p class="hint">Player comparison uses full move number. Full move N maps internally to <code>PlyIndex = (N * 2) - 1</code>, after Black's Nth move.</p>
+      <div class="row">
+        <label>Player A (required) <select id="qPlayerA"></select></label>
+        <label>Player B (optional baseline) <select id="qPlayerB"></select></label>
+      </div>
+      <div class="row">
+        <label>Colour
+          <select id="qPlayerColour">
+            <option value="Any">Any</option>
+            <option value="White">White</option>
+            <option value="Black">Black</option>
+          </select>
+        </label>
+        <label>moveNumber <input type="number" id="qMoveNumber" value="1" min="1" step="1" /></label>
+      </div>
+    </div>
     <button type="button" id="runMetric">Run metric</button>
     <div class="status" id="metricStatus"></div>
     <div id="metricTableWrap"></div>
@@ -194,12 +219,12 @@
         };
       }
 
-      function populatePlayerSelect(select, players) {
+      function populatePlayerSelect(select, players, emptyText) {
         select.innerHTML = '';
 
         var empty = document.createElement('option');
         empty.value = '';
-        empty.textContent = 'Any player';
+        empty.textContent = emptyText || 'Any player';
         select.appendChild(empty);
 
         players.forEach(function (p) {
@@ -214,15 +239,17 @@
 
       function loadPlayerOptions() {
         var selects = [
-          document.getElementById('qWhite'),
-          document.getElementById('qBlack'),
-          document.getElementById('gWhite'),
-          document.getElementById('gBlack')
+          { element: document.getElementById('qWhite'), emptyText: 'Any player' },
+          { element: document.getElementById('qBlack'), emptyText: 'Any player' },
+          { element: document.getElementById('qPlayerA'), emptyText: 'Select player A' },
+          { element: document.getElementById('qPlayerB'), emptyText: 'All players' },
+          { element: document.getElementById('gWhite'), emptyText: 'Any player' },
+          { element: document.getElementById('gBlack'), emptyText: 'Any player' }
         ];
 
-        selects.forEach(function (select) {
-          populatePlayerSelect(select, []);
-          select.disabled = true;
+        selects.forEach(function (item) {
+          populatePlayerSelect(item.element, [], item.emptyText);
+          item.element.disabled = true;
         });
 
         return fetch(analyser + '/GetPlayers')
@@ -235,15 +262,15 @@
             (players || []).forEach(function (p) {
               playersById[p.id] = p.displayName || (p.surname || ('Player ' + p.id));
             });
-            selects.forEach(function (select) {
-              populatePlayerSelect(select, players || []);
-              select.disabled = false;
+            selects.forEach(function (item) {
+              populatePlayerSelect(item.element, players || [], item.emptyText);
+              item.element.disabled = false;
             });
           })
           .catch(function () {
-            selects.forEach(function (select) {
-              populatePlayerSelect(select, []);
-              select.disabled = false;
+            selects.forEach(function (item) {
+              populatePlayerSelect(item.element, [], item.emptyText);
+              item.element.disabled = false;
             });
           });
       }
@@ -354,27 +381,72 @@
       var metricList = document.getElementById('metricList');
       var metricStatus = document.getElementById('metricStatus');
       var metricTableWrap = document.getElementById('metricTableWrap');
+      var sidePlayerFilters = document.getElementById('sidePlayerFilters');
+      var sideMaterialFields = document.getElementById('sideMaterialFields');
+      var playerComparisonFields = document.getElementById('playerComparisonFields');
+
+      function selectedMetricKey() {
+        return (metricKeySel.value || '').trim();
+      }
+
+      function updateMetricFields() {
+        var key = selectedMetricKey();
+        var isPlayerComparison = key === 'AverageMaterialByPlayerAtMove';
+        var isSideMaterial = key === 'AverageMaterialByYearAndColour';
+
+        playerComparisonFields.hidden = !isPlayerComparison;
+        sideMaterialFields.hidden = !isSideMaterial;
+        sidePlayerFilters.hidden = isPlayerComparison || isSideMaterial;
+
+        if (isPlayerComparison)
+          metricStatus.textContent = 'Select Player A, optionally Player B, then choose colour and full move number.';
+        else
+          metricStatus.textContent = '';
+        metricStatus.className = 'status';
+        metricTableWrap.innerHTML = '';
+      }
 
       function buildQuery() {
         var q = {};
+        var key = selectedMetricKey();
         var a = numVal('qMinYear');
         var b = numVal('qMaxYear');
         var w = selectedPlayer('qWhite');
         var bl = selectedPlayer('qBlack');
+        var playerA = selectedPlayer('qPlayerA');
+        var playerB = selectedPlayer('qPlayerB');
         var eco = strVal('qEco');
         var ply = numVal('qPly');
+        var moveNumber = numVal('qMoveNumber');
+        var playerColour = strVal('qPlayerColour');
         if (a != null) q.minGameYear = a;
         if (b != null) q.maxGameYear = b;
-        if (w != null) {
-          q.whitePlayerSurname = w.surname;
-          q.whitePlayerForenames = w.forenames;
+
+        if (key === 'AverageMaterialByPlayerAtMove') {
+          if (playerA == null)
+            throw new Error('Select Player A before running AverageMaterialByPlayerAtMove.');
+
+          q.playerASurname = playerA.surname;
+          q.playerAForenames = playerA.forenames;
+          if (playerB != null) {
+            q.playerBSurname = playerB.surname;
+            q.playerBForenames = playerB.forenames;
+          }
+          if (playerColour != null) q.playerColour = playerColour;
+          if (moveNumber != null) q.moveNumber = moveNumber;
+        } else if (key !== 'AverageMaterialByYearAndColour') {
+          if (w != null) {
+            q.whitePlayerSurname = w.surname;
+            q.whitePlayerForenames = w.forenames;
+          }
+          if (bl != null) {
+            q.blackPlayerSurname = bl.surname;
+            q.blackPlayerForenames = bl.forenames;
+          }
         }
-        if (bl != null) {
-          q.blackPlayerSurname = bl.surname;
-          q.blackPlayerForenames = bl.forenames;
-        }
+
         if (eco != null) q.eco = eco;
-        if (ply != null) q.summaryPlyIndex = ply;
+        if (key === 'AverageMaterialByYearAndColour' && ply != null) q.summaryPlyIndex = ply;
         return Object.keys(q).length ? q : undefined;
       }
 
@@ -404,11 +476,14 @@
               opt.textContent = m.metricKey;
               metricKeySel.appendChild(opt);
             });
+            updateMetricFields();
           })
           .catch(function (e) {
             metricList.textContent = 'Error: ' + e.message;
           });
       });
+
+      metricKeySel.addEventListener('change', updateMetricFields);
 
       document.getElementById('runMetric').addEventListener('click', function () {
         var key = (metricKeySel.value || '').trim();
@@ -417,7 +492,14 @@
           metricStatus.className = 'status error';
           return;
         }
-        var query = buildQuery();
+        var query;
+        try {
+          query = buildQuery();
+        } catch (e) {
+          metricStatus.textContent = 'Error: ' + e.message;
+          metricStatus.className = 'status error';
+          return;
+        }
         var body = { metricKey: key };
         if (query) body.query = query;
         metricStatus.textContent = 'Running…';
