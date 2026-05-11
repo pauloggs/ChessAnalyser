@@ -181,6 +181,35 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Games grouped by normalized game result; optional filters on year, player names, and ECO.
+        /// </summary>
+        public static string GetGameCountsByResult =>
+            """
+            SELECT CASE g.Winner
+                       WHEN 'W' THEN 'White'
+                       WHEN 'B' THEN 'Black'
+                       WHEN 'D' THEN 'Draw'
+                       ELSE 'Unknown'
+                   END AS Result,
+                   COUNT(*) AS GameCount
+            FROM dbo.Game g
+            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+              AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (@Eco IS NULL OR g.Eco = @Eco)
+            GROUP BY CASE g.Winner
+                         WHEN 'W' THEN 'White'
+                         WHEN 'B' THEN 'Black'
+                         WHEN 'D' THEN 'Draw'
+                         ELSE 'Unknown'
+                     END
+            ORDER BY GameCount DESC, Result;
+            """;
+
+        /// <summary>
         /// Player A average material at a ply compared with Player B, or all players when Player B is omitted.
         /// ColourMode is one of Any, White, Black.
         /// </summary>

@@ -20,6 +20,8 @@ internal static class MetricCatalog
                 "Count of games grouped by ECO code, with optional year, player-name, and ECO filters.",
             "GameCountByYear" =>
                 "Count of games grouped by parsed GameYear, with optional player-name and ECO filters.",
+            "GameCountByResult" =>
+                "Count of games grouped by result (White, Black, Draw, Unknown), with optional year, player-name, and ECO filters.",
             "AverageMaterialByPlayerAtMove" =>
                 "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
             _ => null
@@ -56,6 +58,12 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
                 "Rows without a parsed GameYear are excluded."
+            ],
+            "GameCountByResult" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Stored winner codes are normalized to White, Black, Draw, or Unknown."
             ],
             "AverageMaterialByPlayerAtMove" =>
             [
