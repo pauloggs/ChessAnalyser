@@ -97,6 +97,9 @@ Discover metrics from the web UI or by calling:
 GET /api/analytics/metrics
 ```
 
+Discovery returns each metric key, a short description, and parameter hints for the most relevant
+query fields. The web UI shows those hints under **Refresh metric list**.
+
 Current metric keys:
 
 - `AverageMaterialByYearAndColour`

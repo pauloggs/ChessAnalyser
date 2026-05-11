@@ -23,4 +23,41 @@ internal static class MetricCatalog
             _ => null
         };
     }
+
+    public static IReadOnlyList<string> GetParameterHints(string metricKey)
+    {
+        if (string.IsNullOrEmpty(metricKey))
+            return [];
+
+        return metricKey.Trim() switch
+        {
+            "AverageMaterialByYearAndColour" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: summaryPlyIndex (defaults to 4).",
+                "Do not use for independent player-vs-player comparisons."
+            ],
+            "KnightMoveDestinationFrequency" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Returns numeric ToSquare values (0-63)."
+            ],
+            "GameCountByEco" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Rows with blank or missing ECO are excluded."
+            ],
+            "AverageMaterialByPlayerAtMove" =>
+            [
+                "Required: playerASurname (playerAForenames optional but recommended).",
+                "Optional: playerBSurname/playerBForenames; omit Player B for all-player baseline.",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: moveNumber (defaults to 1; full move N maps to PlyIndex = N * 2 - 1).",
+                "Optional: minGameYear, maxGameYear, eco."
+            ],
+            _ => []
+        };
+    }
 }

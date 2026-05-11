@@ -9,4 +9,7 @@ public sealed class MetricDescriptorResponse
 
     /// <summary>Human-readable summary when known to the host catalog.</summary>
     public string? Description { get; init; }
+
+    /// <summary>Short hints for the most relevant query parameters for this metric.</summary>
+    public required IReadOnlyList<string> ParameterHints { get; init; }
 }

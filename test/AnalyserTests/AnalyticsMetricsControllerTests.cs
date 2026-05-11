@@ -23,6 +23,8 @@ public class AnalyticsMetricsControllerTests
         Assert.Equal("AverageMaterialByYearAndColour", list[0].MetricKey);
         Assert.Equal("KnightMoveDestinationFrequency", list[1].MetricKey);
         Assert.False(string.IsNullOrEmpty(list[0].Description));
+        Assert.NotEmpty(list[0].ParameterHints);
+        Assert.Contains(list[0].ParameterHints, h => h.Contains("summaryPlyIndex", StringComparison.Ordinal));
     }
 
     [Fact]
