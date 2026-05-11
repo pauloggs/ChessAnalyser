@@ -108,6 +108,7 @@ Current metric keys:
 - `GameCountByYear`
 - `GameCountByResult`
 - `GameCountByPlayer`
+- `PlayerResultSummary`
 - `AverageMaterialByPlayerAtMove`
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
@@ -525,7 +526,62 @@ Content-Type: application/json
 
 ---
 
-## 11. Example analysis: browse the game population
+## 11. Example analysis: player result summary
+
+### Question
+
+Which players have the most wins, losses, draws, and score in the loaded game set?
+
+### Why it is useful
+
+This summarizes results from each player's own perspective, regardless of whether they played White
+or Black. It is useful for quick leaderboard-style checks and for spotting unusual result parsing.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `PlayerResultSummary`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "PlayerResultSummary",
+  "query": {
+    "minGameYear": 1900,
+    "maxGameYear": 1950
+  }
+}
+```
+
+### Result columns
+
+- `Player`
+- `WinCount`
+- `LossCount`
+- `DrawCount`
+- `UnknownCount`
+- `TotalGameCount`
+- `Score`
+
+### Notes
+
+- Wins and losses are calculated from the player's perspective.
+- `Score` is `wins + (draws / 2)`.
+- Player filters narrow the game set before summarizing results.
+
+---
+
+## 12. Example analysis: browse the game population
 
 ### Question
 
@@ -555,7 +611,7 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 
 ---
 
-## 12. Useful SQL checks
+## 13. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -598,7 +654,7 @@ ORDER BY g.Id;
 
 ---
 
-## 13. Adding a new example analysis to this document
+## 14. Adding a new example analysis to this document
 
 Use this template:
 

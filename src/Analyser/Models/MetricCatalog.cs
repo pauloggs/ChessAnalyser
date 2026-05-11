@@ -24,6 +24,8 @@ internal static class MetricCatalog
                 "Count of games grouped by result (White, Black, Draw, Unknown), with optional year, player-name, and ECO filters.",
             "GameCountByPlayer" =>
                 "Count of player appearances, split by White and Black games, with optional year, player-name, and ECO filters.",
+            "PlayerResultSummary" =>
+                "Player result summary from each player's perspective: wins, losses, draws, unknown results, total games, and score.",
             "AverageMaterialByPlayerAtMove" =>
                 "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
             _ => null
@@ -72,6 +74,12 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional side filters narrow the game set before counting player appearances.",
                 "Returns one row per resolved player with White, Black, and total game counts."
+            ],
+            "PlayerResultSummary" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional side filters narrow the game set before summarizing player results.",
+                "Wins and losses are calculated from each player's perspective; draws score 0.5."
             ],
             "AverageMaterialByPlayerAtMove" =>
             [
