@@ -26,7 +26,8 @@ public sealed class AnalyticsMetricsController(IMetricRegistry metricRegistry) :
             .Select(k => new MetricDescriptorResponse
             {
                 MetricKey = k,
-                Description = MetricCatalog.TryGetDescription(k)
+                Description = MetricCatalog.TryGetDescription(k),
+                ParameterHints = MetricCatalog.GetParameterHints(k)
             })
             .ToList();
 

@@ -467,8 +467,15 @@
             }
             metricList.innerHTML = '<ul style="margin:0.25rem 0;padding-left:1.2rem;">' +
               list.map(function (m) {
+                var hints = (m.parameterHints && m.parameterHints.length)
+                  ? '<ul style="margin:0.2rem 0 0.45rem 1rem;padding-left:1rem;">' +
+                    m.parameterHints.map(function (h) { return '<li>' + escapeHtml(h) + '</li>'; }).join('') +
+                    '</ul>'
+                  : '';
                 return '<li><strong>' + escapeHtml(m.metricKey) + '</strong>' +
-                  (m.description ? ' — ' + escapeHtml(m.description) : '') + '</li>';
+                  (m.description ? ' — ' + escapeHtml(m.description) : '') +
+                  hints +
+                  '</li>';
               }).join('') + '</ul>';
             list.forEach(function (m) {
               var opt = document.createElement('option');
