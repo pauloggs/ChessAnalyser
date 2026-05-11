@@ -118,16 +118,14 @@ metric:
 {
   "minGameYear": 1900,
   "maxGameYear": 1950,
-  "whitePlayerSurname": null,
-  "whitePlayerForenames": null,
-  "blackPlayerSurname": null,
-  "blackPlayerForenames": null,
+  "playerSurname": null,
+  "playerForenames": null,
+  "playerColour": "Any",
   "eco": null,
   "playerASurname": "Kasparov",
   "playerAForenames": "Garry",
   "playerBSurname": null,
   "playerBForenames": null,
-  "playerColour": "Any",
   "moveNumber": 1,
   "summaryPlyIndex": 4
 }
@@ -194,9 +192,9 @@ Content-Type: application/json
 - `summaryPlyIndex = 4` means the board snapshot after ply 4 using this repo's ply convention.
 - Material uses the configured `IPieceValues` implementation (`ClassicalPieceValues` today).
 - Player filters only narrow the game set before the side averages are calculated. For example,
-  filtering White player to `Kasparov, Garry` compares Kasparov's White-side material with the
-  Black-side material of his opponents in those same games. It does **not** compare Kasparov against
-  an all-player baseline or against another player independently.
+  filtering player to `Kasparov, Garry` with colour `White` compares Kasparov's White-side material
+  with the Black-side material of his opponents in those same games. It does **not** compare Kasparov
+  against an all-player baseline or against another player independently.
 - Use the planned player-comparison metric (PLAN §12.5) for player-vs-player or player-vs-baseline
   material questions.
 
@@ -289,7 +287,7 @@ checking whether move derivation is working and for exploring opening or player 
 In **Analytics metrics**:
 
 - Metric key: `KnightMoveDestinationFrequency`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 
@@ -342,7 +340,7 @@ to verify against `dbo.Game`.
 In **Analytics metrics**:
 
 - Metric key: `GameCountByEco`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 
@@ -391,7 +389,7 @@ and whether `GameYear` parsing looks sensible before running deeper year-based a
 In **Analytics metrics**:
 
 - Metric key: `GameCountByYear`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 
@@ -440,7 +438,7 @@ understanding whether the loaded data is balanced by outcome.
 In **Analytics metrics**:
 
 - Metric key: `GameCountByResult`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 
@@ -490,7 +488,7 @@ players in the corpus and checks whether player resolution is producing sensible
 In **Analytics metrics**:
 
 - Metric key: `GameCountByPlayer`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 
@@ -542,7 +540,7 @@ or Black. It is useful for quick leaderboard-style checks and for spotting unusu
 In **Analytics metrics**:
 
 - Metric key: `PlayerResultSummary`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose a player plus colour
 
 Click **Run metric**.
 

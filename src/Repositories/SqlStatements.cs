@@ -114,8 +114,11 @@ namespace Repositories
             WHERE g.GameYear IS NOT NULL
               AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
               AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
-              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (
+                  @PlayerSurname IS NULL
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+              )
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY g.GameYear
             ORDER BY g.GameYear;
@@ -134,8 +137,11 @@ namespace Repositories
             WHERE m.MovedPiece = 'N'
               AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (
+                  @PlayerSurname IS NULL
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+              )
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY m.ToSquare
             ORDER BY MoveCount DESC, m.ToSquare;
@@ -154,8 +160,11 @@ namespace Repositories
               AND LTRIM(RTRIM(g.Eco)) <> ''
               AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (
+                  @PlayerSurname IS NULL
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+              )
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY g.Eco
             ORDER BY GameCount DESC, g.Eco;
@@ -173,8 +182,11 @@ namespace Repositories
             WHERE g.GameYear IS NOT NULL
               AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
               AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
-              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (
+                  @PlayerSurname IS NULL
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+              )
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY g.GameYear
             ORDER BY g.GameYear;
@@ -197,8 +209,11 @@ namespace Repositories
             LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
             WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (
+                  @PlayerSurname IS NULL
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                  OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+              )
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY CASE g.Winner
                          WHEN 'W' THEN 'White'
@@ -224,8 +239,11 @@ namespace Repositories
                 LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-                  AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-                  AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+                  AND (
+                      @PlayerSurname IS NULL
+                      OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
                   AND (@Eco IS NULL OR g.Eco = @Eco)
             ),
             Appearance AS
@@ -270,8 +288,11 @@ namespace Repositories
                 LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-                  AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
-                  AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+                  AND (
+                      @PlayerSurname IS NULL
+                      OR ((@PlayerColour = 'Any' OR @PlayerColour = 'White') AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR ((@PlayerColour = 'Any' OR @PlayerColour = 'Black') AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
                   AND (@Eco IS NULL OR g.Eco = @Eco)
             ),
             Appearance AS

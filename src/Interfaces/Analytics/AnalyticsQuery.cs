@@ -9,17 +9,11 @@ public sealed class AnalyticsQuery
 
     public short? MaxGameYear { get; init; }
 
-    /// <summary>Exact match on White player's surname when set.</summary>
-    public string? WhitePlayerSurname { get; init; }
+    /// <summary>Exact match on a player's surname when set, independent of colour unless <see cref="PlayerColour"/> is also set.</summary>
+    public string? PlayerSurname { get; init; }
 
-    /// <summary>Exact match on White player's forenames when set. Empty string matches players with no forenames.</summary>
-    public string? WhitePlayerForenames { get; init; }
-
-    /// <summary>Exact match on Black player's surname when set.</summary>
-    public string? BlackPlayerSurname { get; init; }
-
-    /// <summary>Exact match on Black player's forenames when set. Empty string matches players with no forenames.</summary>
-    public string? BlackPlayerForenames { get; init; }
+    /// <summary>Exact match on a player's forenames when set. Empty string matches players with no forenames.</summary>
+    public string? PlayerForenames { get; init; }
 
     /// <summary>Exact match on <c>dbo.Game.Eco</c> when set.</summary>
     public string? Eco { get; init; }
@@ -36,7 +30,7 @@ public sealed class AnalyticsQuery
     /// <summary>Comparison player's forenames. Empty string matches players with no forenames.</summary>
     public string? PlayerBForenames { get; init; }
 
-    /// <summary>Colour mode for player-comparison metrics: <c>Any</c>, <c>White</c>, or <c>Black</c>.</summary>
+    /// <summary>Colour mode for player-aware metrics: <c>Any</c>, <c>White</c>, or <c>Black</c>.</summary>
     public string? PlayerColour { get; init; }
 
     /// <summary>User-facing full move number. For position summaries, full move N maps to ply <c>(N * 2) - 1</c>.</summary>
