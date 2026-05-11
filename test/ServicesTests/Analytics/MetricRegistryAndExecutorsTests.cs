@@ -8,7 +8,7 @@ namespace ServicesTests.Analytics;
 public class MetricRegistryAndExecutorsTests
 {
     [Fact]
-    public void MetricRegistry_ContainsBothReferenceMetricKeys()
+    public void MetricRegistry_ContainsRegisteredMetricKeys()
     {
         var repo = new Mock<IChessRepository>();
         repo.Setup(r => r.GetMaterialAveragesByYearAtPlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -17,6 +17,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<KnightDestinationCountRow>());
         repo.Setup(r => r.GetGameCountsByEcoAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<GameCountByEcoRow>());
+        repo.Setup(r => r.GetGameCountsByYearAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GameCountByYearRow>());
         repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
                 It.IsAny<AnalyticsQuery>(),
                 It.IsAny<int>(),
@@ -30,14 +32,16 @@ public class MetricRegistryAndExecutorsTests
             new AverageMaterialByYearAndColourExecutor(repo.Object),
             new KnightMoveDestinationFrequencyExecutor(repo.Object),
             new GameCountByEcoExecutor(repo.Object),
+            new GameCountByYearExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
         Assert.Contains("KnightMoveDestinationFrequency", sut.MetricKeys);
         Assert.Contains("GameCountByEco", sut.MetricKeys);
+        Assert.Contains("GameCountByYear", sut.MetricKeys);
         Assert.Contains("AverageMaterialByPlayerAtMove", sut.MetricKeys);
-        Assert.Equal(4, sut.MetricKeys.Count);
+        Assert.Equal(5, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -184,6 +188,55 @@ public class MetricRegistryAndExecutorsTests
                 q.MinGameYear == 1980
                 && q.WhitePlayerSurname == "Kasparov"
                 && q.WhitePlayerForenames == "Garry"
+                && q.Eco == "B90"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GameCountByYearExecutor_MapsRows()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetGameCountsByYearAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<GameCountByYearRow>
+            {
+                new() { GameYear = 1985, GameCount = 12 },
+                new() { GameYear = 1986, GameCount = 5 }
+            });
+
+        var sut = new GameCountByYearExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery());
+
+        Assert.Equal(["GameYear", "GameCount"], result.ColumnNames);
+        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal((short)1985, result.Rows[0][0]);
+        Assert.Equal(12, result.Rows[0][1]);
+    }
+
+    [Fact]
+    public async Task GameCountByYearExecutor_PassesNameFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetGameCountsByYearAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GameCountByYearRow>());
+
+        var query = new AnalyticsQuery
+        {
+            MinGameYear = 1980,
+            MaxGameYear = 1990,
+            BlackPlayerSurname = "Karpov",
+            BlackPlayerForenames = "Anatoly",
+            Eco = "B90"
+        };
+        var sut = new GameCountByYearExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetGameCountsByYearAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.MinGameYear == 1980
+                && q.MaxGameYear == 1990
+                && q.BlackPlayerSurname == "Karpov"
+                && q.BlackPlayerForenames == "Anatoly"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }

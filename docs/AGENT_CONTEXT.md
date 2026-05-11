@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-05-11 (PLAN **§12.4** item 3: metrics discovery hints added; HTTP auth **deferred** — see [PLAN.md §12.4](./PLAN.md).)
+**Last updated:** 2026-05-11 (PLAN **§12.4** item 2: `GameCountByYear` metric added; HTTP auth **deferred** — see [PLAN.md §12.4](./PLAN.md).)
 
 ---
 
@@ -24,13 +24,13 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
-- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, and metrics discovery descriptions plus parameter hints. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
+- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, and metrics discovery descriptions plus parameter hints. **Done (metrics surface):** `GameCountByEco`, `AverageMaterialByPlayerAtMove`, and `GameCountByYear`. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
 
 ---
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** **[PLAN.md §12.4](./PLAN.md) item 2 — extend the metrics surface:** add another small **`IMetricExecutor`** for a concrete analysis question, following the existing repository-read + `AnalyticsTableResult` pattern. Keep inputs explicit in `AnalyticsQuery`, register the executor in DI, and add parameter hints in `MetricCatalog`.
+**Do next:** No fixed planned PR is queued. Choose the next concrete analysis question before adding another metric, or do a small cleanup/test-hardening slice if one is called out by the maintainer.
 
 **Then:** Continue §12.4 item 4 tests as needed for each new metric. Optionally refresh [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) if deriver/summary hot paths change.
 

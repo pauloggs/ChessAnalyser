@@ -105,6 +105,7 @@ Current metric keys:
 - `AverageMaterialByYearAndColour`
 - `KnightMoveDestinationFrequency`
 - `GameCountByEco`
+- `GameCountByYear`
 - `AverageMaterialByPlayerAtMove`
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
@@ -371,7 +372,56 @@ Content-Type: application/json
 
 ---
 
-## 8. Example analysis: browse the game population
+## 8. Example analysis: game count by year
+
+### Question
+
+How are the loaded games distributed over calendar years?
+
+### Why it is useful
+
+This is a fast corpus-shape metric for checking whether the loaded PGNs cover the expected years
+and whether `GameYear` parsing looks sensible before running deeper year-based analyses.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `GameCountByYear`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "GameCountByYear",
+  "query": {
+    "minGameYear": 1900,
+    "maxGameYear": 1950
+  }
+}
+```
+
+### Result columns
+
+- `GameYear`
+- `GameCount`
+
+### Notes
+
+- Games with `GameYear = NULL` are excluded.
+- Supplying `eco` narrows the year distribution to games with that exact ECO code.
+
+---
+
+## 9. Example analysis: browse the game population
 
 ### Question
 
@@ -401,7 +451,7 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 
 ---
 
-## 9. Useful SQL checks
+## 10. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -444,7 +494,7 @@ ORDER BY g.Id;
 
 ---
 
-## 10. Adding a new example analysis to this document
+## 11. Adding a new example analysis to this document
 
 Use this template:
 

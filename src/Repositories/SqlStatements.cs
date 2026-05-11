@@ -162,6 +162,25 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Games grouped by calendar year; games without a parsed year are excluded.
+        /// </summary>
+        public static string GetGameCountsByYear =>
+            """
+            SELECT g.GameYear AS GameYear, COUNT(*) AS GameCount
+            FROM dbo.Game g
+            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            WHERE g.GameYear IS NOT NULL
+              AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
+              AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
+              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (@Eco IS NULL OR g.Eco = @Eco)
+            GROUP BY g.GameYear
+            ORDER BY g.GameYear;
+            """;
+
+        /// <summary>
         /// Player A average material at a ply compared with Player B, or all players when Player B is omitted.
         /// ColourMode is one of Any, White, Black.
         /// </summary>

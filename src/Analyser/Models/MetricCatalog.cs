@@ -18,6 +18,8 @@ internal static class MetricCatalog
                 "Count of knight half-moves grouped by destination square (ToSquare), with optional Game filters.",
             "GameCountByEco" =>
                 "Count of games grouped by ECO code, with optional year, player-name, and ECO filters.",
+            "GameCountByYear" =>
+                "Count of games grouped by parsed GameYear, with optional player-name and ECO filters.",
             "AverageMaterialByPlayerAtMove" =>
                 "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
             _ => null
@@ -48,6 +50,12 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
                 "Rows with blank or missing ECO are excluded."
+            ],
+            "GameCountByYear" =>
+            [
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Rows without a parsed GameYear are excluded."
             ],
             "AverageMaterialByPlayerAtMove" =>
             [
