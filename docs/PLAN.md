@@ -303,6 +303,66 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 ---
 
+### 12.5 Player material comparison metrics (planned PR sequence)
+
+**Decision (2026):** The existing **`AverageMaterialByYearAndColour`** metric is useful as a
+general corpus/year trend, but it is **not** a clear player-comparison metric. If a White player is
+selected and Black is left as “any”, the result compares that selected player’s White material
+against the Black-side material from the same games. That can be misleading because it does **not**
+compare two players independently, nor does it compare a player against a corpus baseline.
+
+Implement player material comparison as a separate sequence of PRs:
+
+1. **Clarify the existing metric (docs/catalog only).**
+   - Keep **`AverageMaterialByYearAndColour`** as a corpus-oriented metric.
+   - Update metric catalog / examples so it is described as “average side material by year”, not a
+     player comparison tool.
+   - Avoid implying that filtering by one player creates a fair independent comparison.
+2. **Add a new player-comparison metric.**
+   - Indicative key: **`AverageMaterialByPlayerAtMove`** (final name can change during
+     implementation).
+   - Inputs:
+     - Player A (`Surname`, `Forenames`).
+     - Optional Player B (`Surname`, `Forenames`).
+     - Optional colour filter: **White**, **Black**, or **Any**.
+     - Move number (user-facing), not raw `PlyIndex`.
+     - Optional year / ECO filters, following existing `AnalyticsQuery` style.
+   - Supported comparisons:
+     - Selected White player average material vs selected Black player average material.
+     - Selected player average material vs **all players** baseline.
+     - Player A vs Player B regardless of colour, when colour is **Any**.
+   - Keep the DB model ply-based internally; translate user-facing move number to the appropriate
+     `PlyIndex` in the metric or repository layer.
+3. **Add metric-specific UI affordances.**
+   - The generic metrics form should not try to make every filter meaningful for every metric.
+   - When `AverageMaterialByPlayerAtMove` is selected, show player-comparison fields, colour mode,
+     and move number wording that explains the internal ply convention.
+   - Keep raw metric execution available for development / Swagger.
+
+**Move vs ply rule for this planned metric:**
+
+- The public UI/API should ask for **move number**, because users think in moves, not raw plies.
+- Internally, `GamePositionSummary` remains keyed by `PlyIndex`.
+- Current convention:
+  - `PlyIndex = -1`: initial position.
+  - `PlyIndex = 0`: after White move 1.
+  - `PlyIndex = 1`: after Black move 1.
+- Implementation must make the chosen interpretation explicit. Preferred initial option:
+  **“after full move N”** maps to `PlyIndex = (N * 2) - 1` (after Black’s Nth move). If later
+  needed, add “after White move N” as a separate selector rather than overloading one number.
+
+**Testing expectations:**
+
+- Unit tests for move-number-to-ply mapping, including move 1.
+- Executor tests covering:
+  - Player A vs all-player baseline.
+  - Player A vs Player B.
+  - Colour = White, Black, Any.
+  - Empty result when the player name does not match.
+- API/controller or UI smoke tests if metric-specific UI logic becomes non-trivial.
+
+---
+
 ## 13. Risks and mitigations
 
 | Risk | Mitigation |
@@ -322,4 +382,4 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** (unified web UI first, then metrics extension) until deployment plans change.*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** for general metrics/UI work and **§12.5** for the planned player material comparison sequence until deployment plans change.*
