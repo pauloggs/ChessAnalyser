@@ -103,7 +103,8 @@ Current metric keys:
 - `KnightMoveDestinationFrequency`
 - `GameCountByEco`
 
-Both support the shared `AnalyticsQuery` filter shape:
+Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
+metric:
 
 ```json
 {
@@ -122,18 +123,21 @@ Omit properties, or leave them blank in the UI, when you do not want that filter
 
 ---
 
-## 4. Example analysis: average material by year
+## 4. Example analysis: average side material by year
 
 ### Question
 
-How does average material on the board vary by year at an early fixed ply?
+How does average material for the White side and Black side vary by year at an early fixed ply?
 
 ### Why it is useful
 
-This is a basic board-state sanity check and a starting point for historical comparisons. At a low
-ply such as `4`, most games should still be near starting material unless early captures happened.
-Large or surprising differences can point to data issues, unusual PGN parsing, or interesting
-opening patterns.
+This is a corpus-level board-state sanity check and a starting point for historical comparisons. At
+a low ply such as `4`, most games should still be near starting material unless early captures
+happened. Large or surprising differences can point to data issues, unusual PGN parsing, or
+interesting opening patterns.
+
+This metric compares **sides in the selected game set**: average `WhiteMaterial` for those games
+and average `BlackMaterial` for those same games. It is not an independent player-comparison metric.
 
 ### Run it in the UI
 
@@ -141,7 +145,7 @@ In **Analytics metrics**:
 
 - Metric key: `AverageMaterialByYearAndColour`
 - `summaryPlyIndex`: `4` (or leave empty for the default)
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+- Optional: set `minGameYear`, `maxGameYear`, or `eco`
 
 Click **Run metric**.
 
@@ -175,6 +179,12 @@ Content-Type: application/json
 - Games with `GameYear = NULL` are excluded by year-based metrics.
 - `summaryPlyIndex = 4` means the board snapshot after ply 4 using this repo's ply convention.
 - Material uses the configured `IPieceValues` implementation (`ClassicalPieceValues` today).
+- Player filters only narrow the game set before the side averages are calculated. For example,
+  filtering White player to `Kasparov, Garry` compares Kasparov's White-side material with the
+  Black-side material of his opponents in those same games. It does **not** compare Kasparov against
+  an all-player baseline or against another player independently.
+- Use the planned player-comparison metric (PLAN §12.5) for player-vs-player or player-vs-baseline
+  material questions.
 
 ---
 

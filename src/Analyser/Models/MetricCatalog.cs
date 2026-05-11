@@ -13,7 +13,7 @@ internal static class MetricCatalog
         return metricKey.Trim() switch
         {
             "AverageMaterialByYearAndColour" =>
-                "Average WhiteMaterial and BlackMaterial from GamePositionSummary at a fixed ply, grouped by GameYear (games with null year excluded).",
+                "Corpus trend: average White-side and Black-side material at a fixed ply, grouped by GameYear. Not an independent player comparison metric.",
             "KnightMoveDestinationFrequency" =>
                 "Count of knight half-moves grouped by destination square (ToSquare), with optional Game filters.",
             "GameCountByEco" =>
