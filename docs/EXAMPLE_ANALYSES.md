@@ -43,7 +43,7 @@ SELECT TOP 20
     DateTag,
     GameYear,
     Eco,
-    WhitePlayerId,
+    WhitePlayerId, -- storage FK; UI/API filters use player surname/forenames
     BlackPlayerId
 FROM dbo.[Game]
 ORDER BY Id DESC;
@@ -101,6 +101,7 @@ Current metric keys:
 
 - `AverageMaterialByYearAndColour`
 - `KnightMoveDestinationFrequency`
+- `GameCountByEco`
 
 Both support the shared `AnalyticsQuery` filter shape:
 
@@ -108,8 +109,10 @@ Both support the shared `AnalyticsQuery` filter shape:
 {
   "minGameYear": 1900,
   "maxGameYear": 1950,
-  "whitePlayerId": null,
-  "blackPlayerId": null,
+  "whitePlayerSurname": null,
+  "whitePlayerForenames": null,
+  "blackPlayerSurname": null,
+  "blackPlayerForenames": null,
   "eco": null,
   "summaryPlyIndex": 4
 }
@@ -138,7 +141,7 @@ In **Analytics metrics**:
 
 - Metric key: `AverageMaterialByYearAndColour`
 - `summaryPlyIndex`: `4` (or leave empty for the default)
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, `whitePlayerId`, or `blackPlayerId`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
 
 Click **Run metric**.
 
@@ -192,7 +195,7 @@ checking whether move derivation is working and for exploring opening or player 
 In **Analytics metrics**:
 
 - Metric key: `KnightMoveDestinationFrequency`
-- Optional: set `minGameYear`, `maxGameYear`, `eco`, `whitePlayerId`, or `blackPlayerId`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
 
 Click **Run metric**.
 
@@ -229,7 +232,56 @@ Content-Type: application/json
 
 ---
 
-## 6. Example analysis: browse the game population
+## 6. Example analysis: game count by ECO
+
+### Question
+
+Which ECO codes occur most often in the loaded game set?
+
+### Why it is useful
+
+This is a fast corpus-shape metric. It helps you see which openings dominate the data and is easy
+to verify against `dbo.Game`.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `GameCountByEco`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "GameCountByEco",
+  "query": {
+    "minGameYear": 1900,
+    "maxGameYear": 1950
+  }
+}
+```
+
+### Result columns
+
+- `Eco`
+- `GameCount`
+
+### Notes
+
+- Games with missing or blank `Eco` are excluded.
+- Supplying `eco` narrows the result to that exact code, which is mostly useful as a quick check.
+
+---
+
+## 7. Example analysis: browse the game population
 
 ### Question
 
@@ -241,7 +293,7 @@ In **Games (paged)**:
 
 - `page`: `1`
 - `pageSize`: `50`
-- Optional filters: `minGameYear`, `maxGameYear`, `whitePlayerId`, `blackPlayerId`, `eco`
+- Optional filters: `minGameYear`, `maxGameYear`, White/Black player names, `eco`
 
 Click **Fetch page**.
 
@@ -254,12 +306,12 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 ### What to look for
 
 - `event`, `site`, `dateTag`, `gameYear`, and `eco` are populated where the PGN has those tags.
-- `whitePlayerId` and `blackPlayerId` are present when player resolution succeeded.
+- White/Black player names in the UI are populated from the resolved `Player` rows.
 - Page counts look reasonable for your loaded PGN set.
 
 ---
 
-## 7. Useful SQL checks
+## 8. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -302,7 +354,7 @@ ORDER BY g.Id;
 
 ---
 
-## 8. Adding a new example analysis to this document
+## 9. Adding a new example analysis to this document
 
 Use this template:
 
@@ -343,7 +395,7 @@ When adding a new metric implementation, update:
 
 ---
 
-## 9. Known limitations and next improvements
+## 10. Known limitations and next improvements
 
 - The current web UI is intentionally simple static HTML/JavaScript.
 - Metric outputs are tabular, not charted.

@@ -80,6 +80,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Counts games by ECO code with optional game filters.
+        /// </summary>
+        Task<IReadOnlyList<GameCountByEcoRow>> GetGameCountsByEcoAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -117,13 +124,15 @@ namespace Repositories
             await connection.OpenAsync(cancellationToken).ConfigureAwait(false);
 
             var offset = (page - 1) * pageSize;
-            var eco = NormalizeEco(filters?.Eco);
+            var eco = NormalizeNonEmpty(filters?.Eco);
             var filterParams = new
             {
                 MinGameYear = filters?.MinGameYear,
                 MaxGameYear = filters?.MaxGameYear,
-                WhitePlayerId = filters?.WhitePlayerId,
-                BlackPlayerId = filters?.BlackPlayerId,
+                WhitePlayerSurname = filters?.WhitePlayerSurname,
+                WhitePlayerForenames = filters?.WhitePlayerForenames,
+                BlackPlayerSurname = filters?.BlackPlayerSurname,
+                BlackPlayerForenames = filters?.BlackPlayerForenames,
                 Eco = eco,
                 Offset = offset,
                 PageSize = pageSize
@@ -131,14 +140,16 @@ namespace Repositories
 
             const string whereClause =
                 """
-                WHERE (@MinGameYear IS NULL OR [GameYear] >= @MinGameYear)
-                  AND (@MaxGameYear IS NULL OR [GameYear] <= @MaxGameYear)
-                  AND (@WhitePlayerId IS NULL OR [WhitePlayerId] = @WhitePlayerId)
-                  AND (@BlackPlayerId IS NULL OR [BlackPlayerId] = @BlackPlayerId)
-                  AND (@Eco IS NULL OR [Eco] = @Eco)
+                LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR g.[GameYear] >= @MinGameYear)
+                  AND (@MaxGameYear IS NULL OR g.[GameYear] <= @MaxGameYear)
+                  AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+                  AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+                  AND (@Eco IS NULL OR g.[Eco] = @Eco)
                 """;
 
-            var countSql = "SELECT COUNT(1) FROM dbo.[Game] " + whereClause;
+            var countSql = "SELECT COUNT(1) FROM dbo.[Game] g " + whereClause;
             var countCmd = new CommandDefinition(
                 countSql,
                 filterParams,
@@ -148,9 +159,9 @@ namespace Repositories
 
             var pageSql =
                 """
-                SELECT * FROM dbo.[Game]
+                SELECT g.* FROM dbo.[Game] g
                 """ + whereClause + """
-                ORDER BY [Id]
+                ORDER BY g.[Id]
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
                 """;
             var pageCmd = new CommandDefinition(
@@ -169,12 +180,19 @@ namespace Repositories
             };
         }
 
-        private static string? NormalizeEco(string? eco)
+        private static string? NormalizeNonEmpty(string? value)
         {
-            if (string.IsNullOrWhiteSpace(eco))
+            if (string.IsNullOrWhiteSpace(value))
                 return null;
-            var t = eco.Trim();
+            var t = value.Trim();
             return t.Length == 0 ? null : t;
+        }
+
+        private static string? NormalizeNamePart(string? value)
+        {
+            if (value == null)
+                return null;
+            return value.Trim();
         }
 
         /// <summary>
@@ -512,8 +530,10 @@ namespace Repositories
                         PlyIndex = plyIndex,
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerId = query.WhitePlayerId,
-                        BlackPlayerId = query.BlackPlayerId,
+                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
+                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
+                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
+                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
                         Eco = query.Eco
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -535,9 +555,36 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerId = query.WhitePlayerId,
-                        BlackPlayerId = query.BlackPlayerId,
+                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
+                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
+                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
+                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
                         Eco = query.Eco
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<GameCountByEcoRow>> GetGameCountsByEcoAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<GameCountByEcoRow>(
+                new CommandDefinition(
+                    SqlStatements.GetGameCountsByEco,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
+                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
+                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
+                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
 

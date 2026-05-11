@@ -109,11 +109,13 @@ namespace Repositories
                    COUNT(*) AS GameCount
             FROM dbo.Game g
             INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
             WHERE g.GameYear IS NOT NULL
               AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
               AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
-              AND (@WhitePlayerId IS NULL OR g.WhitePlayerId = @WhitePlayerId)
-              AND (@BlackPlayerId IS NULL OR g.BlackPlayerId = @BlackPlayerId)
+              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY g.GameYear
             ORDER BY g.GameYear;
@@ -127,14 +129,36 @@ namespace Repositories
             SELECT m.ToSquare AS ToSquare, COUNT(*) AS MoveCount
             FROM dbo.GameMove m
             INNER JOIN dbo.Game g ON g.Id = m.GameId
+            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
             WHERE m.MovedPiece = 'N'
               AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
-              AND (@WhitePlayerId IS NULL OR g.WhitePlayerId = @WhitePlayerId)
-              AND (@BlackPlayerId IS NULL OR g.BlackPlayerId = @BlackPlayerId)
+              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
               AND (@Eco IS NULL OR g.Eco = @Eco)
             GROUP BY m.ToSquare
             ORDER BY MoveCount DESC, m.ToSquare;
+            """;
+
+        /// <summary>
+        /// Games grouped by ECO code; optional filters on year, player names, and ECO.
+        /// </summary>
+        public static string GetGameCountsByEco =>
+            """
+            SELECT g.Eco AS Eco, COUNT(*) AS GameCount
+            FROM dbo.Game g
+            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            WHERE g.Eco IS NOT NULL
+              AND LTRIM(RTRIM(g.Eco)) <> ''
+              AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+              AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+              AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+              AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+              AND (@Eco IS NULL OR g.Eco = @Eco)
+            GROUP BY g.Eco
+            ORDER BY GameCount DESC, g.Eco;
             """;
 
         /// <summary>

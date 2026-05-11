@@ -9,9 +9,13 @@ public sealed class GamePageFilters
 
     public short? MaxGameYear { get; init; }
 
-    public int? WhitePlayerId { get; init; }
+    public string? WhitePlayerSurname { get; init; }
 
-    public int? BlackPlayerId { get; init; }
+    public string? WhitePlayerForenames { get; init; }
+
+    public string? BlackPlayerSurname { get; init; }
+
+    public string? BlackPlayerForenames { get; init; }
 
     /// <summary>Exact match on persisted <c>Eco</c> (max 16 characters in DB).</summary>
     public string? Eco { get; init; }

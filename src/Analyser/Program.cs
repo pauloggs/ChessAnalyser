@@ -84,6 +84,7 @@ builder.Services.AddScoped<IGameMoveDeriver, GameMoveDeriver>();
 builder.Services.AddScoped<IAnalyticsMaterializationService, AnalyticsMaterializationService>();
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialByYearAndColourExecutor>();
 builder.Services.AddScoped<IMetricExecutor, KnightMoveDestinationFrequencyExecutor>();
+builder.Services.AddScoped<IMetricExecutor, GameCountByEcoExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 

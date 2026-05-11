@@ -116,6 +116,8 @@ namespace ControllerTests
             var ok = Assert.IsType<OkObjectResult>(result);
             var options = Assert.IsType<List<PlayerOptionResponse>>(ok.Value);
             Assert.Equal([1, 3, 2], options.Select(o => o.Id).ToArray());
+            Assert.Equal("Botvinnik", options[0].Surname);
+            Assert.Equal("Mikhail", options[0].Forenames);
             Assert.Equal("Botvinnik, Mikhail", options[0].DisplayName);
             Assert.Equal("Capablanca", options[1].DisplayName);
             Assert.Equal("Tal, Mikhail", options[2].DisplayName);
@@ -170,8 +172,10 @@ namespace ControllerTests
                         f != null
                         && f.MinGameYear == 1990
                         && f.MaxGameYear == 2000
-                        && f.WhitePlayerId == 3
-                        && f.BlackPlayerId == 7
+                        && f.WhitePlayerSurname == "Kasparov"
+                        && f.WhitePlayerForenames == "Garry"
+                        && f.BlackPlayerSurname == "Karpov"
+                        && f.BlackPlayerForenames == "Anatoly"
                         && f.Eco == "B90"),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(page);
@@ -187,7 +191,16 @@ namespace ControllerTests
                 scopeFactoryMock.Object,
                 pgnOptions);
 
-            await controller.GetGames(1, 10, 1990, 2000, 3, 7, "B90");
+            await controller.GetGames(
+                1,
+                10,
+                1990,
+                2000,
+                "Kasparov",
+                "Garry",
+                "Karpov",
+                "Anatoly",
+                "B90");
 
             chessRepoMock.Verify(
                 r => r.GetGamesPage(
@@ -197,8 +210,10 @@ namespace ControllerTests
                         f != null
                         && f.MinGameYear == 1990
                         && f.MaxGameYear == 2000
-                        && f.WhitePlayerId == 3
-                        && f.BlackPlayerId == 7
+                        && f.WhitePlayerSurname == "Kasparov"
+                        && f.WhitePlayerForenames == "Garry"
+                        && f.BlackPlayerSurname == "Karpov"
+                        && f.BlackPlayerForenames == "Anatoly"
                         && f.Eco == "B90"),
                     It.IsAny<CancellationToken>()),
                 Times.Once);
