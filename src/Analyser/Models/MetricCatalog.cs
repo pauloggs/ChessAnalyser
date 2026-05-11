@@ -42,43 +42,46 @@ internal static class MetricCatalog
             "AverageMaterialByYearAndColour" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: playerSurname/playerForenames plus playerColour = Any, White, or Black to narrow the game set.",
                 "Optional: summaryPlyIndex (defaults to 4).",
                 "Do not use for independent player-vs-player comparisons."
             ],
             "KnightMoveDestinationFrequency" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Optional: playerSurname/playerForenames plus playerColour = Any, White, or Black.",
                 "Returns numeric ToSquare values (0-63)."
             ],
             "GameCountByEco" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Optional: playerSurname/playerForenames plus playerColour = Any, White, or Black.",
                 "Rows with blank or missing ECO are excluded."
             ],
             "GameCountByYear" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Optional: playerSurname/playerForenames plus playerColour = Any, White, or Black.",
                 "Rows without a parsed GameYear are excluded."
             ],
             "GameCountByResult" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters: whitePlayerSurname/Forenames, blackPlayerSurname/Forenames.",
+                "Optional: playerSurname/playerForenames plus playerColour = Any, White, or Black.",
                 "Stored winner codes are normalized to White, Black, Draw, or Unknown."
             ],
             "GameCountByPlayer" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters narrow the game set before counting player appearances.",
+                "Optional player filter narrows the game set before counting player appearances.",
+                "playerColour = Any, White, or Black is independent from player identity.",
                 "Returns one row per resolved player with White, Black, and total game counts."
             ],
             "PlayerResultSummary" =>
             [
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional side filters narrow the game set before summarizing player results.",
+                "Optional player filter narrows the game set before summarizing player results.",
+                "playerColour = Any, White, or Black is independent from player identity.",
                 "Wins and losses are calculated from each player's perspective; draws score 0.5."
             ],
             "AverageMaterialByPlayerAtMove" =>

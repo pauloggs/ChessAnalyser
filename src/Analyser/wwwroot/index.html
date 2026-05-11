@@ -108,11 +108,17 @@
     </div>
     <label>eco (exact)</label>
     <input type="text" id="qEco" maxlength="16" placeholder="optional" />
-    <div id="sidePlayerFilters" class="metric-fields">
-      <p class="hint">Optional side filters for metrics that operate on games or moves.</p>
+    <div id="metricPlayerFilters" class="metric-fields">
+      <p class="hint">Optional player filter for metrics that operate on games or moves. Player identity and colour are independent: choose a player, then optionally restrict to games where they played White or Black.</p>
       <div class="row">
-        <label>White player <select id="qWhite"></select></label>
-        <label>Black player <select id="qBlack"></select></label>
+        <label>Player <select id="qPlayer"></select></label>
+        <label>Colour
+          <select id="qMetricPlayerColour">
+            <option value="Any">Any</option>
+            <option value="White">White</option>
+            <option value="Black">Black</option>
+          </select>
+        </label>
       </div>
     </div>
     <div id="sideMaterialFields" class="metric-fields">
@@ -239,8 +245,7 @@
 
       function loadPlayerOptions() {
         var selects = [
-          { element: document.getElementById('qWhite'), emptyText: 'Any player' },
-          { element: document.getElementById('qBlack'), emptyText: 'Any player' },
+          { element: document.getElementById('qPlayer'), emptyText: 'Any player' },
           { element: document.getElementById('qPlayerA'), emptyText: 'Select player A' },
           { element: document.getElementById('qPlayerB'), emptyText: 'All players' },
           { element: document.getElementById('gWhite'), emptyText: 'Any player' },
@@ -381,7 +386,7 @@
       var metricList = document.getElementById('metricList');
       var metricStatus = document.getElementById('metricStatus');
       var metricTableWrap = document.getElementById('metricTableWrap');
-      var sidePlayerFilters = document.getElementById('sidePlayerFilters');
+      var metricPlayerFilters = document.getElementById('metricPlayerFilters');
       var sideMaterialFields = document.getElementById('sideMaterialFields');
       var playerComparisonFields = document.getElementById('playerComparisonFields');
 
@@ -396,7 +401,7 @@
 
         playerComparisonFields.hidden = !isPlayerComparison;
         sideMaterialFields.hidden = !isSideMaterial;
-        sidePlayerFilters.hidden = isPlayerComparison || isSideMaterial;
+        metricPlayerFilters.hidden = isPlayerComparison;
 
         if (isPlayerComparison)
           metricStatus.textContent = 'Select Player A, optionally Player B, then choose colour and full move number.';
@@ -411,8 +416,8 @@
         var key = selectedMetricKey();
         var a = numVal('qMinYear');
         var b = numVal('qMaxYear');
-        var w = selectedPlayer('qWhite');
-        var bl = selectedPlayer('qBlack');
+        var metricPlayer = selectedPlayer('qPlayer');
+        var metricPlayerColour = strVal('qMetricPlayerColour');
         var playerA = selectedPlayer('qPlayerA');
         var playerB = selectedPlayer('qPlayerB');
         var eco = strVal('qEco');
@@ -434,14 +439,11 @@
           }
           if (playerColour != null) q.playerColour = playerColour;
           if (moveNumber != null) q.moveNumber = moveNumber;
-        } else if (key !== 'AverageMaterialByYearAndColour') {
-          if (w != null) {
-            q.whitePlayerSurname = w.surname;
-            q.whitePlayerForenames = w.forenames;
-          }
-          if (bl != null) {
-            q.blackPlayerSurname = bl.surname;
-            q.blackPlayerForenames = bl.forenames;
+        } else {
+          if (metricPlayer != null) {
+            q.playerSurname = metricPlayer.surname;
+            q.playerForenames = metricPlayer.forenames;
+            if (metricPlayerColour != null) q.playerColour = metricPlayerColour;
           }
         }
 

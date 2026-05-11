@@ -144,7 +144,7 @@ public class MetricRegistryAndExecutorsTests
         repo.Setup(r => r.GetKnightDestinationCountsAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<KnightDestinationCountRow>());
 
-        var query = new AnalyticsQuery { MinGameYear = 2000, Eco = "C00", WhitePlayerSurname = "Tal", WhitePlayerForenames = "Mikhail" };
+        var query = new AnalyticsQuery { MinGameYear = 2000, Eco = "C00", PlayerSurname = "Tal", PlayerForenames = "Mikhail", PlayerColour = "Any" };
         var sut = new KnightMoveDestinationFrequencyExecutor(repo.Object);
         await sut.ExecuteAsync(query);
 
@@ -152,8 +152,9 @@ public class MetricRegistryAndExecutorsTests
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 2000
                 && q.Eco == "C00"
-                && q.WhitePlayerSurname == "Tal"
-                && q.WhitePlayerForenames == "Mikhail"),
+                && q.PlayerSurname == "Tal"
+                && q.PlayerForenames == "Mikhail"
+                && q.PlayerColour == "Any"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 
@@ -187,8 +188,9 @@ public class MetricRegistryAndExecutorsTests
         var query = new AnalyticsQuery
         {
             MinGameYear = 1980,
-            WhitePlayerSurname = "Kasparov",
-            WhitePlayerForenames = "Garry",
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            PlayerColour = "White",
             Eco = "B90"
         };
         var sut = new GameCountByEcoExecutor(repo.Object);
@@ -198,8 +200,9 @@ public class MetricRegistryAndExecutorsTests
         repo.Verify(r => r.GetGameCountsByEcoAsync(
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
-                && q.WhitePlayerSurname == "Kasparov"
-                && q.WhitePlayerForenames == "Garry"
+                && q.PlayerSurname == "Kasparov"
+                && q.PlayerForenames == "Garry"
+                && q.PlayerColour == "White"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -235,8 +238,9 @@ public class MetricRegistryAndExecutorsTests
         {
             MinGameYear = 1980,
             MaxGameYear = 1990,
-            BlackPlayerSurname = "Karpov",
-            BlackPlayerForenames = "Anatoly",
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            PlayerColour = "Black",
             Eco = "B90"
         };
         var sut = new GameCountByYearExecutor(repo.Object);
@@ -247,8 +251,9 @@ public class MetricRegistryAndExecutorsTests
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990
-                && q.BlackPlayerSurname == "Karpov"
-                && q.BlackPlayerForenames == "Anatoly"
+                && q.PlayerSurname == "Karpov"
+                && q.PlayerForenames == "Anatoly"
+                && q.PlayerColour == "Black"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -284,8 +289,9 @@ public class MetricRegistryAndExecutorsTests
         {
             MinGameYear = 1980,
             MaxGameYear = 1990,
-            WhitePlayerSurname = "Kasparov",
-            WhitePlayerForenames = "Garry",
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            PlayerColour = "Any",
             Eco = "B90"
         };
         var sut = new GameCountByResultExecutor(repo.Object);
@@ -296,8 +302,9 @@ public class MetricRegistryAndExecutorsTests
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990
-                && q.WhitePlayerSurname == "Kasparov"
-                && q.WhitePlayerForenames == "Garry"
+                && q.PlayerSurname == "Kasparov"
+                && q.PlayerForenames == "Garry"
+                && q.PlayerColour == "Any"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -336,8 +343,9 @@ public class MetricRegistryAndExecutorsTests
         {
             MinGameYear = 1980,
             MaxGameYear = 1990,
-            WhitePlayerSurname = "Kasparov",
-            WhitePlayerForenames = "Garry",
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            PlayerColour = "White",
             Eco = "B90"
         };
         var sut = new GameCountByPlayerExecutor(repo.Object);
@@ -348,8 +356,9 @@ public class MetricRegistryAndExecutorsTests
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990
-                && q.WhitePlayerSurname == "Kasparov"
-                && q.WhitePlayerForenames == "Garry"
+                && q.PlayerSurname == "Kasparov"
+                && q.PlayerForenames == "Garry"
+                && q.PlayerColour == "White"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
@@ -391,8 +400,9 @@ public class MetricRegistryAndExecutorsTests
         {
             MinGameYear = 1980,
             MaxGameYear = 1990,
-            WhitePlayerSurname = "Kasparov",
-            WhitePlayerForenames = "Garry",
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            PlayerColour = "White",
             Eco = "B90"
         };
         var sut = new PlayerResultSummaryExecutor(repo.Object);
@@ -403,8 +413,9 @@ public class MetricRegistryAndExecutorsTests
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990
-                && q.WhitePlayerSurname == "Kasparov"
-                && q.WhitePlayerForenames == "Garry"
+                && q.PlayerSurname == "Kasparov"
+                && q.PlayerForenames == "Garry"
+                && q.PlayerColour == "White"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
     }

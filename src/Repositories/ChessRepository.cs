@@ -233,6 +233,21 @@ namespace Repositories
             return value.Trim();
         }
 
+        private static string NormalizePlayerColourFilter(string? value)
+        {
+            if (string.IsNullOrWhiteSpace(value)
+                || string.Equals(value.Trim(), "Any", StringComparison.OrdinalIgnoreCase))
+                return "Any";
+
+            if (string.Equals(value.Trim(), "White", StringComparison.OrdinalIgnoreCase))
+                return "White";
+
+            if (string.Equals(value.Trim(), "Black", StringComparison.OrdinalIgnoreCase))
+                return "Black";
+
+            throw new ArgumentException("playerColour must be Any, White, or Black.", "playerColour");
+        }
+
         /// <summary>
         /// Gets an open SQL connection.
         /// </summary>
@@ -568,10 +583,9 @@ namespace Repositories
                         PlyIndex = plyIndex,
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = query.Eco
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -593,10 +607,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = query.Eco
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -618,10 +631,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -643,10 +655,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -668,10 +679,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -693,10 +703,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
@@ -718,10 +727,9 @@ namespace Repositories
                     {
                         MinGameYear = query.MinGameYear,
                         MaxGameYear = query.MaxGameYear,
-                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
-                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
-                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
-                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();

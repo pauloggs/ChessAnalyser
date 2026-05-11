@@ -265,7 +265,7 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 | Concern | Decision |
 |---------|----------|
-| Execute | **`POST /api/analytics/metrics/execute`** (or `…/run`) with body `{ "metricKey": "…", "query": { … } }` mapping to **`AnalyticsQuery`** (`MinGameYear`, `MaxGameYear`, `WhitePlayerSurname`, `WhitePlayerForenames`, `BlackPlayerSurname`, `BlackPlayerForenames`, `Eco`, `SummaryPlyIndex`). |
+| Execute | **`POST /api/analytics/metrics/execute`** (or `…/run`) with body `{ "metricKey": "…", "query": { … } }` mapping to **`AnalyticsQuery`** (`MinGameYear`, `MaxGameYear`, independent `PlayerSurname` / `PlayerForenames` + `PlayerColour`, `Eco`, `SummaryPlyIndex`, and metric-specific player comparison fields). |
 | Discovery | **`GET /api/analytics/metrics`** returning **`IMetricRegistry.MetricKeys`** (and optional short descriptions from a static map or XML comments). |
 | Response | JSON projection of **`AnalyticsTableResult`**: `columnNames` + `rows` (array of arrays, or array of objects keyed by column — pick one and document). |
 | Errors | **404** or **400** for unknown **`metricKey`**; **400** for malformed filters. |
