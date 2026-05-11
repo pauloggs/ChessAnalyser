@@ -106,6 +106,7 @@ Current metric keys:
 - `KnightMoveDestinationFrequency`
 - `GameCountByEco`
 - `GameCountByYear`
+- `GameCountByResult`
 - `AverageMaterialByPlayerAtMove`
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
@@ -421,7 +422,57 @@ Content-Type: application/json
 
 ---
 
-## 9. Example analysis: browse the game population
+## 9. Example analysis: game count by result
+
+### Question
+
+How often do games end in White wins, Black wins, draws, or unknown results?
+
+### Why it is useful
+
+This is a quick sanity check over the PGN result parsing and a useful corpus-shape metric for
+understanding whether the loaded data is balanced by outcome.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `GameCountByResult`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "GameCountByResult",
+  "query": {
+    "minGameYear": 1900,
+    "maxGameYear": 1950
+  }
+}
+```
+
+### Result columns
+
+- `Result`
+- `GameCount`
+
+### Notes
+
+- Stored winner codes are normalized to `White`, `Black`, `Draw`, or `Unknown`.
+- `Unknown` includes games where the result was missing, not parsed, or otherwise not one of the
+  known PGN result values.
+
+---
+
+## 10. Example analysis: browse the game population
 
 ### Question
 
@@ -451,7 +502,7 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 
 ---
 
-## 10. Useful SQL checks
+## 11. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -494,7 +545,7 @@ ORDER BY g.Id;
 
 ---
 
-## 11. Adding a new example analysis to this document
+## 12. Adding a new example analysis to this document
 
 Use this template:
 
