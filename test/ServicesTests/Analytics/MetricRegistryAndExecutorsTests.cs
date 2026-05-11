@@ -21,6 +21,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<GameCountByYearRow>());
         repo.Setup(r => r.GetGameCountsByResultAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<GameCountByResultRow>());
+        repo.Setup(r => r.GetGameCountsByPlayerAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GameCountByPlayerRow>());
         repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
                 It.IsAny<AnalyticsQuery>(),
                 It.IsAny<int>(),
@@ -36,6 +38,7 @@ public class MetricRegistryAndExecutorsTests
             new GameCountByEcoExecutor(repo.Object),
             new GameCountByYearExecutor(repo.Object),
             new GameCountByResultExecutor(repo.Object),
+            new GameCountByPlayerExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object)
         });
 
@@ -44,8 +47,9 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("GameCountByEco", sut.MetricKeys);
         Assert.Contains("GameCountByYear", sut.MetricKeys);
         Assert.Contains("GameCountByResult", sut.MetricKeys);
+        Assert.Contains("GameCountByPlayer", sut.MetricKeys);
         Assert.Contains("AverageMaterialByPlayerAtMove", sut.MetricKeys);
-        Assert.Equal(6, sut.MetricKeys.Count);
+        Assert.Equal(7, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -285,6 +289,58 @@ public class MetricRegistryAndExecutorsTests
         await sut.ExecuteAsync(query);
 
         repo.Verify(r => r.GetGameCountsByResultAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.MinGameYear == 1980
+                && q.MaxGameYear == 1990
+                && q.WhitePlayerSurname == "Kasparov"
+                && q.WhitePlayerForenames == "Garry"
+                && q.Eco == "B90"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task GameCountByPlayerExecutor_MapsRows()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetGameCountsByPlayerAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<GameCountByPlayerRow>
+            {
+                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", WhiteGameCount = 12, BlackGameCount = 8, TotalGameCount = 20 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "", WhiteGameCount = 3, BlackGameCount = 2, TotalGameCount = 5 }
+            });
+
+        var sut = new GameCountByPlayerExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery());
+
+        Assert.Equal(["Player", "WhiteGameCount", "BlackGameCount", "TotalGameCount"], result.ColumnNames);
+        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal("Kasparov, Garry", result.Rows[0][0]);
+        Assert.Equal(12, result.Rows[0][1]);
+        Assert.Equal(8, result.Rows[0][2]);
+        Assert.Equal(20, result.Rows[0][3]);
+        Assert.Equal("Tal", result.Rows[1][0]);
+    }
+
+    [Fact]
+    public async Task GameCountByPlayerExecutor_PassesNameFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetGameCountsByPlayerAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<GameCountByPlayerRow>());
+
+        var query = new AnalyticsQuery
+        {
+            MinGameYear = 1980,
+            MaxGameYear = 1990,
+            WhitePlayerSurname = "Kasparov",
+            WhitePlayerForenames = "Garry",
+            Eco = "B90"
+        };
+        var sut = new GameCountByPlayerExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetGameCountsByPlayerAsync(
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990

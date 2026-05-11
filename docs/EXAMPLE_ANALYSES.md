@@ -107,6 +107,7 @@ Current metric keys:
 - `GameCountByEco`
 - `GameCountByYear`
 - `GameCountByResult`
+- `GameCountByPlayer`
 - `AverageMaterialByPlayerAtMove`
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
@@ -472,7 +473,59 @@ Content-Type: application/json
 
 ---
 
-## 10. Example analysis: browse the game population
+## 10. Example analysis: game count by player
+
+### Question
+
+Which players appear most often in the loaded games, and how often did they play White or Black?
+
+### Why it is useful
+
+This is a quick participation metric over the resolved `Player` table. It helps identify dominant
+players in the corpus and checks whether player resolution is producing sensible counts.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `GameCountByPlayer`
+- Optional: set `minGameYear`, `maxGameYear`, `eco`, or choose White/Black players by name
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "GameCountByPlayer",
+  "query": {
+    "minGameYear": 1900,
+    "maxGameYear": 1950
+  }
+}
+```
+
+### Result columns
+
+- `Player`
+- `WhiteGameCount`
+- `BlackGameCount`
+- `TotalGameCount`
+
+### Notes
+
+- Player filters narrow the game set before counting appearances.
+- Only resolved players are included; games without a resolved player ID for a side do not
+  contribute an appearance for that side.
+
+---
+
+## 11. Example analysis: browse the game population
 
 ### Question
 
@@ -502,7 +555,7 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 
 ---
 
-## 11. Useful SQL checks
+## 12. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -545,7 +598,7 @@ ORDER BY g.Id;
 
 ---
 
-## 12. Adding a new example analysis to this document
+## 13. Adding a new example analysis to this document
 
 Use this template:
 
