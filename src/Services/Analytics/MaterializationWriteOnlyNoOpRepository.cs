@@ -54,6 +54,13 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<GameCountByEcoRow>>();
 
+    public Task<IReadOnlyList<PlayerMaterialAverageRow>> GetPlayerMaterialAveragesAtPlyAsync(
+        AnalyticsQuery query,
+        int moveNumber,
+        int plyIndex,
+        string colourMode,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerMaterialAverageRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 

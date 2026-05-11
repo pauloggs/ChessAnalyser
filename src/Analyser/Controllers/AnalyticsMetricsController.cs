@@ -61,5 +61,9 @@ public sealed class AnalyticsMetricsController(IMetricRegistry metricRegistry) :
         {
             return NotFound($"Unknown metric key: {request.MetricKey.Trim()}");
         }
+        catch (ArgumentException ex)
+        {
+            return BadRequest(ex.Message);
+        }
     }
 }

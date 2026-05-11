@@ -162,6 +162,82 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Player A average material at a ply compared with Player B, or all players when Player B is omitted.
+        /// ColourMode is one of Any, White, Black.
+        /// </summary>
+        public static string GetPlayerMaterialAveragesAtPly =>
+            """
+            WITH Appearance AS
+            (
+                SELECT p.Surname,
+                       p.Forenames,
+                       CAST('White' AS NVARCHAR(8)) AS Colour,
+                       s.WhiteMaterial AS Material
+                FROM dbo.Game g
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+                INNER JOIN dbo.Player p ON p.Id = g.WhitePlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+
+                UNION ALL
+
+                SELECT p.Surname,
+                       p.Forenames,
+                       CAST('Black' AS NVARCHAR(8)) AS Colour,
+                       s.BlackMaterial AS Material
+                FROM dbo.Game g
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+                INNER JOIN dbo.Player p ON p.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            )
+            SELECT Series,
+                   PlayerSurname,
+                   PlayerForenames,
+                   Colour,
+                   MoveNumber,
+                   PlyIndex,
+                   AvgMaterial,
+                   PositionCount
+            FROM
+            (
+                SELECT 1 AS SortOrder,
+                       CAST('PlayerA' AS NVARCHAR(16)) AS Series,
+                       @PlayerASurname AS PlayerSurname,
+                       @PlayerAForenames AS PlayerForenames,
+                       @ColourMode AS Colour,
+                       @MoveNumber AS MoveNumber,
+                       @PlyIndex AS PlyIndex,
+                       AVG(CAST(Material AS FLOAT)) AS AvgMaterial,
+                       COUNT(*) AS PositionCount
+                FROM Appearance
+                WHERE Surname = @PlayerASurname
+                  AND (@PlayerAForenames IS NULL OR Forenames = @PlayerAForenames)
+                  AND (@ColourMode = 'Any' OR Colour = @ColourMode)
+                HAVING COUNT(*) > 0
+
+                UNION ALL
+
+                SELECT 2 AS SortOrder,
+                       CASE WHEN @PlayerBSurname IS NULL THEN CAST('AllPlayers' AS NVARCHAR(16)) ELSE CAST('PlayerB' AS NVARCHAR(16)) END AS Series,
+                       @PlayerBSurname AS PlayerSurname,
+                       @PlayerBForenames AS PlayerForenames,
+                       @ColourMode AS Colour,
+                       @MoveNumber AS MoveNumber,
+                       @PlyIndex AS PlyIndex,
+                       AVG(CAST(Material AS FLOAT)) AS AvgMaterial,
+                       COUNT(*) AS PositionCount
+                FROM Appearance
+                WHERE (@PlayerBSurname IS NULL OR (Surname = @PlayerBSurname AND (@PlayerBForenames IS NULL OR Forenames = @PlayerBForenames)))
+                  AND (@ColourMode = 'Any' OR Colour = @ColourMode)
+                HAVING COUNT(*) > 0
+            ) x
+            ORDER BY SortOrder;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>

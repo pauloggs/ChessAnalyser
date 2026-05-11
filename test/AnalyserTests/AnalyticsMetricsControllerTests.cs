@@ -39,6 +39,22 @@ public class AnalyticsMetricsControllerTests
     }
 
     [Fact]
+    public async Task Execute_InvalidMetricArguments_Returns400()
+    {
+        var registry = new Mock<IMetricRegistry>();
+        registry.Setup(r => r.ExecuteAsync("AverageMaterialByPlayerAtMove", It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ThrowsAsync(new ArgumentException("playerASurname is required."));
+
+        var sut = new AnalyticsMetricsController(registry.Object);
+        var result = await sut.Execute(
+            new ExecuteMetricRequest { MetricKey = "AverageMaterialByPlayerAtMove", Query = new AnalyticsQuery() },
+            CancellationToken.None);
+
+        var badRequest = Assert.IsType<BadRequestObjectResult>(result.Result);
+        Assert.Equal("playerASurname is required.", badRequest.Value);
+    }
+
+    [Fact]
     public async Task Execute_ValidMetric_ReturnsTable()
     {
         var table = new AnalyticsTableResult

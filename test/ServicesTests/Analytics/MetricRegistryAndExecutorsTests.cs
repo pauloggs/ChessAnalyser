@@ -17,18 +17,27 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<KnightDestinationCountRow>());
         repo.Setup(r => r.GetGameCountsByEcoAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<GameCountByEcoRow>());
+        repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerMaterialAverageRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
             new AverageMaterialByYearAndColourExecutor(repo.Object),
             new KnightMoveDestinationFrequencyExecutor(repo.Object),
-            new GameCountByEcoExecutor(repo.Object)
+            new GameCountByEcoExecutor(repo.Object),
+            new AverageMaterialByPlayerAtMoveExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
         Assert.Contains("KnightMoveDestinationFrequency", sut.MetricKeys);
         Assert.Contains("GameCountByEco", sut.MetricKeys);
-        Assert.Equal(3, sut.MetricKeys.Count);
+        Assert.Contains("AverageMaterialByPlayerAtMove", sut.MetricKeys);
+        Assert.Equal(4, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -177,5 +186,138 @@ public class MetricRegistryAndExecutorsTests
                 && q.WhitePlayerForenames == "Garry"
                 && q.Eco == "B90"),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Theory]
+    [InlineData(1, 1)]
+    [InlineData(2, 3)]
+    [InlineData(10, 19)]
+    public void AverageMaterialByPlayerAtMoveExecutor_MapsMoveNumberToFullMovePly(int moveNumber, int expectedPly)
+    {
+        Assert.Equal(expectedPly, AverageMaterialByPlayerAtMoveExecutor.MoveNumberToPlyIndex(moveNumber));
+    }
+
+    [Fact]
+    public void AverageMaterialByPlayerAtMoveExecutor_RejectsMoveNumberLessThanOne()
+    {
+        Assert.Throws<ArgumentOutOfRangeException>(() =>
+            AverageMaterialByPlayerAtMoveExecutor.MoveNumberToPlyIndex(0));
+    }
+
+    [Theory]
+    [InlineData(null, "Any")]
+    [InlineData("any", "Any")]
+    [InlineData("WHITE", "White")]
+    [InlineData("black", "Black")]
+    public void AverageMaterialByPlayerAtMoveExecutor_NormalizesColourMode(string? input, string expected)
+    {
+        Assert.Equal(expected, AverageMaterialByPlayerAtMoveExecutor.NormalizeColourMode(input));
+    }
+
+    [Fact]
+    public async Task AverageMaterialByPlayerAtMoveExecutor_PlayerAComparedWithAllPlayers_MapsRows()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                2,
+                3,
+                "Any",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerMaterialAverageRow>
+            {
+                new() { Series = "PlayerA", PlayerSurname = "Kasparov", PlayerForenames = "Garry", Colour = "Any", MoveNumber = 2, PlyIndex = 3, AvgMaterial = 38.5, PositionCount = 10 },
+                new() { Series = "AllPlayers", PlayerSurname = null, PlayerForenames = null, Colour = "Any", MoveNumber = 2, PlyIndex = 3, AvgMaterial = 39.1, PositionCount = 200 }
+            });
+
+        var sut = new AverageMaterialByPlayerAtMoveExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerASurname = "Kasparov",
+            PlayerAForenames = "Garry",
+            MoveNumber = 2
+        });
+
+        Assert.Equal(["Series", "Player", "Colour", "MoveNumber", "PlyIndex", "AvgMaterial", "PositionCount"], result.ColumnNames);
+        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal("PlayerA", result.Rows[0][0]);
+        Assert.Equal("Kasparov, Garry", result.Rows[0][1]);
+        Assert.Equal(38.5, result.Rows[0][5]);
+        Assert.Equal("All players", result.Rows[1][1]);
+    }
+
+    [Fact]
+    public async Task AverageMaterialByPlayerAtMoveExecutor_PlayerAComparedWithPlayerB_PassesQueryToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                3,
+                5,
+                "White",
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerMaterialAverageRow>
+            {
+                new() { Series = "PlayerA", PlayerSurname = "Kasparov", PlayerForenames = "Garry", Colour = "White", MoveNumber = 3, PlyIndex = 5, AvgMaterial = 38, PositionCount = 1 },
+                new() { Series = "PlayerB", PlayerSurname = "Karpov", PlayerForenames = "Anatoly", Colour = "White", MoveNumber = 3, PlyIndex = 5, AvgMaterial = 39, PositionCount = 1 }
+            });
+
+        var query = new AnalyticsQuery
+        {
+            PlayerASurname = "Kasparov",
+            PlayerAForenames = "Garry",
+            PlayerBSurname = "Karpov",
+            PlayerBForenames = "Anatoly",
+            PlayerColour = "White",
+            MoveNumber = 3,
+            MinGameYear = 1980,
+            Eco = "B90"
+        };
+        var sut = new AverageMaterialByPlayerAtMoveExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetPlayerMaterialAveragesAtPlyAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerASurname == "Kasparov"
+                && q.PlayerAForenames == "Garry"
+                && q.PlayerBSurname == "Karpov"
+                && q.PlayerBForenames == "Anatoly"
+                && q.MinGameYear == 1980
+                && q.Eco == "B90"),
+            3,
+            5,
+            "White",
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AverageMaterialByPlayerAtMoveExecutor_ReturnsEmpty_WhenPlayerAHasNoRows()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                It.IsAny<int>(),
+                It.IsAny<int>(),
+                It.IsAny<string>(),
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerMaterialAverageRow>
+            {
+                new() { Series = "AllPlayers", Colour = "Any", MoveNumber = 1, PlyIndex = 1, AvgMaterial = 39, PositionCount = 10 }
+            });
+
+        var sut = new AverageMaterialByPlayerAtMoveExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery { PlayerASurname = "NoSuchPlayer" });
+
+        Assert.Empty(result.Rows);
+    }
+
+    [Fact]
+    public async Task AverageMaterialByPlayerAtMoveExecutor_RequiresPlayerASurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new AverageMaterialByPlayerAtMoveExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
 }
