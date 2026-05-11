@@ -7,5 +7,9 @@ public sealed class PlayerOptionResponse
 {
     public int Id { get; init; }
 
+    public required string Surname { get; init; }
+
+    public required string Forenames { get; init; }
+
     public required string DisplayName { get; init; }
 }

@@ -9,9 +9,17 @@ public sealed class AnalyticsQuery
 
     public short? MaxGameYear { get; init; }
 
-    public int? WhitePlayerId { get; init; }
+    /// <summary>Exact match on White player's surname when set.</summary>
+    public string? WhitePlayerSurname { get; init; }
 
-    public int? BlackPlayerId { get; init; }
+    /// <summary>Exact match on White player's forenames when set. Empty string matches players with no forenames.</summary>
+    public string? WhitePlayerForenames { get; init; }
+
+    /// <summary>Exact match on Black player's surname when set.</summary>
+    public string? BlackPlayerSurname { get; init; }
+
+    /// <summary>Exact match on Black player's forenames when set. Empty string matches players with no forenames.</summary>
+    public string? BlackPlayerForenames { get; init; }
 
     /// <summary>Exact match on <c>dbo.Game.Eco</c> when set.</summary>
     public string? Eco { get; init; }

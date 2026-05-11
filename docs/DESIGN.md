@@ -37,7 +37,7 @@ The framework should make it **easy to add new metrics** and **efficient to run 
 |----|-------------|--------|
 | F-1 | **Board-state metrics (“material” and counts)** | At each ply, support metrics over **what is on the board**: total piece value by colour, **per-piece-type counts** (e.g. knights on the board), and any combination of dimensions (player, year, ply index, colour, etc.). Examples: “at ply 4, average total material for White’s side for player X”; “at ply 4, average number of knights, globally and split White/Black.” **Configurable** piece values for value-based totals. |
 | F-2 | **Move / piece-frequency metrics** | Support statistics on **how often** certain events occur: e.g. piece type P moved to square S, captures, promotions (if derivable), etc., filterable by player, year, colour, ECO, etc. |
-| F-3 | **Dimensional filtering** | All public metrics must support **combinations** of filters (e.g. `Year = 1938 AND WhitePlayerId = 42 AND PlyIndex BETWEEN 0 AND 40`). |
+| F-3 | **Dimensional filtering** | All public metrics must support **combinations** of filters (e.g. `Year = 1938 AND WhitePlayer = "Capablanca, Jose Raul" AND PlyIndex BETWEEN 0 AND 40`). |
 | F-4 | **Aggregation** | Support **COUNT**, **SUM**, **AVG**, **MIN**, **MAX** where semantically valid; extensible registry for custom reducers if needed later. |
 | F-5 | **Grouping** | Support **GROUP BY** one or more dimensions (year, player, ECO bucket, decile of ply, etc.). |
 | F-6 | **Extensibility** | New statistic types should be addable **without** modifying unrelated metrics (plugin-like or registry pattern; see §6). |
@@ -58,7 +58,7 @@ Dimensions should be **first-class** in the design even if not all are implement
 | Dimension | Source (conceptual) | Resolution / notes |
 |-----------|---------------------|---------------------|
 | Game | `Game` | GameId, Name, Result/Winner, etc. |
-| White player / Black player | `Game.WhitePlayerId`, `BlackPlayerId` → `Player` | Ingest-time resolution; analytics use **canonical Id**. |
+| White player / Black player | `Game.WhitePlayerId`, `BlackPlayerId` → `Player` | Ingest-time resolution stores canonical IDs; public filters use player surname/forenames so users do not need database IDs. |
 | Calendar **year** | **Explicit column** on `Game` (see §3.5) | Games with **incomplete/unknown** PGN dates are **omitted** from any analysis or grouping that depends on year (no “unknown year” bucket unless added later as a separate requirement). |
 | Ply | `BoardPosition.PlyIndex` | **Unit of aggregation for moves and position stats: one ply** (half-move). Aligns with colour/player differentiation; not “full move” (White+Black). |
 | Colour / side | Derived from schema + ply convention | Document in PLAN/implementations and tests (NFR-5). |

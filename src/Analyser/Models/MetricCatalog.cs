@@ -16,6 +16,8 @@ internal static class MetricCatalog
                 "Average WhiteMaterial and BlackMaterial from GamePositionSummary at a fixed ply, grouped by GameYear (games with null year excluded).",
             "KnightMoveDestinationFrequency" =>
                 "Count of knight half-moves grouped by destination square (ToSquare), with optional Game filters.",
+            "GameCountByEco" =>
+                "Count of games grouped by ECO code, with optional year, player-name, and ECO filters.",
             _ => null
         };
     }

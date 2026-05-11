@@ -114,6 +114,8 @@ public class AnalyserController(
             .Select(p => new PlayerOptionResponse
             {
                 Id = p.Id,
+                Surname = p.Surname?.Trim() ?? string.Empty,
+                Forenames = p.Forenames?.Trim() ?? string.Empty,
                 DisplayName = FormatPlayerDisplayName(p)
             })
             .ToList();
@@ -129,8 +131,10 @@ public class AnalyserController(
     /// <param name="pageSize">Rows per page (1–500).</param>
     /// <param name="minGameYear">Lower bound on <c>GameYear</c> (inclusive).</param>
     /// <param name="maxGameYear">Upper bound on <c>GameYear</c> (inclusive).</param>
-    /// <param name="whitePlayerId">Exact match on <c>WhitePlayerId</c>.</param>
-    /// <param name="blackPlayerId">Exact match on <c>BlackPlayerId</c>.</param>
+    /// <param name="whitePlayerSurname">Exact match on White player's surname.</param>
+    /// <param name="whitePlayerForenames">Exact match on White player's forenames. Empty string matches blank forenames.</param>
+    /// <param name="blackPlayerSurname">Exact match on Black player's surname.</param>
+    /// <param name="blackPlayerForenames">Exact match on Black player's forenames. Empty string matches blank forenames.</param>
     /// <param name="eco">Exact match on persisted <c>Eco</c> (trimmed, max 16 characters).</param>
     /// <param name="cancellationToken">Propagates cancellation from the client.</param>
     [HttpGet("GetGames")]
@@ -140,8 +144,10 @@ public class AnalyserController(
         [FromQuery] int pageSize = 50,
         [FromQuery] short? minGameYear = null,
         [FromQuery] short? maxGameYear = null,
-        [FromQuery] int? whitePlayerId = null,
-        [FromQuery] int? blackPlayerId = null,
+        [FromQuery] string? whitePlayerSurname = null,
+        [FromQuery] string? whitePlayerForenames = null,
+        [FromQuery] string? blackPlayerSurname = null,
+        [FromQuery] string? blackPlayerForenames = null,
         [FromQuery] string? eco = null,
         CancellationToken cancellationToken = default)
     {
@@ -156,19 +162,44 @@ public class AnalyserController(
         if (ecoTrimmed != null && ecoTrimmed.Length > 16)
             return BadRequest("eco must be at most 16 characters after trimming.");
 
-        GamePageFilters? filters = minGameYear.HasValue || maxGameYear.HasValue || whitePlayerId.HasValue || blackPlayerId.HasValue || ecoTrimmed != null
+        var whiteSurname = NormalizeOptional(whitePlayerSurname);
+        var whiteForenames = NormalizeOptionalAllowEmpty(whitePlayerForenames);
+        var blackSurname = NormalizeOptional(blackPlayerSurname);
+        var blackForenames = NormalizeOptionalAllowEmpty(blackPlayerForenames);
+
+        GamePageFilters? filters = minGameYear.HasValue
+                                    || maxGameYear.HasValue
+                                    || whiteSurname != null
+                                    || blackSurname != null
+                                    || ecoTrimmed != null
             ? new GamePageFilters
             {
                 MinGameYear = minGameYear,
                 MaxGameYear = maxGameYear,
-                WhitePlayerId = whitePlayerId,
-                BlackPlayerId = blackPlayerId,
+                WhitePlayerSurname = whiteSurname,
+                WhitePlayerForenames = whiteSurname == null ? null : whiteForenames,
+                BlackPlayerSurname = blackSurname,
+                BlackPlayerForenames = blackSurname == null ? null : blackForenames,
                 Eco = ecoTrimmed
             }
             : null;
 
         var pageResult = await _chessRepository.GetGamesPage(page, pageSize, filters, cancellationToken).ConfigureAwait(false);
         return Ok(pageResult);
+    }
+
+    private static string? NormalizeOptional(string? value)
+    {
+        if (string.IsNullOrWhiteSpace(value))
+            return null;
+        return value.Trim();
+    }
+
+    private static string? NormalizeOptionalAllowEmpty(string? value)
+    {
+        if (value == null)
+            return null;
+        return value.Trim();
     }
 
     private static string FormatPlayerDisplayName(Player player)

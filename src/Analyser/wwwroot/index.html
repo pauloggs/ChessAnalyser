@@ -152,6 +152,7 @@
       var base = window.location.origin;
       var analyser = base + '/Analyser';
       var analytics = base + '/api/analytics/metrics';
+      var playersById = {};
 
       function parseJsonSafe(response) {
         return response.text().then(function (text) {
@@ -183,6 +184,16 @@
         return t === '' ? null : t;
       }
 
+      function selectedPlayer(id) {
+        var select = document.getElementById(id);
+        if (!select || select.selectedIndex < 0 || !select.value) return null;
+        var opt = select.options[select.selectedIndex];
+        return {
+          surname: opt.dataset.surname || '',
+          forenames: opt.dataset.forenames || ''
+        };
+      }
+
       function populatePlayerSelect(select, players) {
         select.innerHTML = '';
 
@@ -193,8 +204,10 @@
 
         players.forEach(function (p) {
           var opt = document.createElement('option');
-          opt.value = String(p.id);
+          opt.value = p.displayName || (p.surname || ('Player ' + p.id));
           opt.textContent = p.displayName || ('Player ' + p.id);
+          opt.dataset.surname = p.surname || '';
+          opt.dataset.forenames = p.forenames || '';
           select.appendChild(opt);
         });
       }
@@ -218,6 +231,10 @@
             return r.json();
           })
           .then(function (players) {
+            playersById = {};
+            (players || []).forEach(function (p) {
+              playersById[p.id] = p.displayName || (p.surname || ('Player ' + p.id));
+            });
             selects.forEach(function (select) {
               populatePlayerSelect(select, players || []);
               select.disabled = false;
@@ -342,14 +359,20 @@
         var q = {};
         var a = numVal('qMinYear');
         var b = numVal('qMaxYear');
-        var w = numVal('qWhite');
-        var bl = numVal('qBlack');
+        var w = selectedPlayer('qWhite');
+        var bl = selectedPlayer('qBlack');
         var eco = strVal('qEco');
         var ply = numVal('qPly');
         if (a != null) q.minGameYear = a;
         if (b != null) q.maxGameYear = b;
-        if (w != null) q.whitePlayerId = w;
-        if (bl != null) q.blackPlayerId = bl;
+        if (w != null) {
+          q.whitePlayerSurname = w.surname;
+          q.whitePlayerForenames = w.forenames;
+        }
+        if (bl != null) {
+          q.blackPlayerSurname = bl.surname;
+          q.blackPlayerForenames = bl.forenames;
+        }
         if (eco != null) q.eco = eco;
         if (ply != null) q.summaryPlyIndex = ply;
         return Object.keys(q).length ? q : undefined;
@@ -450,13 +473,19 @@
         params.set('pageSize', String(pageSize));
         var my = numVal('gMinYear');
         var Mx = numVal('gMaxYear');
-        var gw = numVal('gWhite');
-        var gb = numVal('gBlack');
+        var gw = selectedPlayer('gWhite');
+        var gb = selectedPlayer('gBlack');
         var ge = strVal('gEco');
         if (my != null) params.set('minGameYear', String(my));
         if (Mx != null) params.set('maxGameYear', String(Mx));
-        if (gw != null) params.set('whitePlayerId', String(gw));
-        if (gb != null) params.set('blackPlayerId', String(gb));
+        if (gw != null) {
+          params.set('whitePlayerSurname', gw.surname);
+          params.set('whitePlayerForenames', gw.forenames);
+        }
+        if (gb != null) {
+          params.set('blackPlayerSurname', gb.surname);
+          params.set('blackPlayerForenames', gb.forenames);
+        }
         if (ge != null) params.set('eco', ge);
         gamesStatus.textContent = 'Loading…';
         gamesStatus.className = 'status';
@@ -476,11 +505,20 @@
               gamesTableWrap.innerHTML = '<p class="hint">No rows.</p>';
               return;
             }
-            var cols = ['id', 'name', 'gameYear', 'eco', 'event', 'whitePlayerId', 'blackPlayerId', 'gameId'];
-            var th = cols.map(function (c) { return '<th>' + c + '</th>'; }).join('');
+            var cols = [
+              { key: 'id', label: 'id' },
+              { key: 'name', label: 'name' },
+              { key: 'gameYear', label: 'gameYear' },
+              { key: 'eco', label: 'eco' },
+              { key: 'event', label: 'event' },
+              { key: 'whitePlayerId', label: 'whitePlayer', display: function (g) { return playersById[g.whitePlayerId] || ''; } },
+              { key: 'blackPlayerId', label: 'blackPlayer', display: function (g) { return playersById[g.blackPlayerId] || ''; } },
+              { key: 'gameId', label: 'gameId' }
+            ];
+            var th = cols.map(function (c) { return '<th>' + c.label + '</th>'; }).join('');
             var trs = data.items.map(function (g) {
               var tds = cols.map(function (c) {
-                var v = g[c];
+                var v = c.display ? c.display(g) : g[c.key];
                 return '<td>' + escapeHtml(v === null || v === undefined ? '' : v) + '</td>';
               }).join('');
               return '<tr>' + tds + '</tr>';
