@@ -89,6 +89,7 @@ On every **pull request** and on **pushes** to `main` or `master`, [.github/work
 |----------|---------|
 | [docs/DESIGN.md](docs/DESIGN.md) | Requirements and locked decisions for **board-position analytics** (facts, dimensions, C# vs SQL, rollups). |
 | [docs/PLAN.md](docs/PLAN.md) | Implementation plan, migrations outline, and **§11 checklist** for analytics work. |
+| [docs/EXAMPLE_ANALYSES.md](docs/EXAMPLE_ANALYSES.md) | Practical cookbook for running and maintaining local example analyses. |
 | [docs/AGENT_CONTEXT.md](docs/AGENT_CONTEXT.md) | Session handoff for agents: current progress and **recommended next step**. |
 | [docs/](docs/) | Additional notes (coverage gaps, audits, reviews). |
 

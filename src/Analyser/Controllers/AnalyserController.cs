@@ -1,3 +1,4 @@
+using Analyser.Models;
 using Interfaces;
 using Interfaces.DTO;
 using Microsoft.AspNetCore.Mvc;
@@ -100,6 +101,27 @@ public class AnalyserController(
     }
 
     /// <summary>
+    /// Gets players for local UI filter dropdowns, ordered by surname and forenames.
+    /// </summary>
+    [HttpGet("GetPlayers")]
+    [Produces("application/json")]
+    public async Task<IActionResult> GetPlayers()
+    {
+        var players = await _chessRepository.GetPlayers().ConfigureAwait(false);
+        var options = players
+            .OrderBy(p => p.Surname)
+            .ThenBy(p => p.Forenames)
+            .Select(p => new PlayerOptionResponse
+            {
+                Id = p.Id,
+                DisplayName = FormatPlayerDisplayName(p)
+            })
+            .ToList();
+
+        return Ok(options);
+    }
+
+    /// <summary>
     /// Get one page of games from the database (ordered by Id). Defaults: page 1, page 50; pageSize is capped at 500.
     /// Optional filters combine with AND. Games with null <c>GameYear</c> are excluded when a year bound is set.
     /// </summary>
@@ -147,5 +169,18 @@ public class AnalyserController(
 
         var pageResult = await _chessRepository.GetGamesPage(page, pageSize, filters, cancellationToken).ConfigureAwait(false);
         return Ok(pageResult);
+    }
+
+    private static string FormatPlayerDisplayName(Player player)
+    {
+        var surname = player.Surname?.Trim() ?? string.Empty;
+        var forenames = player.Forenames?.Trim() ?? string.Empty;
+
+        if (surname.Length == 0)
+            return forenames.Length == 0 ? $"Player {player.Id}" : forenames;
+        if (forenames.Length == 0)
+            return surname;
+
+        return $"{surname}, {forenames}";
     }
 }

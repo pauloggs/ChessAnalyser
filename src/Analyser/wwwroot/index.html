@@ -6,34 +6,51 @@
   <meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate" />
   <title>Chess Analyser</title>
   <style>
-    :root { color-scheme: light dark; }
-    body { font-family: system-ui, sans-serif; max-width: 52rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; line-height: 1.45; }
-    header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid #ccc; padding-bottom: 0.75rem; margin-bottom: 1rem; }
+    :root {
+      color-scheme: light;
+      --bg: #f8fafc;
+      --panel: #ffffff;
+      --text: #111827;
+      --muted: #4b5563;
+      --border: #cbd5e1;
+      --link: #0645ad;
+      --accent: #14532d;
+      --accent-fill: #15803d;
+      --danger: #b91c1c;
+      --button: #1d4ed8;
+      --button-hover: #1e40af;
+      --table-head: #e5e7eb;
+      --code-bg: #eef2f7;
+    }
+    body { font-family: system-ui, sans-serif; max-width: 56rem; margin: 0 auto; padding: 1rem 1.25rem 3rem; line-height: 1.5; color: var(--text); background: var(--bg); }
+    header { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 0.75rem; border-bottom: 1px solid var(--border); padding-bottom: 0.75rem; margin-bottom: 1rem; }
     header h1 { font-size: 1.35rem; margin: 0; }
     nav { display: flex; flex-wrap: wrap; gap: 0.5rem 1rem; font-size: 0.9rem; }
-    nav a { color: #06c; }
-    section { margin-top: 2rem; padding-top: 1.25rem; border-top: 1px solid #ddd; scroll-margin-top: 0.75rem; }
-    .section-strip { margin: 0.75rem 0 1.25rem; padding: 0.6rem 0.75rem; background: #f4f4f4; border-radius: 6px; font-size: 0.92rem; border: 1px solid #ddd; }
+    a, nav a { color: var(--link); }
+    section { margin-top: 1.5rem; padding: 1.25rem; border: 1px solid var(--border); border-radius: 8px; scroll-margin-top: 0.75rem; background: var(--panel); }
+    .section-strip { margin: 0.75rem 0 1.25rem; padding: 0.6rem 0.75rem; background: var(--code-bg); border-radius: 6px; font-size: 0.92rem; border: 1px solid var(--border); }
     .section-strip a { font-weight: 600; margin: 0 0.15rem; }
     section h2 { font-size: 1.1rem; margin: 0 0 0.75rem; }
-    .hint { font-size: 0.85rem; color: #555; margin: 0 0 0.75rem; }
+    .hint { font-size: 0.85rem; color: var(--muted); margin: 0 0 0.75rem; }
     label { display: block; margin-top: 0.65rem; font-size: 0.9rem; }
-    input[type="text"], input[type="number"], select { width: 100%; max-width: 28rem; padding: 0.45rem 0.5rem; box-sizing: border-box; }
+    input[type="text"], input[type="number"], select { width: 100%; max-width: 28rem; padding: 0.5rem 0.55rem; box-sizing: border-box; color: var(--text); background: #fff; border: 1px solid #94a3b8; border-radius: 4px; }
+    input:focus, select:focus, button:focus { outline: 3px solid #93c5fd; outline-offset: 1px; }
     .row { display: flex; flex-wrap: wrap; gap: 0.75rem 1rem; align-items: flex-end; margin-top: 0.5rem; }
     .row label { margin-top: 0; flex: 1 1 8rem; min-width: 0; }
     .row label input, .row label select { max-width: none; width: 100%; }
-    button { margin-top: 0.65rem; padding: 0.45rem 1rem; cursor: pointer; }
+    button { margin-top: 0.65rem; padding: 0.5rem 1rem; cursor: pointer; color: #fff; background: var(--button); border: 1px solid var(--button); border-radius: 4px; font-weight: 600; }
+    button:hover:not(:disabled) { background: var(--button-hover); border-color: var(--button-hover); }
     button:disabled { cursor: not-allowed; opacity: 0.65; }
-    .progress-wrap { margin: 0.75rem 0; height: 1.35rem; background: #eee; border-radius: 4px; overflow: hidden; max-width: 28rem; }
-    .progress-bar { height: 100%; background: #080; transition: width 0.2s; width: 0%; }
-    .progress-bar.failed { background: #c00; }
-    .status { margin-top: 0.5rem; font-size: 0.88rem; color: #444; white-space: pre-wrap; }
-    .error { color: #c00; }
-    pre.raw { background: #f5f5f5; padding: 0.75rem; overflow: auto; max-height: 14rem; font-size: 0.8rem; border-radius: 4px; margin-top: 0.5rem; }
+    .progress-wrap { margin: 0.75rem 0; height: 1.35rem; background: #e2e8f0; border: 1px solid var(--border); border-radius: 4px; overflow: hidden; max-width: 28rem; }
+    .progress-bar { height: 100%; background: var(--accent-fill); transition: width 0.2s; width: 0%; }
+    .progress-bar.failed { background: var(--danger); }
+    .status { margin-top: 0.5rem; font-size: 0.88rem; color: var(--muted); white-space: pre-wrap; }
+    .error { color: var(--danger); }
+    pre.raw { background: var(--code-bg); color: var(--text); padding: 0.75rem; overflow: auto; max-height: 14rem; font-size: 0.8rem; border-radius: 4px; margin-top: 0.5rem; border: 1px solid var(--border); }
     table.data { border-collapse: collapse; width: 100%; font-size: 0.82rem; margin-top: 0.5rem; }
-    table.data th, table.data td { border: 1px solid #ccc; padding: 0.35rem 0.45rem; text-align: left; vertical-align: top; }
-    table.data th { background: #f0f0f0; }
-    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid #ccc; font-size: 0.85rem; color: #555; }
+    table.data th, table.data td { border: 1px solid var(--border); padding: 0.4rem 0.5rem; text-align: left; vertical-align: top; }
+    table.data th { background: var(--table-head); color: var(--text); }
+    footer { margin-top: 2.5rem; padding-top: 1rem; border-top: 1px solid var(--border); font-size: 0.85rem; color: var(--muted); }
     .checkbox-row { margin-top: 0.5rem; display: flex; align-items: center; gap: 0.4rem; }
     .checkbox-row input { width: auto; }
     #metricList { min-height: 2rem; }
@@ -86,8 +103,10 @@
     <div class="row">
       <label>minGameYear <input type="number" id="qMinYear" placeholder="optional" step="1" /></label>
       <label>maxGameYear <input type="number" id="qMaxYear" placeholder="optional" step="1" /></label>
-      <label>whitePlayerId <input type="number" id="qWhite" placeholder="optional" step="1" /></label>
-      <label>blackPlayerId <input type="number" id="qBlack" placeholder="optional" step="1" /></label>
+    </div>
+    <div class="row">
+      <label>White player <select id="qWhite"></select></label>
+      <label>Black player <select id="qBlack"></select></label>
     </div>
     <label>eco (exact)</label>
     <input type="text" id="qEco" maxlength="16" placeholder="optional" />
@@ -108,8 +127,10 @@
     <div class="row">
       <label>minGameYear <input type="number" id="gMinYear" placeholder="optional" step="1" /></label>
       <label>maxGameYear <input type="number" id="gMaxYear" placeholder="optional" step="1" /></label>
-      <label>whitePlayerId <input type="number" id="gWhite" placeholder="optional" step="1" /></label>
-      <label>blackPlayerId <input type="number" id="gBlack" placeholder="optional" step="1" /></label>
+    </div>
+    <div class="row">
+      <label>White player <select id="gWhite"></select></label>
+      <label>Black player <select id="gBlack"></select></label>
     </div>
     <label>eco</label>
     <input type="text" id="gEco" maxlength="16" placeholder="optional" />
@@ -160,6 +181,54 @@
         if (!el) return null;
         var t = (el.value || '').trim();
         return t === '' ? null : t;
+      }
+
+      function populatePlayerSelect(select, players) {
+        select.innerHTML = '';
+
+        var empty = document.createElement('option');
+        empty.value = '';
+        empty.textContent = 'Any player';
+        select.appendChild(empty);
+
+        players.forEach(function (p) {
+          var opt = document.createElement('option');
+          opt.value = String(p.id);
+          opt.textContent = p.displayName || ('Player ' + p.id);
+          select.appendChild(opt);
+        });
+      }
+
+      function loadPlayerOptions() {
+        var selects = [
+          document.getElementById('qWhite'),
+          document.getElementById('qBlack'),
+          document.getElementById('gWhite'),
+          document.getElementById('gBlack')
+        ];
+
+        selects.forEach(function (select) {
+          populatePlayerSelect(select, []);
+          select.disabled = true;
+        });
+
+        return fetch(analyser + '/GetPlayers')
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            return r.json();
+          })
+          .then(function (players) {
+            selects.forEach(function (select) {
+              populatePlayerSelect(select, players || []);
+              select.disabled = false;
+            });
+          })
+          .catch(function () {
+            selects.forEach(function (select) {
+              populatePlayerSelect(select, []);
+              select.disabled = false;
+            });
+          });
       }
 
       /* PGN load */
@@ -427,6 +496,7 @@
       });
 
       try {
+        loadPlayerOptions();
         setTimeout(function () { document.getElementById('refreshMetrics').click(); }, 0);
       } catch (e) {
         console.error(e);

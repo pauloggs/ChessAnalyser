@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Analyser.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Options;
@@ -85,6 +86,39 @@ namespace ControllerTests
             var value = Assert.IsType<EtlProgress>(ok.Value);
             Assert.Equal("Running", value.Status);
             Assert.Equal(5, value.TotalFiles);
+        }
+
+        [Fact]
+        public async Task GetPlayers_ReturnsOrderedPlayerOptionsWithDisplayNames()
+        {
+            var players = new List<Player>
+            {
+                new() { Id = 2, Surname = "Tal", Forenames = "Mikhail" },
+                new() { Id = 1, Surname = "Botvinnik", Forenames = "Mikhail" },
+                new() { Id = 3, Surname = "Capablanca", Forenames = "" }
+            };
+            var chessRepoMock = new Mock<IChessRepository>();
+            chessRepoMock.Setup(r => r.GetPlayers()).ReturnsAsync(players);
+            var etlServiceMock = new Mock<IEtlService>();
+            var progressStoreMock = new Mock<IEtlProgressStore>();
+            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
+            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
+
+            var controller = new Analyser.Controllers.AnalyserController(
+                chessRepoMock.Object,
+                etlServiceMock.Object,
+                progressStoreMock.Object,
+                scopeFactoryMock.Object,
+                pgnOptions);
+
+            var result = await controller.GetPlayers();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var options = Assert.IsType<List<PlayerOptionResponse>>(ok.Value);
+            Assert.Equal([1, 3, 2], options.Select(o => o.Id).ToArray());
+            Assert.Equal("Botvinnik, Mikhail", options[0].DisplayName);
+            Assert.Equal("Capablanca", options[1].DisplayName);
+            Assert.Equal("Tal, Mikhail", options[2].DisplayName);
         }
 
         [Fact]
