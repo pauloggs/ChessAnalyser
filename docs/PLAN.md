@@ -333,7 +333,7 @@ Implement player material comparison as a separate sequence of PRs:
      - Player A vs Player B regardless of colour, when colour is **Any**.
    - Keep the DB model ply-based internally; translate user-facing move number to the appropriate
      `PlyIndex` in the metric or repository layer.
-3. [ ] **Add metric-specific UI affordances.**
+3. [x] **Add metric-specific UI affordances.**
    - The generic metrics form should not try to make every filter meaningful for every metric.
    - When `AverageMaterialByPlayerAtMove` is selected, show player-comparison fields, colour mode,
      and move number wording that explains the internal ply convention.

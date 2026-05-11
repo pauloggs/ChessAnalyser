@@ -207,17 +207,20 @@ all-player baseline?
 This is the player-comparison material metric. Unlike `AverageMaterialByYearAndColour`, it compares
 player appearances independently, so Player A does not need to have played Player B.
 
-### Run it
+### Run it in the UI
 
-Until the UI has metric-specific fields, use Swagger or another HTTP client.
+In **Analytics metrics**, select metric key `AverageMaterialByPlayerAtMove`. The form switches to
+player-comparison fields.
 
-Use metric key `AverageMaterialByPlayerAtMove` with:
+Set:
 
-- `playerASurname` / `playerAForenames` (required)
-- optional `playerBSurname` / `playerBForenames`; omit Player B for the all-player baseline
-- `playerColour`: `Any`, `White`, or `Black` (defaults to `Any`)
-- `moveNumber`: full move number (defaults to `1`)
-- optional `minGameYear`, `maxGameYear`, `eco`
+- Player A (required)
+- Player B (optional; leave as **All players** for the baseline)
+- Colour: `Any`, `White`, or `Black`
+- `moveNumber`: full move number (default `1`)
+- Optional: `minGameYear`, `maxGameYear`, `eco`
+
+Click **Run metric**.
 
 ### Equivalent HTTP request
 
