@@ -313,12 +313,12 @@ compare two players independently, nor does it compare a player against a corpus
 
 Implement player material comparison as a separate sequence of PRs:
 
-1. **Clarify the existing metric (docs/catalog only).**
+1. [x] **Clarify the existing metric (docs/catalog only).**
    - Keep **`AverageMaterialByYearAndColour`** as a corpus-oriented metric.
    - Update metric catalog / examples so it is described as “average side material by year”, not a
      player comparison tool.
    - Avoid implying that filtering by one player creates a fair independent comparison.
-2. **Add a new player-comparison metric.**
+2. [ ] **Add a new player-comparison metric.**
    - Indicative key: **`AverageMaterialByPlayerAtMove`** (final name can change during
      implementation).
    - Inputs:
@@ -333,7 +333,7 @@ Implement player material comparison as a separate sequence of PRs:
      - Player A vs Player B regardless of colour, when colour is **Any**.
    - Keep the DB model ply-based internally; translate user-facing move number to the appropriate
      `PlyIndex` in the metric or repository layer.
-3. **Add metric-specific UI affordances.**
+3. [ ] **Add metric-specific UI affordances.**
    - The generic metrics form should not try to make every filter meaningful for every metric.
    - When `AverageMaterialByPlayerAtMove` is selected, show player-comparison fields, colour mode,
      and move number wording that explains the internal ply convention.
