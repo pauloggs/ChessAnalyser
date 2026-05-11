@@ -23,6 +23,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<GameCountByResultRow>());
         repo.Setup(r => r.GetGameCountsByPlayerAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<GameCountByPlayerRow>());
+        repo.Setup(r => r.GetPlayerResultSummariesAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerResultSummaryRow>());
         repo.Setup(r => r.GetPlayerMaterialAveragesAtPlyAsync(
                 It.IsAny<AnalyticsQuery>(),
                 It.IsAny<int>(),
@@ -39,6 +41,7 @@ public class MetricRegistryAndExecutorsTests
             new GameCountByYearExecutor(repo.Object),
             new GameCountByResultExecutor(repo.Object),
             new GameCountByPlayerExecutor(repo.Object),
+            new PlayerResultSummaryExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object)
         });
 
@@ -48,8 +51,9 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("GameCountByYear", sut.MetricKeys);
         Assert.Contains("GameCountByResult", sut.MetricKeys);
         Assert.Contains("GameCountByPlayer", sut.MetricKeys);
+        Assert.Contains("PlayerResultSummary", sut.MetricKeys);
         Assert.Contains("AverageMaterialByPlayerAtMove", sut.MetricKeys);
-        Assert.Equal(7, sut.MetricKeys.Count);
+        Assert.Equal(8, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -341,6 +345,61 @@ public class MetricRegistryAndExecutorsTests
         await sut.ExecuteAsync(query);
 
         repo.Verify(r => r.GetGameCountsByPlayerAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.MinGameYear == 1980
+                && q.MaxGameYear == 1990
+                && q.WhitePlayerSurname == "Kasparov"
+                && q.WhitePlayerForenames == "Garry"
+                && q.Eco == "B90"),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task PlayerResultSummaryExecutor_MapsRows()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayerResultSummariesAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerResultSummaryRow>
+            {
+                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", WinCount = 12, LossCount = 3, DrawCount = 10, UnknownCount = 1, TotalGameCount = 26, Score = 17 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "", WinCount = 5, LossCount = 2, DrawCount = 4, UnknownCount = 0, TotalGameCount = 11, Score = 7 }
+            });
+
+        var sut = new PlayerResultSummaryExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery());
+
+        Assert.Equal(["Player", "WinCount", "LossCount", "DrawCount", "UnknownCount", "TotalGameCount", "Score"], result.ColumnNames);
+        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal("Kasparov, Garry", result.Rows[0][0]);
+        Assert.Equal(12, result.Rows[0][1]);
+        Assert.Equal(3, result.Rows[0][2]);
+        Assert.Equal(10, result.Rows[0][3]);
+        Assert.Equal(1, result.Rows[0][4]);
+        Assert.Equal(26, result.Rows[0][5]);
+        Assert.Equal(17d, result.Rows[0][6]);
+        Assert.Equal("Tal", result.Rows[1][0]);
+    }
+
+    [Fact]
+    public async Task PlayerResultSummaryExecutor_PassesNameFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayerResultSummariesAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerResultSummaryRow>());
+
+        var query = new AnalyticsQuery
+        {
+            MinGameYear = 1980,
+            MaxGameYear = 1990,
+            WhitePlayerSurname = "Kasparov",
+            WhitePlayerForenames = "Garry",
+            Eco = "B90"
+        };
+        var sut = new PlayerResultSummaryExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetPlayerResultSummariesAsync(
             It.Is<AnalyticsQuery>(q =>
                 q.MinGameYear == 1980
                 && q.MaxGameYear == 1990

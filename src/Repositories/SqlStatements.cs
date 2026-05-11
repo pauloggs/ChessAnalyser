@@ -256,6 +256,59 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Player results from each player's perspective; optional filters narrow the game set first.
+        /// </summary>
+        public static string GetPlayerResultSummaries =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Winner,
+                       g.WhitePlayerId,
+                       g.BlackPlayerId
+                FROM dbo.Game g
+                LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
+                  AND (@BlackPlayerSurname IS NULL OR (bp.Surname = @BlackPlayerSurname AND (@BlackPlayerForenames IS NULL OR bp.Forenames = @BlackPlayerForenames)))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearance AS
+            (
+                SELECT WhitePlayerId AS PlayerId,
+                       CASE WHEN Winner = 'W' THEN 1 ELSE 0 END AS WinCount,
+                       CASE WHEN Winner = 'B' THEN 1 ELSE 0 END AS LossCount,
+                       CASE WHEN Winner = 'D' THEN 1 ELSE 0 END AS DrawCount,
+                       CASE WHEN Winner IS NULL OR Winner NOT IN ('W', 'B', 'D') THEN 1 ELSE 0 END AS UnknownCount
+                FROM FilteredGames
+                WHERE WhitePlayerId IS NOT NULL
+
+                UNION ALL
+
+                SELECT BlackPlayerId AS PlayerId,
+                       CASE WHEN Winner = 'B' THEN 1 ELSE 0 END AS WinCount,
+                       CASE WHEN Winner = 'W' THEN 1 ELSE 0 END AS LossCount,
+                       CASE WHEN Winner = 'D' THEN 1 ELSE 0 END AS DrawCount,
+                       CASE WHEN Winner IS NULL OR Winner NOT IN ('W', 'B', 'D') THEN 1 ELSE 0 END AS UnknownCount
+                FROM FilteredGames
+                WHERE BlackPlayerId IS NOT NULL
+            )
+            SELECT p.Surname AS PlayerSurname,
+                   p.Forenames AS PlayerForenames,
+                   SUM(a.WinCount) AS WinCount,
+                   SUM(a.LossCount) AS LossCount,
+                   SUM(a.DrawCount) AS DrawCount,
+                   SUM(a.UnknownCount) AS UnknownCount,
+                   COUNT(*) AS TotalGameCount,
+                   CAST(SUM(a.WinCount) AS FLOAT) + (CAST(SUM(a.DrawCount) AS FLOAT) / 2.0) AS Score
+            FROM Appearance a
+            INNER JOIN dbo.Player p ON p.Id = a.PlayerId
+            GROUP BY p.Surname, p.Forenames
+            ORDER BY Score DESC, TotalGameCount DESC, p.Surname, p.Forenames;
+            """;
+
+        /// <summary>
         /// Player A average material at a ply compared with Player B, or all players when Player B is omitted.
         /// ColourMode is one of Any, White, Black.
         /// </summary>
