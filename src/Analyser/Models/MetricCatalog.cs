@@ -18,6 +18,8 @@ internal static class MetricCatalog
                 "Count of knight half-moves grouped by destination square (ToSquare), with optional Game filters.",
             "GameCountByEco" =>
                 "Count of games grouped by ECO code, with optional year, player-name, and ECO filters.",
+            "AverageMaterialByPlayerAtMove" =>
+                "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
             _ => null
         };
     }

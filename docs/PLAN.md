@@ -318,7 +318,7 @@ Implement player material comparison as a separate sequence of PRs:
    - Update metric catalog / examples so it is described as “average side material by year”, not a
      player comparison tool.
    - Avoid implying that filtering by one player creates a fair independent comparison.
-2. [ ] **Add a new player-comparison metric.**
+2. [x] **Add a new player-comparison metric.**
    - Indicative key: **`AverageMaterialByPlayerAtMove`** (final name can change during
      implementation).
    - Inputs:

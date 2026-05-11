@@ -87,6 +87,16 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Average material for Player A compared with Player B or all players at one ply.
+        /// </summary>
+        Task<IReadOnlyList<PlayerMaterialAverageRow>> GetPlayerMaterialAveragesAtPlyAsync(
+            AnalyticsQuery query,
+            int moveNumber,
+            int plyIndex,
+            string colourMode,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -584,6 +594,37 @@ namespace Repositories
                         WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
                         BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
                         BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<PlayerMaterialAverageRow>> GetPlayerMaterialAveragesAtPlyAsync(
+            AnalyticsQuery query,
+            int moveNumber,
+            int plyIndex,
+            string colourMode,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<PlayerMaterialAverageRow>(
+                new CommandDefinition(
+                    SqlStatements.GetPlayerMaterialAveragesAtPly,
+                    new
+                    {
+                        MoveNumber = moveNumber,
+                        PlyIndex = plyIndex,
+                        ColourMode = colourMode,
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerASurname = NormalizeNonEmpty(query.PlayerASurname),
+                        PlayerAForenames = NormalizeNamePart(query.PlayerAForenames),
+                        PlayerBSurname = NormalizeNonEmpty(query.PlayerBSurname),
+                        PlayerBForenames = NormalizeNamePart(query.PlayerBForenames),
                         Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();

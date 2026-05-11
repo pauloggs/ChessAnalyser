@@ -102,6 +102,7 @@ Current metric keys:
 - `AverageMaterialByYearAndColour`
 - `KnightMoveDestinationFrequency`
 - `GameCountByEco`
+- `AverageMaterialByPlayerAtMove`
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
 metric:
@@ -115,6 +116,12 @@ metric:
   "blackPlayerSurname": null,
   "blackPlayerForenames": null,
   "eco": null,
+  "playerASurname": "Kasparov",
+  "playerAForenames": "Garry",
+  "playerBSurname": null,
+  "playerBForenames": null,
+  "playerColour": "Any",
+  "moveNumber": 1,
   "summaryPlyIndex": 4
 }
 ```
@@ -188,7 +195,74 @@ Content-Type: application/json
 
 ---
 
-## 5. Example analysis: knight destination frequency
+## 5. Example analysis: average material by player at move
+
+### Question
+
+How does one player's average material at a full move compare with another player, or with the
+all-player baseline?
+
+### Why it is useful
+
+This is the player-comparison material metric. Unlike `AverageMaterialByYearAndColour`, it compares
+player appearances independently, so Player A does not need to have played Player B.
+
+### Run it
+
+Until the UI has metric-specific fields, use Swagger or another HTTP client.
+
+Use metric key `AverageMaterialByPlayerAtMove` with:
+
+- `playerASurname` / `playerAForenames` (required)
+- optional `playerBSurname` / `playerBForenames`; omit Player B for the all-player baseline
+- `playerColour`: `Any`, `White`, or `Black` (defaults to `Any`)
+- `moveNumber`: full move number (defaults to `1`)
+- optional `minGameYear`, `maxGameYear`, `eco`
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "AverageMaterialByPlayerAtMove",
+  "query": {
+    "playerASurname": "Kasparov",
+    "playerAForenames": "Garry",
+    "playerBSurname": "Karpov",
+    "playerBForenames": "Anatoly",
+    "playerColour": "Any",
+    "moveNumber": 5,
+    "minGameYear": 1980,
+    "maxGameYear": 1990
+  }
+}
+```
+
+### Result columns
+
+- `Series` (`PlayerA`, `PlayerB`, or `AllPlayers`)
+- `Player`
+- `Colour`
+- `MoveNumber`
+- `PlyIndex`
+- `AvgMaterial`
+- `PositionCount`
+
+### Notes
+
+- User-facing `moveNumber` maps to `PlyIndex = (moveNumber * 2) - 1`, i.e. after Black's move for
+  that full move number.
+- `playerColour = Any` includes both White and Black appearances for the selected player(s).
+- If Player B is omitted, the comparison row is `AllPlayers`.
+- If Player A does not match any rows, the metric returns an empty result.
+
+---
+
+## 6. Example analysis: knight destination frequency
 
 ### Question
 
@@ -242,7 +316,7 @@ Content-Type: application/json
 
 ---
 
-## 6. Example analysis: game count by ECO
+## 7. Example analysis: game count by ECO
 
 ### Question
 
@@ -291,7 +365,7 @@ Content-Type: application/json
 
 ---
 
-## 7. Example analysis: browse the game population
+## 8. Example analysis: browse the game population
 
 ### Question
 
@@ -321,7 +395,7 @@ GET /Analyser/GetGames?page=1&pageSize=50&minGameYear=1900&maxGameYear=1950
 
 ---
 
-## 8. Useful SQL checks
+## 9. Useful SQL checks
 
 Use these as diagnostics, not as the primary application surface.
 
@@ -364,7 +438,7 @@ ORDER BY g.Id;
 
 ---
 
-## 9. Adding a new example analysis to this document
+## 10. Adding a new example analysis to this document
 
 Use this template:
 
@@ -405,7 +479,7 @@ When adding a new metric implementation, update:
 
 ---
 
-## 10. Known limitations and next improvements
+## 11. Known limitations and next improvements
 
 - The current web UI is intentionally simple static HTML/JavaScript.
 - Metric outputs are tabular, not charted.
