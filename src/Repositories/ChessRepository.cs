@@ -101,6 +101,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Counts player appearances with optional game filters.
+        /// </summary>
+        Task<IReadOnlyList<GameCountByPlayerRow>> GetGameCountsByPlayerAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Average material for Player A compared with Player B or all players at one ply.
         /// </summary>
         Task<IReadOnlyList<PlayerMaterialAverageRow>> GetPlayerMaterialAveragesAtPlyAsync(
@@ -650,6 +657,31 @@ namespace Repositories
             var rows = (await connection.QueryAsync<GameCountByResultRow>(
                 new CommandDefinition(
                     SqlStatements.GetGameCountsByResult,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        WhitePlayerSurname = NormalizeNonEmpty(query.WhitePlayerSurname),
+                        WhitePlayerForenames = NormalizeNamePart(query.WhitePlayerForenames),
+                        BlackPlayerSurname = NormalizeNonEmpty(query.BlackPlayerSurname),
+                        BlackPlayerForenames = NormalizeNamePart(query.BlackPlayerForenames),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<GameCountByPlayerRow>> GetGameCountsByPlayerAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<GameCountByPlayerRow>(
+                new CommandDefinition(
+                    SqlStatements.GetGameCountsByPlayer,
                     new
                     {
                         MinGameYear = query.MinGameYear,
