@@ -50,6 +50,8 @@ internal static class MetricCatalog
                 "Share of the filtered player's games where both sides castled to opposite wings (kingside vs queenside).",
             "UncastledKingRate" =>
                 "Proportion of the filtered player's games where they never castled.",
+            "FirstQueenMovePly" =>
+                "Mean half-move ply of the filtered player's first queen move; games without a queen move are excluded.",
             _ => null
         };
     }
@@ -205,6 +207,13 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "GameCount is all filtered appearances; UncastledKingRate is the share with no castling move."
+            ],
+            "FirstQueenMovePly" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "GamesWithQueenMove counts games where the queen moved at least once; average is raw ply (not normalized by game length)."
             ],
             _ => []
         };

@@ -155,6 +155,10 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<UncastledKingRateRow>>();
 
+    public Task<IReadOnlyList<FirstQueenMovePlyRow>> GetFirstQueenMovePlyAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<FirstQueenMovePlyRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 

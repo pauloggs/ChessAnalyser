@@ -68,6 +68,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<OppositeSideCastlingRateRow>());
         repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<UncastledKingRateRow>());
+        repo.Setup(r => r.GetFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<FirstQueenMovePlyRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -89,7 +91,8 @@ public class MetricRegistryAndExecutorsTests
             new ForwardMoveRateExecutor(repo.Object),
             new CastlingSidePreferenceExecutor(repo.Object),
             new OppositeSideCastlingRateExecutor(repo.Object),
-            new UncastledKingRateExecutor(repo.Object)
+            new UncastledKingRateExecutor(repo.Object),
+            new FirstQueenMovePlyExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -111,7 +114,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("CastlingSidePreference", sut.MetricKeys);
         Assert.Contains("OppositeSideCastlingRate", sut.MetricKeys);
         Assert.Contains("UncastledKingRate", sut.MetricKeys);
-        Assert.Equal(19, sut.MetricKeys.Count);
+        Assert.Contains("FirstQueenMovePly", sut.MetricKeys);
+        Assert.Equal(20, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -1594,6 +1598,72 @@ public class MetricRegistryAndExecutorsTests
                 && q.PlayerForenames == "Mikhail"
                 && q.Eco == "B90"
                 && q.MinGameYear == 1960),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task FirstQueenMovePlyExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<FirstQueenMovePlyRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Kasparov",
+                    PlayerForenames = "Garry",
+                    GamesWithQueenMove = 45,
+                    AverageFirstQueenMovePly = 6.5
+                }
+            });
+
+        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry"
+        });
+
+        Assert.Equal(["Player", "GamesWithQueenMove", "AverageFirstQueenMovePly"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Kasparov, Garry", result.Rows[0][0]);
+        Assert.Equal(45, result.Rows[0][1]);
+        Assert.Equal(6.5, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task FirstQueenMovePlyExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task FirstQueenMovePlyExecutor_PassesFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<FirstQueenMovePlyRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran",
+            PlayerColour = "Black",
+            MaxGameYear = 1975
+        };
+        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetFirstQueenMovePlyAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerSurname == "Petrosian"
+                && q.PlayerForenames == "Tigran"
+                && q.PlayerColour == "Black"
+                && q.MaxGameYear == 1975),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }
