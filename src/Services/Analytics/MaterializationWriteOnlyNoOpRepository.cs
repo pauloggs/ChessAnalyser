@@ -21,6 +21,9 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
 
     public Task<List<Player>> GetPlayers() => Throw<List<Player>>();
 
+    public Task<Player?> GetPlayerByIdAsync(int playerId, CancellationToken cancellationToken = default) =>
+        Throw<Player?>();
+
     public Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames) => Throw<int?>();
 
     public Task<List<Player>> GetPlayersBySurname(string surname) => Throw<List<Player>>();
@@ -35,6 +38,15 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
 
     public Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<WorldChampionRef>>();
+
+    public Task<IReadOnlyList<FidePlayerRecord>> GetFidePlayers(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<FidePlayerRecord>>();
+
+    public Task ReplaceFideCatalogAsync(IReadOnlyList<FidePlayerRecord> records, CancellationToken cancellationToken = default) =>
+        Throw();
+
+    public Task<int?> GetPlayerIdByFideIdAsync(int fideId, CancellationToken cancellationToken = default) =>
+        Throw<int?>();
 
     public Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(int playerId, CancellationToken cancellationToken = default) =>
         Throw<PlayerCorpusActivity?>();

@@ -7,11 +7,14 @@ namespace Services;
 /// <inheritdoc />
 public sealed class PlayerMetadataSyncService(
     IChessRepository repository,
-    IWorldChampionMatcher worldChampionMatcher) : IPlayerMetadataSyncService
+    IWorldChampionMatcher worldChampionMatcher,
+    IPlayerFideMetadataEnricher playerFideMetadataEnricher) : IPlayerMetadataSyncService
 {
     private readonly IChessRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly IWorldChampionMatcher _worldChampionMatcher =
         worldChampionMatcher ?? throw new ArgumentNullException(nameof(worldChampionMatcher));
+    private readonly IPlayerFideMetadataEnricher _playerFideMetadataEnricher =
+        playerFideMetadataEnricher ?? throw new ArgumentNullException(nameof(playerFideMetadataEnricher));
 
     /// <inheritdoc />
     public async Task<PlayerMetadataSyncResult> SyncWorldChampionFlagsAsync(CancellationToken cancellationToken = default)
@@ -38,4 +41,10 @@ public sealed class PlayerMetadataSyncService(
             PlayersUpdated = updated
         };
     }
+
+    /// <inheritdoc />
+    public Task<FideMetadataSyncResult> BackfillFideMetadataAsync(
+        bool dryRun = false,
+        CancellationToken cancellationToken = default) =>
+        _playerFideMetadataEnricher.EnrichAllAsync(dryRun, cancellationToken);
 }

@@ -2,6 +2,7 @@ using Interfaces.DTO;
 using Moq;
 using Services;
 using Services.Helpers;
+using Services.PlayerMetadata;
 
 namespace ServicesTests
 {
@@ -274,8 +275,13 @@ namespace ServicesTests
             var playerResolverMock = new Mock<IPlayerResolver>();
             playerResolverMock.Setup(pr => pr.LoadKnownPlayersAsync()).Returns(Task.CompletedTask);
             playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>())).Returns(Task.CompletedTask);
+            var enricherMock = new Mock<IPlayerFideMetadataEnricher>();
+            enricherMock.Setup(e => e.TryEnrichPlayerAsync(It.IsAny<int>(), It.IsAny<short?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(false);
+            enricherMock.Setup(e => e.EnrichAllAsync(It.IsAny<bool>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FideMetadataSyncResult());
 
-            var etlService = new EtlService(fileHandler, pgnParser, persistenceMock.Object, boardPositionService, progressStore, playerResolverMock.Object);
+            var etlService = new EtlService(fileHandler, pgnParser, persistenceMock.Object, boardPositionService, progressStore, playerResolverMock.Object, enricherMock.Object);
             var reports = new List<EtlProgress>();
             // Use synchronous progress so "Completed" is in the list before the test asserts (Progress<T> can post async)
             var progress = new SynchronousProgress<EtlProgress>(p => reports.Add(p));

@@ -14,7 +14,14 @@ public sealed class FideRatingListReader : IFideRatingListReader
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(filePath);
         if (!File.Exists(filePath))
-            throw new FileNotFoundException("FIDE rating list file was not found.", filePath);
+        {
+            throw new FileNotFoundException(
+                $"FIDE rating list file was not found: '{filePath}'. " +
+                $"Working directory: '{Directory.GetCurrentDirectory()}'. " +
+                "Download a TXT list from https://ratings.fide.com/download_lists.phtml and save it locally " +
+                "(see data/fide/README.md). Use an absolute path if needed.",
+                filePath);
+        }
 
         var records = new List<FidePlayerRecord>();
         await foreach (var line in ReadLinesAsync(filePath, cancellationToken).ConfigureAwait(false))

@@ -40,6 +40,8 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 | `011_AddPlayerWasWorldChampionColumn.sql` | Adds `WasWorldChampion` bit on `dbo.Player` (curated classical world-champion metadata). |
 | `012_AddPlayerFideMetadataColumns.sql` | Adds nullable FIDE metadata on `dbo.Player` (`FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear`) and unique filtered index on `FideId`. |
 | `013_CreateRefWorldChampion.sql` | Creates schema `Ref`, table `Ref.WorldChampion` (classical champions), and seeds 18 champion name rows. |
+| `014_CreateRefFidePlayer.sql` | Creates `Ref.FidePlayer` (FIDE catalog columns). |
+| `015_SeedRefFidePlayer.sql` | Validates catalog table; Migrations host loads `data/fide/players_list_foa.txt` when empty and backfills players. |
 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 
@@ -51,7 +53,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 - **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
 - **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
-- **Player metadata:** after migration `011`, run migrations through `013`, then `dotnet run --project src/Analyser -- --sync-player-metadata` to backfill `WasWorldChampion` on existing `dbo.Player` rows from `Ref.WorldChampion`. New players pick up the flag on insert during ETL.
+- **Player metadata:** migrations through `015` seed `Ref.FidePlayer` and run idempotent player metadata enrichment automatically. PGN load (ETL) enriches players per game and runs a full enrichment pass at the end — no separate manual commands.
 
 ## Schema history snapshot
 

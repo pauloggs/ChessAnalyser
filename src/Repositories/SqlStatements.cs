@@ -49,12 +49,37 @@ namespace Repositories
             WHERE Id = @Id;
             """;
 
+        public static string GetPlayerById =>
+            """
+            SELECT Id, Surname, Forenames, WasWorldChampion,
+                   FideId, Federation, Sex, FideTitle, BirthYear
+            FROM dbo.Player
+            WHERE Id = @Id;
+            """;
+
         public static string GetWorldChampions =>
             """
             SELECT Id, Surname, Forenames, ChampionOrder, ReignStartYear, ReignEndYear
             FROM Ref.WorldChampion
             ORDER BY ChampionOrder, Surname, Forenames;
             """;
+
+        public static string GetFidePlayers =>
+            """
+            SELECT FideId, Surname, Forenames, Federation, Sex, FideTitle AS Title, BirthYear
+            FROM Ref.FidePlayer;
+            """;
+
+        public static string DeleteFidePlayers => "DELETE FROM Ref.FidePlayer;";
+
+        public static string InsertFidePlayer =>
+            """
+            INSERT INTO Ref.FidePlayer (FideId, Surname, Forenames, Federation, Sex, FideTitle, BirthYear)
+            VALUES (@FideId, @Surname, @Forenames, @Federation, @Sex, @Title, @BirthYear);
+            """;
+
+        public static string GetPlayerIdByFideId =>
+            "SELECT Id FROM dbo.Player WHERE FideId = @FideId;";
 
         public static string GetPlayerCorpusActivity =>
             """

@@ -1,5 +1,6 @@
 using DbUp;
 using Microsoft.Extensions.Configuration;
+using Migrations.Seeding;
 
 var configuration = new ConfigurationBuilder()
     .SetBasePath(Directory.GetCurrentDirectory())
@@ -33,6 +34,13 @@ if (!result.Successful)
     Console.ResetColor();
     return 1;
 }
+
+var fideListRelative = configuration["FideCatalog:ListPath"] ?? "data/fide/players_list_foa.txt";
+var fideListPath = RepoRootPath.Resolve(fideListRelative);
+
+await SeedRefFidePlayerRunner.RunIfNeededAsync(connectionString, fideListPath);
+
+await PlayerMetadataBackfillRunner.RunAsync(configuration);
 
 Console.ForegroundColor = ConsoleColor.Green;
 Console.WriteLine("Migrations completed successfully.");

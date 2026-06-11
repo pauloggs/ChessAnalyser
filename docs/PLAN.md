@@ -746,21 +746,19 @@ player (e.g. Petrosian) on the same filters.
 
 ---
 
-### 15.3 Sync CLI — `--sync-fide-metadata` (PR 3)
+### 15.3 Ref.FidePlayer catalog + automatic seed (PR 3)
 
-**Branch:** `feat/sync-fide-metadata-cli`
+**Branch:** `feat/ref-fide-player-catalog`
 
-1. [ ] Extend **`IPlayerMetadataSyncService`** (or add **`IFideMetadataSyncService`**) with `SyncFideMetadataAsync(fideListPath, …)`.
-2. [ ] **`Program.cs`:** `--sync-fide-metadata <path>` (and optional `--dry-run`).
-3. [ ] For each DB player: match → update FIDE columns; **do not** touch `WasWorldChampion`.
-4. [ ] **`PlayerMetadataSyncResult`** (or new result type): `PlayersChecked`, `PlayersUpdated`, `PlayersMatched`, `PlayersUnmatched`, `PlayersAmbiguous`.
-5. [ ] Keep existing **`--sync-player-metadata`** for world-champion catalog only.
-6. [ ] Update **`Migrations/README.md`**: run order after load — `--sync-fide-metadata` then `--sync-player-metadata` (order between the two is flexible; WC catalog does not depend on FIDE).
-7. [ ] Service tests with mocked reader/matcher/repository.
+1. [x] Migration **`014_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table.
+2. [x] Migration **`015_SeedRefFidePlayer.sql`** + Migrations host — load `data/fide/players_list_foa.txt` into Ref when empty; backfill `dbo.Player`.
+3. [x] **`IPlayerFideMetadataEnricher`** — backfill all players + enrich on ETL insert (`PlayerResolver`).
+4. [x] No manual Analyser CLI import — seed runs as part of `dotnet run --project src/Migrations`.
+5. [x] Service tests.
 
-**Acceptance:** running CLI against a test DB + small fixture file updates matched rows; idempotent second run.
+**Acceptance:** migrations populate Ref + players when FIDE file is present; new ETL players auto-enriched; idempotent re-run.
 
-**Manual note:** maintainer may run this after large PGN parse completes — no need to run during parse.
+**Note:** ~1.8M-row catalog is streamed by the Migrations host (not a multi-GB SQL INSERT script in git).
 
 ---
 

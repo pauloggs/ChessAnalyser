@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Repositories;
 using Services.Helpers;
 
 namespace Services.PlayerMetadata;
@@ -6,10 +7,48 @@ namespace Services.PlayerMetadata;
 /// <inheritdoc />
 public sealed class FidePlayerMatcher : IFidePlayerMatcher
 {
+    private readonly IChessRepository? _repository;
     private IReadOnlyList<FidePlayerRecord> _records = Array.Empty<FidePlayerRecord>();
     private Dictionary<string, List<FidePlayerRecord>> _bySurname = new(StringComparer.OrdinalIgnoreCase);
+    private bool _loaded;
+
+    public FidePlayerMatcher(IChessRepository repository)
+    {
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+    }
+
+    /// <summary>Parameterless constructor for unit tests that call <see cref="SetRecords"/> directly.</summary>
+    public FidePlayerMatcher()
+    {
+    }
 
     /// <inheritdoc />
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_loaded || _repository == null)
+            return;
+
+        var records = await _repository.GetFidePlayers(cancellationToken).ConfigureAwait(false);
+        SetRecords(records);
+        _loaded = true;
+    }
+
+    /// <inheritdoc />
+    public void InvalidateCache()
+    {
+        _loaded = false;
+        _records = Array.Empty<FidePlayerRecord>();
+        _bySurname = new Dictionary<string, List<FidePlayerRecord>>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public void LoadCatalogSnapshot(IReadOnlyList<FidePlayerRecord> records)
+    {
+        SetRecords(records);
+        _loaded = true;
+    }
+
+    /// <summary>Indexes FIDE rows for matching. Used by tests and after loading from <c>Ref.FidePlayer</c>.</summary>
     public void SetRecords(IReadOnlyList<FidePlayerRecord> records)
     {
         _records = records ?? throw new ArgumentNullException(nameof(records));
@@ -35,11 +74,52 @@ public sealed class FidePlayerMatcher : IFidePlayerMatcher
         if (matches.Count == 0)
             return Unmatched();
 
+        matches = matches.Where(m => IsCorpusCompatible(m.BirthYear, context)).ToList();
+        if (matches.Count == 0)
+            return Unmatched();
+
         if (matches.Count == 1)
             return Matched(matches[0]);
 
         return ResolveAmbiguous(matches, context);
     }
+
+    /// <summary>
+    /// True when corpus game years are consistent with the candidate birth year (DESIGN §13.5).
+    /// When corpus years or birth year are unknown, returns true (no basis to reject).
+    /// </summary>
+    internal static bool IsCorpusCompatible(short? candidateBirthYear, FidePlayerMatchContext? context)
+    {
+        if (context is null || candidateBirthYear is null)
+            return true;
+
+        var birth = candidateBirthYear.Value;
+
+        if (context.CorpusFirstGameYear is short first && birth > first)
+            return false;
+
+        if (context.CorpusLastGameYear is short last && birth > last)
+            return false;
+
+        if (context.KnownBirthYear is short knownBirth &&
+            Math.Abs(knownBirth - birth) > 2)
+            return false;
+
+        if (context.CorpusFirstGameYear is not short firstYear ||
+            context.CorpusLastGameYear is not short lastYear)
+            return true;
+
+        if (firstYear < birth + MinCompetitiveAge)
+            return false;
+
+        if (lastYear > birth + MaxPlausibleCareerEndAge)
+            return false;
+
+        return true;
+    }
+
+    private const int MinCompetitiveAge = 5;
+    private const int MaxPlausibleCareerEndAge = 100;
 
     private static FidePlayerMatchResult ResolveAmbiguous(
         IReadOnlyList<FidePlayerRecord> matches,
@@ -77,9 +157,9 @@ public sealed class FidePlayerMatcher : IFidePlayerMatcher
             context.CorpusLastGameYear is short last &&
             candidate.BirthYear is short birth)
         {
-            if (first >= birth + 8 && last <= birth + 100)
+            if (first >= birth + MinCompetitiveAge && last <= birth + MaxPlausibleCareerEndAge)
                 score += 30;
-            else if (first >= birth + 5 && last <= birth + 110)
+            else if (first >= birth + 3 && last <= birth + 110)
                 score += 10;
         }
 

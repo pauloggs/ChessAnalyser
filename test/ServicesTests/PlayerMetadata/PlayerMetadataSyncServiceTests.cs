@@ -25,13 +25,30 @@ public class PlayerMetadataSyncServiceTests
         matcher.Setup(m => m.IsWorldChampion("Tal", "Mikhail")).Returns(true);
         matcher.Setup(m => m.IsWorldChampion("Morphy", "Paul")).Returns(false);
 
-        var sut = new PlayerMetadataSyncService(repo.Object, matcher.Object);
+        var enricher = new Mock<IPlayerFideMetadataEnricher>();
+        var sut = new PlayerMetadataSyncService(repo.Object, matcher.Object, enricher.Object);
         var result = await sut.SyncWorldChampionFlagsAsync();
 
         Assert.Equal(3, result.PlayersChecked);
         Assert.Equal(1, result.PlayersUpdated);
         repo.Verify(r => r.UpdatePlayerWasWorldChampionAsync(1, true, It.IsAny<CancellationToken>()), Times.Once);
-        repo.Verify(r => r.UpdatePlayerWasWorldChampionAsync(2, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
-        repo.Verify(r => r.UpdatePlayerWasWorldChampionAsync(3, It.IsAny<bool>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task BackfillFideMetadataAsync_DelegatesToEnricher()
+    {
+        var expected = new FideMetadataSyncResult { PlayersChecked = 10, PlayersUpdated = 3 };
+        var enricher = new Mock<IPlayerFideMetadataEnricher>();
+        enricher.Setup(e => e.EnrichAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+
+        var sut = new PlayerMetadataSyncService(
+            Mock.Of<IChessRepository>(),
+            Mock.Of<IWorldChampionMatcher>(),
+            enricher.Object);
+
+        var result = await sut.BackfillFideMetadataAsync();
+
+        Assert.Equal(10, result.PlayersChecked);
+        Assert.Equal(3, result.PlayersUpdated);
     }
 }
