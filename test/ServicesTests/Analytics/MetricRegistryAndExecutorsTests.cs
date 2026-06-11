@@ -7,6 +7,8 @@ namespace ServicesTests.Analytics;
 
 public class MetricRegistryAndExecutorsTests
 {
+    private static readonly CorpusBenchmarkCalculator CorpusBenchmarkCalculator = new();
+
     [Fact]
     public void MetricRegistry_ContainsRegisteredMetricKeys()
     {
@@ -36,10 +38,16 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<AverageCastlingPlyRow>());
         repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AverageMaterialVolatilityRow>());
+        repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetBishopPairFrequencyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<BishopPairFrequencyRow>());
         repo.Setup(r => r.GetMinorPieceCompositionAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MinorPieceCompositionRow>());
+        repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CaptureRateRow>());
+        repo.Setup(r => r.GetQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<QueenTradeRateRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -52,9 +60,11 @@ public class MetricRegistryAndExecutorsTests
             new PlayerResultSummaryExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object),
             new AverageCastlingPlyExecutor(repo.Object),
-            new AverageMaterialVolatilityExecutor(repo.Object),
+            new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
             new BishopPairFrequencyExecutor(repo.Object),
-            new MinorPieceCompositionExecutor(repo.Object)
+            new MinorPieceCompositionExecutor(repo.Object),
+            new CaptureRateExecutor(repo.Object),
+            new QueenTradeRateExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -69,7 +79,9 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("AverageMaterialVolatility", sut.MetricKeys);
         Assert.Contains("BishopPairFrequency", sut.MetricKeys);
         Assert.Contains("MinorPieceComposition", sut.MetricKeys);
-        Assert.Equal(12, sut.MetricKeys.Count);
+        Assert.Contains("CaptureRate", sut.MetricKeys);
+        Assert.Contains("QueenTradeRate", sut.MetricKeys);
+        Assert.Equal(14, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -655,7 +667,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -673,7 +685,7 @@ public class MetricRegistryAndExecutorsTests
     public async Task AverageMaterialVolatilityExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
@@ -684,6 +696,8 @@ public class MetricRegistryAndExecutorsTests
         var repo = new Mock<IChessRepository>();
         repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AverageMaterialVolatilityRow>());
+        repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var query = new AnalyticsQuery
         {
@@ -692,13 +706,54 @@ public class MetricRegistryAndExecutorsTests
             MinPlyIndex = 15,
             MaxPlyIndex = 40
         };
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
         repo.Verify(r => r.GetAverageMaterialVolatilityAsync(
             It.Is<AnalyticsQuery>(q => q.MinPlyIndex == 15 && q.MaxPlyIndex == 40),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AverageMaterialVolatilityExecutor_AppendsBenchmarkColumnsWhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AverageMaterialVolatilityRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Fischer",
+                    PlayerForenames = "Robert James",
+                    GameCount = 50,
+                    AverageMaterialVolatility = 1.34
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 50, MetricValue = 1.34 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 40, MetricValue = 2.0 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 40, MetricValue = 1.0 }
+            });
+
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Robert James",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            ["Player", "GameCount", "AverageMaterialVolatility", "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"],
+            result.ColumnNames);
+        Assert.Equal(1.5, result.Rows[0][3]);
+        Assert.Equal(-0.16, Convert.ToDouble(result.Rows[0][4]), precision: 10);
+        Assert.Equal(50.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -792,5 +847,142 @@ public class MetricRegistryAndExecutorsTests
         var sut = new MinorPieceCompositionExecutor(repo.Object);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CaptureRateExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CaptureRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Tal",
+                    PlayerForenames = "Mikhail",
+                    GameCount = 4,
+                    AverageCaptureRate = 0.35
+                }
+            });
+
+        var sut = new CaptureRateExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail"
+        });
+
+        Assert.Equal(["Player", "GameCount", "AverageCaptureRate"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Tal, Mikhail", result.Rows[0][0]);
+        Assert.Equal(4, result.Rows[0][1]);
+        Assert.Equal(0.35, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task CaptureRateExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new CaptureRateExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CaptureRateExecutor_PassesPlyWindowToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CaptureRateRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Robert James",
+            MinPlyIndex = 10,
+            MaxPlyIndex = 50
+        };
+        var sut = new CaptureRateExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetCaptureRateAsync(
+            It.Is<AnalyticsQuery>(q => q.MinPlyIndex == 10 && q.MaxPlyIndex == 50),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task QueenTradeRateExecutor_MapsRowAndUsesDefaultMaxPly()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetQueenTradeRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                40,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<QueenTradeRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Petrosian",
+                    PlayerForenames = "Tigran",
+                    GameCount = 6,
+                    QueenTradeRate = 0.5,
+                    QueenTradeMaxPly = 40
+                }
+            });
+
+        var sut = new QueenTradeRateExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran"
+        });
+
+        Assert.Equal(["Player", "GameCount", "QueenTradeRate", "QueenTradeMaxPly"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Petrosian, Tigran", result.Rows[0][0]);
+        Assert.Equal(0.5, result.Rows[0][2]);
+        Assert.Equal(40, result.Rows[0][3]);
+    }
+
+    [Fact]
+    public async Task QueenTradeRateExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new QueenTradeRateExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task QueenTradeRateExecutor_PassesCustomMaxPly()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetQueenTradeRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                30,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<QueenTradeRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    GameCount = 2,
+                    QueenTradeRate = 0.0,
+                    QueenTradeMaxPly = 30
+                }
+            });
+
+        var sut = new QueenTradeRateExecutor(repo.Object);
+        await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            QueenTradeMaxPly = 30
+        });
+
+        repo.Verify(r => r.GetQueenTradeRateAsync(
+            It.IsAny<AnalyticsQuery>(),
+            30,
+            It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -36,6 +36,10 @@ internal static class MetricCatalog
                 "Mean per-game share of plies in a window where the player retains both bishops (default ply window 15–30).",
             "MinorPieceComposition" =>
                 "Mean bishops minus knights on the player's side in a ply window; positive values favour bishops (default ply window 15–30).",
+            "CaptureRate" =>
+                "Mean per-game share of the filtered player's moves that are captures.",
+            "QueenTradeRate" =>
+                "Share of games where queens are no longer both on the board on or before a ply threshold (default queenTradeMaxPly 40).",
             _ => null
         };
     }
@@ -112,7 +116,8 @@ internal static class MetricCatalog
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional: minPlyIndex, maxPlyIndex to restrict which plies contribute to each game's std dev."
+                "Optional: minPlyIndex, maxPlyIndex to restrict which plies contribute to each game's std dev.",
+                "Optional: includeCorpusBenchmark, benchmarkMinGames (default 30) for corpus-relative columns."
             ],
             "BishopPairFrequency" =>
             [
@@ -128,6 +133,20 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex (defaults to 15 and 30 when both omitted).",
                 "AverageMinorPieceDelta > 0 indicates a bishop-oriented minor-piece mix."
+            ],
+            "CaptureRate" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count."
+            ],
+            "QueenTradeRate" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: queenTradeMaxPly (defaults to 40 when omitted)."
             ],
             _ => []
         };

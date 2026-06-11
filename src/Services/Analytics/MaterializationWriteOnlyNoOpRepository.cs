@@ -85,6 +85,10 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<AverageMaterialVolatilityRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageMaterialVolatilityAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<BishopPairFrequencyRow>> GetBishopPairFrequencyAsync(
         AnalyticsQuery query,
         int? minPlyIndex,
@@ -96,6 +100,15 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         int? minPlyIndex,
         int? maxPlyIndex,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<MinorPieceCompositionRow>>();
+
+    public Task<IReadOnlyList<CaptureRateRow>> GetCaptureRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<CaptureRateRow>>();
+
+    public Task<IReadOnlyList<QueenTradeRateRow>> GetQueenTradeRateAsync(
+        AnalyticsQuery query,
+        int queenTradeMaxPly,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<QueenTradeRateRow>>();
 
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();

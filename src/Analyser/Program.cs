@@ -82,6 +82,7 @@ builder.Services.AddSingleton<IPieceValues, ClassicalPieceValues>();
 builder.Services.AddScoped<IGamePositionSummaryFactory, GamePositionSummaryFactory>();
 builder.Services.AddScoped<IGameMoveDeriver, GameMoveDeriver>();
 builder.Services.AddScoped<IAnalyticsMaterializationService, AnalyticsMaterializationService>();
+builder.Services.AddSingleton<ICorpusBenchmarkCalculator, CorpusBenchmarkCalculator>();
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialByYearAndColourExecutor>();
 builder.Services.AddScoped<IMetricExecutor, KnightMoveDestinationFrequencyExecutor>();
 builder.Services.AddScoped<IMetricExecutor, GameCountByEcoExecutor>();
@@ -94,6 +95,8 @@ builder.Services.AddScoped<IMetricExecutor, AverageCastlingPlyExecutor>();
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialVolatilityExecutor>();
 builder.Services.AddScoped<IMetricExecutor, BishopPairFrequencyExecutor>();
 builder.Services.AddScoped<IMetricExecutor, MinorPieceCompositionExecutor>();
+builder.Services.AddScoped<IMetricExecutor, CaptureRateExecutor>();
+builder.Services.AddScoped<IMetricExecutor, QueenTradeRateExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 

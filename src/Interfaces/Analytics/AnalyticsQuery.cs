@@ -51,4 +51,19 @@ public sealed class AnalyticsQuery
     /// Inclusive upper bound on <c>GamePositionSummary.PlyIndex</c> for position-based style metrics.
     /// </summary>
     public int? MaxPlyIndex { get; init; }
+
+    /// <summary>
+    /// For <c>QueenTradeRate</c> — queens exchanged on or before this ply count as an early trade (default 40).
+    /// </summary>
+    public int? QueenTradeMaxPly { get; init; }
+
+    /// <summary>
+    /// When true, eligible style metrics append corpus-relative benchmark columns (default false).
+    /// </summary>
+    public bool? IncludeCorpusBenchmark { get; init; }
+
+    /// <summary>
+    /// Minimum games for a player to enter the corpus distribution (default 30).
+    /// </summary>
+    public int? BenchmarkMinGames { get; init; }
 }

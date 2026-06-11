@@ -55,7 +55,15 @@
     .checkbox-row input { width: auto; }
     .metric-fields { margin-top: 0.75rem; padding: 0.75rem; border: 1px solid var(--border); border-radius: 6px; background: #f9fafb; }
     .metric-fields[hidden] { display: none; }
-    #metricList { min-height: 2rem; }
+    .metrics-layout { display: flex; flex-wrap: wrap; gap: 1rem 1.25rem; align-items: flex-start; margin-top: 0.5rem; }
+    .metrics-form { flex: 1 1 18rem; min-width: 0; }
+    .metric-detail-panel { flex: 1 1 14rem; max-width: 22rem; padding: 0.85rem 1rem; border: 1px solid var(--border); border-radius: 6px; background: #f9fafb; font-size: 0.88rem; }
+    .metric-detail-panel h3 { margin: 0 0 0.5rem; font-size: 0.95rem; font-weight: 600; word-break: break-word; }
+    .metric-detail-panel p { margin: 0 0 0.65rem; color: var(--muted); line-height: 1.45; }
+    .metric-detail-panel ul { margin: 0.35rem 0 0; padding-left: 1.15rem; color: var(--text); }
+    .metric-detail-panel li { margin-bottom: 0.3rem; }
+    .metric-detail-panel .placeholder { color: var(--muted); font-style: italic; margin: 0; }
+    #metricList { min-height: 0; margin-top: 0.35rem; }
   </style>
 </head>
 <body>
@@ -100,50 +108,67 @@
     <p class="hint">Discovery: <code>GET /api/analytics/metrics</code>. Execute: <code>POST /api/analytics/metrics/execute</code>.</p>
     <button type="button" id="refreshMetrics">Refresh metric list</button>
     <div id="metricList" class="status"></div>
-    <label>Metric key</label>
-    <select id="metricKey"></select>
-    <div class="row">
-      <label>minGameYear <input type="number" id="qMinYear" placeholder="optional" step="1" /></label>
-      <label>maxGameYear <input type="number" id="qMaxYear" placeholder="optional" step="1" /></label>
-    </div>
-    <label>eco (exact)</label>
-    <input type="text" id="qEco" maxlength="16" placeholder="optional" />
-    <div id="metricPlayerFilters" class="metric-fields">
-      <p class="hint">Optional player filter for metrics that operate on games or moves. Player identity and colour are independent: choose a player, then optionally restrict to games where they played White or Black.</p>
-      <div class="row">
-        <label>Player <select id="qPlayer"></select></label>
-        <label>Colour
-          <select id="qMetricPlayerColour">
-            <option value="Any">Any</option>
-            <option value="White">White</option>
-            <option value="Black">Black</option>
-          </select>
-        </label>
+    <div class="metrics-layout">
+      <div class="metrics-form">
+        <label>Metric key</label>
+        <select id="metricKey"></select>
+        <div class="row">
+          <label>minGameYear <input type="number" id="qMinYear" placeholder="optional" step="1" /></label>
+          <label>maxGameYear <input type="number" id="qMaxYear" placeholder="optional" step="1" /></label>
+        </div>
+        <label>eco (exact)</label>
+        <input type="text" id="qEco" maxlength="16" placeholder="optional" />
+        <div id="metricPlayerFilters" class="metric-fields">
+          <p class="hint">Optional player filter for metrics that operate on games or moves. Player identity and colour are independent: choose a player, then optionally restrict to games where they played White or Black.</p>
+          <div class="row">
+            <label>Player <select id="qPlayer"></select></label>
+            <label>Colour
+              <select id="qMetricPlayerColour">
+                <option value="Any">Any</option>
+                <option value="White">White</option>
+                <option value="Black">Black</option>
+              </select>
+            </label>
+          </div>
+        </div>
+        <div id="sideMaterialFields" class="metric-fields">
+          <p class="hint">This corpus trend averages White-side and Black-side material in the selected game set. It is not a player comparison.</p>
+          <label>summaryPlyIndex</label>
+          <input type="number" id="qPly" placeholder="default 4 if empty" step="1" />
+        </div>
+        <div id="playerComparisonFields" class="metric-fields" hidden>
+          <p class="hint">Player comparison uses full move number. Full move N maps internally to <code>PlyIndex = (N * 2) - 1</code>, after Black's Nth move.</p>
+          <div class="row">
+            <label>Player A (required) <select id="qPlayerA"></select></label>
+            <label>Player B (optional baseline) <select id="qPlayerB"></select></label>
+          </div>
+          <div class="row">
+            <label>Colour
+              <select id="qPlayerColour">
+                <option value="Any">Any</option>
+                <option value="White">White</option>
+                <option value="Black">Black</option>
+              </select>
+            </label>
+            <label>moveNumber <input type="number" id="qMoveNumber" value="1" min="1" step="1" /></label>
+          </div>
+        </div>
+        <div id="corpusBenchmarkFields" class="metric-fields" hidden>
+          <p class="hint">Corpus benchmark compares the selected player to other eligible players in this database using the same year, ECO, and colour filters. Percentiles are corpus-local, not universal chess history.</p>
+          <div class="row">
+            <label class="checkbox-row" style="margin-top:0;">
+              <input type="checkbox" id="qIncludeCorpusBenchmark" />
+              <span>Include corpus benchmark</span>
+            </label>
+            <label>benchmarkMinGames <input type="number" id="qBenchmarkMinGames" placeholder="default 30" min="1" step="1" /></label>
+          </div>
+        </div>
+        <button type="button" id="runMetric">Run metric</button>
       </div>
+      <aside id="metricDetailPanel" class="metric-detail-panel" aria-live="polite">
+        <p class="placeholder">Refresh the metric list, then choose a metric to see its description and parameters.</p>
+      </aside>
     </div>
-    <div id="sideMaterialFields" class="metric-fields">
-      <p class="hint">This corpus trend averages White-side and Black-side material in the selected game set. It is not a player comparison.</p>
-      <label>summaryPlyIndex</label>
-      <input type="number" id="qPly" placeholder="default 4 if empty" step="1" />
-    </div>
-    <div id="playerComparisonFields" class="metric-fields" hidden>
-      <p class="hint">Player comparison uses full move number. Full move N maps internally to <code>PlyIndex = (N * 2) - 1</code>, after Black's Nth move.</p>
-      <div class="row">
-        <label>Player A (required) <select id="qPlayerA"></select></label>
-        <label>Player B (optional baseline) <select id="qPlayerB"></select></label>
-      </div>
-      <div class="row">
-        <label>Colour
-          <select id="qPlayerColour">
-            <option value="Any">Any</option>
-            <option value="White">White</option>
-            <option value="Black">Black</option>
-          </select>
-        </label>
-        <label>moveNumber <input type="number" id="qMoveNumber" value="1" min="1" step="1" /></label>
-      </div>
-    </div>
-    <button type="button" id="runMetric">Run metric</button>
     <div class="status" id="metricStatus"></div>
     <div id="metricTableWrap"></div>
   </section>
@@ -384,27 +409,74 @@
       /* Metrics */
       var metricKeySel = document.getElementById('metricKey');
       var metricList = document.getElementById('metricList');
+      var metricDetailPanel = document.getElementById('metricDetailPanel');
       var metricStatus = document.getElementById('metricStatus');
       var metricTableWrap = document.getElementById('metricTableWrap');
       var metricPlayerFilters = document.getElementById('metricPlayerFilters');
       var sideMaterialFields = document.getElementById('sideMaterialFields');
       var playerComparisonFields = document.getElementById('playerComparisonFields');
+      var corpusBenchmarkFields = document.getElementById('corpusBenchmarkFields');
+      var metricsCatalog = [];
+
+      var CORPUS_BENCHMARK_METRICS = {
+        AverageMaterialVolatility: true
+      };
 
       function selectedMetricKey() {
         return (metricKeySel.value || '').trim();
+      }
+
+      function findMetricEntry(key) {
+        if (!key) return null;
+        for (var i = 0; i < metricsCatalog.length; i++) {
+          if (metricsCatalog[i].metricKey === key)
+            return metricsCatalog[i];
+        }
+        return null;
+      }
+
+      function updateMetricDetailPanel() {
+        var key = selectedMetricKey();
+        if (!key) {
+          metricDetailPanel.innerHTML = '<p class="placeholder">Refresh the metric list, then choose a metric to see its description and parameters.</p>';
+          return;
+        }
+        var entry = findMetricEntry(key);
+        if (!entry) {
+          metricDetailPanel.innerHTML = '<h3>' + escapeHtml(key) + '</h3><p class="placeholder">No catalog entry for this metric.</p>';
+          return;
+        }
+        var hints = (entry.parameterHints && entry.parameterHints.length)
+          ? '<ul>' + entry.parameterHints.map(function (h) { return '<li>' + escapeHtml(h) + '</li>'; }).join('') + '</ul>'
+          : '<p class="placeholder">No parameter hints.</p>';
+        metricDetailPanel.innerHTML =
+          '<h3>' + escapeHtml(entry.metricKey) + '</h3>' +
+          (entry.description ? '<p>' + escapeHtml(entry.description) + '</p>' : '<p class="placeholder">No description.</p>') +
+          '<p style="margin:0 0 0.35rem;font-weight:600;font-size:0.85rem;">Parameters</p>' +
+          hints;
+      }
+
+      function supportsCorpusBenchmark(key) {
+        return !!CORPUS_BENCHMARK_METRICS[key];
       }
 
       function updateMetricFields() {
         var key = selectedMetricKey();
         var isPlayerComparison = key === 'AverageMaterialByPlayerAtMove';
         var isSideMaterial = key === 'AverageMaterialByYearAndColour';
+        var isCorpusBenchmark = supportsCorpusBenchmark(key);
 
         playerComparisonFields.hidden = !isPlayerComparison;
         sideMaterialFields.hidden = !isSideMaterial;
         metricPlayerFilters.hidden = isPlayerComparison;
+        corpusBenchmarkFields.hidden = !isCorpusBenchmark;
+
+        updateMetricDetailPanel();
 
         if (isPlayerComparison)
           metricStatus.textContent = 'Select Player A, optionally Player B, then choose colour and full move number.';
+        else if (isCorpusBenchmark)
+          metricStatus.textContent = 'Select a player, then optionally enable corpus benchmark to add percentile columns.';
         else
           metricStatus.textContent = '';
         metricStatus.className = 'status';
@@ -449,6 +521,14 @@
 
         if (eco != null) q.eco = eco;
         if (key === 'AverageMaterialByYearAndColour' && ply != null) q.summaryPlyIndex = ply;
+
+        if (supportsCorpusBenchmark(key)) {
+          if (document.getElementById('qIncludeCorpusBenchmark').checked)
+            q.includeCorpusBenchmark = true;
+          var benchmarkMinGames = numVal('qBenchmarkMinGames');
+          if (benchmarkMinGames != null) q.benchmarkMinGames = benchmarkMinGames;
+        }
+
         return Object.keys(q).length ? q : undefined;
       }
 
@@ -463,23 +543,14 @@
           })
           .then(function (list) {
             metricKeySel.innerHTML = '';
-            if (!list || !list.length) {
+            metricsCatalog = list || [];
+            if (!metricsCatalog.length) {
               metricList.textContent = 'No metrics registered.';
+              updateMetricDetailPanel();
               return;
             }
-            metricList.innerHTML = '<ul style="margin:0.25rem 0;padding-left:1.2rem;">' +
-              list.map(function (m) {
-                var hints = (m.parameterHints && m.parameterHints.length)
-                  ? '<ul style="margin:0.2rem 0 0.45rem 1rem;padding-left:1rem;">' +
-                    m.parameterHints.map(function (h) { return '<li>' + escapeHtml(h) + '</li>'; }).join('') +
-                    '</ul>'
-                  : '';
-                return '<li><strong>' + escapeHtml(m.metricKey) + '</strong>' +
-                  (m.description ? ' — ' + escapeHtml(m.description) : '') +
-                  hints +
-                  '</li>';
-              }).join('') + '</ul>';
-            list.forEach(function (m) {
+            metricList.textContent = metricsCatalog.length + ' metric' + (metricsCatalog.length === 1 ? '' : 's') + ' loaded.';
+            metricsCatalog.forEach(function (m) {
               var opt = document.createElement('option');
               opt.value = m.metricKey;
               opt.textContent = m.metricKey;
