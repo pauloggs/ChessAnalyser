@@ -1,7 +1,7 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.4 (first: **unified `wwwroot` web UI** for local daily use; then metrics catalog extension; HTTP auth **deferred** while the app stays local-only / undeployed).  
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.6 playing-style metrics (first: `AverageCastlingPly`, `MaterialVolatility`); HTTP auth **deferred** while the app stays local-only / undeployed.  
 **Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
 ---
@@ -16,6 +16,7 @@
 | §8 Q3 (year omitted if unknown) | §5.1, §7.2 |
 | §8.5 C# domain logic; SQL for access / trivial aggregates | §5.4, §8 |
 | F-9 / Q7 (programmatic access) | §12 (Stage 4 — HTTP surface for existing registry) |
+| Playing-style metrics (research) | [STYLE_METRICS.md](./STYLE_METRICS.md); implementation §12.6 |
 
 ---
 
@@ -292,10 +293,15 @@ Items **1–13** are **complete** in source for the board-position analytics gro
 
 **Suggested next work (PR-sized, in order of value):**
 
-1. **Unified local web UI (`wwwroot`)** — make the static app the **primary** surface for solo use: PGN path, **LoadGames**, progress polling, **CancelLoad** (already partly on `index.html`); add sections that call existing JSON APIs for **metrics discovery + execute** (`GET/POST /api/analytics/metrics/…`) and **paged GetGames** (`GET /Analyser/GetGames` with filters) so routine work does not require Swagger. Keep **Swagger** as an optional dev “API docs” link, not part of the default workflow.
-2. [x] **Extend the metrics surface** — add **`IMetricExecutor`** implementations for additional questions you care about (same patterns as the two reference metrics: parameterized repository reads, tabular `AnalyticsTableResult` only). Register them in **`IMetricRegistry`** / DI. Current additions include `GameCountByEco`, `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`, and `PlayerResultSummary`.
-3. [x] **Improve discovery** — enrich **`GET /api/analytics/metrics`** with clearer descriptions and parameter hints so the web UI and Swagger stay usable as the catalog grows.
-4. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for new keys), following §12.3; add light **Playwright** or manual test notes for the unified web UI if you introduce non-trivial client script.
+1. [x] **Unified local web UI (`wwwroot`)** — primary surface for PGN load, metrics, and paged games.
+2. [x] **Extend the metrics surface** — corpus and player summary metrics (`GameCountByEco`,
+   `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`,
+   `PlayerResultSummary`).
+3. [x] **Improve discovery** — descriptions and parameter hints on `GET /api/analytics/metrics`.
+4. **Playing-style metrics** — follow **[§12.6](./PLAN.md)** in order: first `AverageCastlingPly`,
+   then `MaterialVolatility`, then Phases 2–8. Research background: [STYLE_METRICS.md](./STYLE_METRICS.md).
+5. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for
+   new keys), following §12.3.
 
 **Optional:** Record a fresh materialization throughput line in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) when you change hot paths in the deriver or summary factory.
 
@@ -363,6 +369,234 @@ Implement player material comparison as a separate sequence of PRs:
 
 ---
 
+### 12.6 Playing-style metrics (planned PR sequence)
+
+**Decision (2026):** Extend the metrics catalog toward **playing-style fingerprints** — behavioural
+patterns derived from `GameMove`, `GamePositionSummary`, and `Game` **without engine evaluation**.
+Research background, literature references, profile combinations, and interpretation caveats are
+documented in [STYLE_METRICS.md](./STYLE_METRICS.md).
+
+**Shared conventions for §12.6 metrics:**
+
+- Follow existing **`IMetricExecutor`** + parameterized **`IChessRepository`** read pattern (§5.3.4,
+  §8).
+- Player filters use **`AnalyticsQuery.PlayerSurname`**, **`PlayerForenames`**, and
+  **`PlayerColour`** (`Any` / `White` / `Black`) — independent identity and colour (see
+  `fix/independent-metric-player-filter`).
+- Year / ECO filters reuse existing `AnalyticsQuery` fields where applicable.
+- Register each executor in **`Program.cs`**; add **`MetricCatalog`** description + parameter hints;
+  add executor tests with mocked repository; add an [EXAMPLE_ANALYSES.md](./EXAMPLE_ANALYSES.md)
+  entry when the metric ships.
+- **Player filter required** for per-player style metrics unless the metric is explicitly corpus-wide
+  (none in the first phases).
+- Prefer **one PR per metric** (or one PR per small phase) to keep review small.
+
+**Optional query extensions** (add to `AnalyticsQuery` when the first metric in a phase needs them):
+
+| Field | Type | Purpose |
+|-------|------|---------|
+| `minPlyIndex` / `maxPlyIndex` | `int?` | Restrict move or position reads to a ply window (e.g. middlegame 15–40). |
+| `queenTradeMaxPly` | `int?` | For `QueenTradeRate` — queens exchanged on or before this ply count as “early trade”. |
+| `shortDrawMaxPly` | `int?` | For `ShortDrawRate` — draws at or below this length count as “short”. |
+| `ecoTopN` | `int?` | For `EcoConcentration` — N largest ECO families (default 3). |
+
+Document defaults in `MetricCatalog.GetParameterHints` when added.
+
+---
+
+#### Phase 1 — castling tempo and material volatility (implement first)
+
+1. [x] **`AverageCastlingPly`**
+   - **Question:** At what half-move does a player typically castle?
+   - **Style signal:** Early castling ≈ pragmatic / king-safety-first; late or absent ≈ riskier or
+     more aggressive structures (ChessBase **Risk**; thesis game-structure features).
+   - **Data:** `GameMove` where `IsCastlingKingside = 1 OR IsCastlingQueenside = 1`, joined to
+     `Game` + `Player` for the filtered side.
+   - **Per game:** `MIN(PlyIndex)` of the player's first castling move (one value per player per
+     game).
+   - **Aggregate:** `AVG(castling_ply)` over games where the player castled at least once.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GamesWithCastling`, `AverageCastlingPly`
+     (nullable decimal; round to 1 decimal in presentation layer if desired).
+   - **Exclude** games where the player never castled from the average (report
+     `GamesWithCastling` separately; pair with Phase 5 `UncastledKingRate`).
+   - **Filters:** `playerSurname`, `playerForenames`, `playerColour`, `minGameYear`, `maxGameYear`,
+     `eco`.
+   - **Tests:** mock repository — player castles once at ply 6 and once at ply 10 → avg 8; games
+     without castling excluded from average but counted correctly.
+
+2. [x] **`MaterialVolatility`** (metric key: `AverageMaterialVolatility`)
+   - **Question:** How much does the material balance swing during a player's games?
+   - **Style signal:** High volatility ≈ dynamic / imbalanced fighting; low ≈ stable positional grind
+     (thesis **Mstd** / material-dynamics features; jk_182 imbalance axis).
+   - **Data:** `GamePositionSummary` per ply, joined to `Game` for player side.
+   - **Per game:** For each ply `p`, compute signed balance from the **player's perspective**:
+     - White player: `WhiteMaterial - BlackMaterial`
+     - Black player: `BlackMaterial - WhiteMaterial`
+     - `playerColour = Any`: use side the filtered player had in that game (two rows per game if the
+       same person played both colours — rare; normally filter colour or one row per game).
+     - `STDDEV_SAMP(balance)` across all plies in the game (include ply `-1` through terminal ply,
+       or document exclusion of ply `-1` — prefer **include all plies** for consistency).
+   - **Aggregate:** `AVG(per_game_stddev)` across games.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageMaterialVolatility`.
+   - **Filters:** `playerSurname`, `playerForenames`, `playerColour`, `minGameYear`, `maxGameYear`,
+     `eco`, optional `minPlyIndex` / `maxPlyIndex` to restrict which plies enter the std-dev (e.g.
+     middlegame only).
+   - **SQL note:** `STDDEV_SAMP` per game may be computed in SQL over grouped rows or in C# after a
+     narrow read — choose per §8 (trivial scalar aggregate on summary columns is allowed).
+   - **Tests:** flat balance → volatility 0; single spike → positive volatility; ply window respected.
+
+---
+
+#### Phase 2 — piece philosophy
+
+3. [x] **`BishopPairFrequency`**
+   - **Question:** How often does a player retain both bishops in the middlegame?
+   - **Data:** `GamePositionSummary` — count plies in window where `WhiteBishopCount = 2` (or
+     `BlackBishopCount = 2`) for the player's side.
+   - **Per game:** `plies_with_bishop_pair / plies_in_window` (ratio 0–1).
+   - **Aggregate:** `AVG(ratio)` across games.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageBishopPairFrequency`.
+   - **Default ply window:** plies 15–30 (override via `minPlyIndex` / `maxPlyIndex`).
+   - **Filters:** player + year + ECO + ply window.
+
+4. [x] **`MinorPieceComposition`**
+   - **Question:** Does the player tend toward bishops or knights on the board?
+   - **Data:** `GamePositionSummary` in ply window.
+   - **Per ply (player side):** `bishop_count - knight_count`; average across plies in window, then
+     average across games.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageMinorPieceDelta`
+     (positive = bishop-oriented).
+   - **Default ply window:** plies 15–30.
+
+---
+
+#### Phase 3 — exchange temperament
+
+5. [ ] **`CaptureRate`**
+   - **Question:** What fraction of the player's moves are captures?
+   - **Data:** `GameMove` where `MovingSide` matches the player's colour in that game.
+   - **Per game:** `COUNT(captures) / COUNT(moves)` where capture ⇔ `CapturedPiece IS NOT NULL`.
+   - **Aggregate:** `AVG(per_game_rate)`.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageCaptureRate`.
+   - **Optional:** `minPlyIndex` / `maxPlyIndex` on move ply.
+
+6. [ ] **`QueenTradeRate`**
+   - **Question:** How often are queens exchanged early?
+   - **Data:** `GamePositionSummary` or `GameMove` — detect first ply where both
+     `WhiteQueenCount` and `BlackQueenCount` are not both 1 (or either queen count drops to 0).
+   - **Per game:** `1` if queen trade occurred on or before `queenTradeMaxPly` (default **40**),
+     else `0`.
+   - **Aggregate:** `AVG` → proportion of games with early queen trade.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `QueenTradeRate`,
+     `QueenTradeMaxPly` (echo parameter used).
+
+---
+
+#### Phase 4 — spatial aggression
+
+7. [ ] **`CentreMoveRate`**
+   - **Question:** How often does a player play to central squares?
+   - **Data:** `GameMove` — `ToSquare` in centre set **{d4, d5, e4, e5}** (square indices 27, 28,
+     35, 36 with a1 = 0).
+   - **Per game:** centre moves / total moves by player.
+   - **Aggregate:** `AVG(per_game_rate)`.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageCentreMoveRate`.
+   - **Optional v2:** extend centre ring to c3–f6 (document if added).
+
+8. [ ] **`ForwardMoveRate`**
+   - **Question:** How often does a player advance into the opponent's half?
+   - **Data:** `GameMove` — `ToSquare` rank index (0–7) compared to moving side (White: rank ≥ 4;
+     Black: rank ≤ 3).
+   - **Per game:** forward moves / total moves.
+   - **Aggregate:** `AVG(per_game_rate)`.
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageForwardMoveRate`.
+
+---
+
+#### Phase 5 — king safety extensions
+
+9. [ ] **`CastlingSidePreference`**
+   - **Data:** `GameMove` castling rows for the player.
+   - **Per game:** first castle only — kingside vs queenside.
+   - **Aggregate:** `KingsideRate`, `QueensideRate` (proportions among games with castling).
+   - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GamesWithCastling`, `KingsideRate`,
+     `QueensideRate`.
+
+10. [ ] **`OppositeSideCastlingRate`**
+    - **Data:** first castling ply and side per colour per game from `GameMove`.
+    - **Per game:** `1` if White and Black castled to different wings (kingside = K-side file,
+      queenside = Q-side), else `0` (exclude games where either side never castled, or report
+      separate `EligibleGameCount`).
+    - **Aggregate:** proportion over eligible games.
+    - **Result columns:** `EligibleGameCount`, `OppositeSideCastlingRate`.
+
+11. [ ] **`UncastledKingRate`**
+    - **Per game:** `1` if the filtered player never castled, else `0`.
+    - **Aggregate:** proportion.
+    - **Result columns:** `GameCount`, `UncastledKingRate`.
+
+---
+
+#### Phase 6 — queen timing
+
+12. [ ] **`FirstQueenMovePly`**
+    - **Data:** `GameMove` where `MovedPiece = 'Q'` for the player's side.
+    - **Per game:** `MIN(PlyIndex)` of queen moves; normalize optionally as
+      `first_queen_ply / max_ply` (document if normalization is included — v1 can report raw ply).
+    - **Aggregate:** `AVG(first_queen_ply)` over games where the queen moved at least once.
+    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GamesWithQueenMove`,
+      `AverageFirstQueenMovePly`.
+
+---
+
+#### Phase 7 — game shape
+
+13. [ ] **`AverageGameLength`**
+    - **Data:** `MAX(PlyIndex)` from `GamePositionSummary` or move count per game.
+    - **Aggregate:** `AVG(max_ply)` for games involving the filtered player.
+    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageGameLengthPly`.
+
+14. [ ] **`ShortDrawRate`**
+    - **Data:** `Game.Winner` draw detection + game length.
+    - **Per game:** among draws only, `1` if `max_ply <= shortDrawMaxPly` (default **20**), else `0`.
+    - **Aggregate:** proportion of draws that are short (ChessBase **Fighting Spirit** proxy).
+    - **Result columns:** `DrawCount`, `ShortDrawRate`, `ShortDrawMaxPly`.
+
+---
+
+#### Phase 8 — repertoire shape
+
+15. [ ] **`EcoDiversity`**
+    - **Data:** `Game.Eco` for games involving the player.
+    - **Aggregate:** `COUNT(DISTINCT Eco)` (exclude null ECO).
+    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `EcoDiversity`.
+
+16. [ ] **`EcoConcentration`**
+    - **Data:** `Game.Eco` frequency table per player.
+    - **Aggregate:** sum of game shares of the top `ecoTopN` ECO codes (default **3**).
+    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `EcoConcentration`,
+      `EcoTopN`.
+
+---
+
+#### Phase 9 — materialization extensions (defer until Phases 1–8 stable)
+
+17. [ ] **`IsCheck`** on `GameMove` (derive at materialization from board diff) → enables future
+    **CheckRate** metric.
+18. [ ] **Game phase** label on `GamePositionSummary` (opening / middlegame / endgame by piece-count
+    rules) → enables **PhaseDistribution** metric.
+19. [ ] **`PlayerStyleProfile`** — composite metric returning a small vector of normalized scores
+    (aggression, positional, simplifier, risk) from a subset of the above; optional PCA later.
+
+**Engine-dependent (out of scope for §12.6):** ACPL, move accuracy, position sharpness/WDL,
+sound sacrifice detection — see [STYLE_METRICS.md §4 Phase 9](./STYLE_METRICS.md) and §14 below.
+
+**Validation:** After Phase 1, compare two players with contrasting reputations (e.g. Tal vs
+Petrosian) on `AverageCastlingPly` and `MaterialVolatility` with the same filters; see
+[STYLE_METRICS.md §7](./STYLE_METRICS.md).
+
+---
+
 ## 13. Risks and mitigations
 
 | Risk | Mitigation |
@@ -379,7 +613,9 @@ Implement player material comparison as a separate sequence of PRs:
 - “Material gained since opening” as a separate metric (DESIGN §9).
 - Unknown-year bucket (DESIGN §9).
 - Arbitrary SQL / raw table dumps from HTTP clients (keep **registered metrics + parameterized repository reads** only).
+- **Engine-based style metrics** (ACPL, sharpness/WDL, sound sacrifice classification) — deferred;
+  see [STYLE_METRICS.md](./STYLE_METRICS.md) and PLAN §12.6 Phase 9.
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete; follow **§12.4** for general metrics/UI work and **§12.5** for the planned player material comparison sequence until deployment plans change.*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete. **Active backlog:** §12.6 playing-style metrics (start with `AverageCastlingPly`, `MaterialVolatility`); §12.4 for general UI/tests; §12.5 player material comparison is complete.*

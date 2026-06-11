@@ -77,6 +77,26 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         string colourMode,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerMaterialAverageRow>>();
 
+    public Task<IReadOnlyList<AverageCastlingPlyRow>> GetAverageCastlingPlyAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<AverageCastlingPlyRow>>();
+
+    public Task<IReadOnlyList<AverageMaterialVolatilityRow>> GetAverageMaterialVolatilityAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<AverageMaterialVolatilityRow>>();
+
+    public Task<IReadOnlyList<BishopPairFrequencyRow>> GetBishopPairFrequencyAsync(
+        AnalyticsQuery query,
+        int? minPlyIndex,
+        int? maxPlyIndex,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<BishopPairFrequencyRow>>();
+
+    public Task<IReadOnlyList<MinorPieceCompositionRow>> GetMinorPieceCompositionAsync(
+        AnalyticsQuery query,
+        int? minPlyIndex,
+        int? maxPlyIndex,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<MinorPieceCompositionRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 

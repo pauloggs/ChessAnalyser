@@ -90,6 +90,10 @@ builder.Services.AddScoped<IMetricExecutor, GameCountByResultExecutor>();
 builder.Services.AddScoped<IMetricExecutor, GameCountByPlayerExecutor>();
 builder.Services.AddScoped<IMetricExecutor, PlayerResultSummaryExecutor>();
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialByPlayerAtMoveExecutor>();
+builder.Services.AddScoped<IMetricExecutor, AverageCastlingPlyExecutor>();
+builder.Services.AddScoped<IMetricExecutor, AverageMaterialVolatilityExecutor>();
+builder.Services.AddScoped<IMetricExecutor, BishopPairFrequencyExecutor>();
+builder.Services.AddScoped<IMetricExecutor, MinorPieceCompositionExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 

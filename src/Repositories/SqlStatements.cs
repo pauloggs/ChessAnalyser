@@ -406,6 +406,221 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Mean first-castling ply for a filtered player; games without castling are excluded from the average.
+        /// </summary>
+        public static string GetAverageCastlingPly =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            FirstCastle AS
+            (
+                SELECT fg.GameId, MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                  AND m.MovingSide = fg.PlayerSide
+                GROUP BY fg.GameId
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GamesWithCastling,
+                   AVG(CAST(CastlingPly AS FLOAT)) AS AverageCastlingPly
+            FROM FirstCastle;
+            """;
+
+        /// <summary>
+        /// Mean per-game sample standard deviation of signed material balance from the player's perspective.
+        /// </summary>
+        public static string GetAverageMaterialVolatility =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            PerPlyBalance AS
+            (
+                SELECT fg.GameId,
+                       CASE fg.PlayerSide
+                           WHEN 'W' THEN CAST(s.WhiteMaterial - s.BlackMaterial AS FLOAT)
+                           WHEN 'B' THEN CAST(s.BlackMaterial - s.WhiteMaterial AS FLOAT)
+                       END AS SignedBalance
+                FROM FilteredGames fg
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGameVolatility AS
+            (
+                SELECT GameId, STDEV(SignedBalance) AS MaterialVolatility
+                FROM PerPlyBalance
+                GROUP BY GameId
+                HAVING COUNT(*) >= 2
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(MaterialVolatility) AS AverageMaterialVolatility
+            FROM PerGameVolatility;
+            """;
+
+        /// <summary>
+        /// Mean per-game share of plies in a window where the filtered player has both bishops.
+        /// </summary>
+        public static string GetBishopPairFrequency =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            PerPly AS
+            (
+                SELECT fg.GameId,
+                       CASE
+                           WHEN fg.PlayerSide = 'W' AND s.WhiteBishopCount = 2 THEN 1.0
+                           WHEN fg.PlayerSide = 'B' AND s.BlackBishopCount = 2 THEN 1.0
+                           ELSE 0.0
+                       END AS HasBishopPair
+                FROM FilteredGames fg
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGame AS
+            (
+                SELECT GameId, AVG(HasBishopPair) AS BishopPairFrequency
+                FROM PerPly
+                GROUP BY GameId
+                HAVING COUNT(*) > 0
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(BishopPairFrequency) AS AverageBishopPairFrequency,
+                   @MinPlyIndex AS MinPlyIndex,
+                   @MaxPlyIndex AS MaxPlyIndex
+            FROM PerGame;
+            """;
+
+        /// <summary>
+        /// Mean per-game average of bishops minus knights on the filtered player's side in a ply window.
+        /// </summary>
+        public static string GetMinorPieceComposition =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            PerPly AS
+            (
+                SELECT fg.GameId,
+                       CASE fg.PlayerSide
+                           WHEN 'W' THEN CAST(s.WhiteBishopCount - s.WhiteKnightCount AS FLOAT)
+                           WHEN 'B' THEN CAST(s.BlackBishopCount - s.BlackKnightCount AS FLOAT)
+                       END AS MinorPieceDelta
+                FROM FilteredGames fg
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGame AS
+            (
+                SELECT GameId, AVG(MinorPieceDelta) AS AvgMinorPieceDelta
+                FROM PerPly
+                GROUP BY GameId
+                HAVING COUNT(*) > 0
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(AvgMinorPieceDelta) AS AverageMinorPieceDelta,
+                   @MinPlyIndex AS MinPlyIndex,
+                   @MaxPlyIndex AS MaxPlyIndex
+            FROM PerGame;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>

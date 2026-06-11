@@ -159,6 +159,9 @@ Detailed interfaces belong in PLAN.md; this section captures the **design intent
 
 - Optional future metric: **material gained** vs opening (explicitly separate from F-1).
 - Optional **“unknown year”** bucket if you later want visibility into games dropped from year reports.
+- **Playing-style metrics** (move/position fingerprints without engine evaluation): research in
+  [STYLE_METRICS.md](./STYLE_METRICS.md); implementation sequence in [PLAN.md §12.6](./PLAN.md).
+  First targets: `AverageCastlingPly`, `MaterialVolatility`.
 
 ---
 

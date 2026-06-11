@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-05-11 (analytics metric player filters now use independent player identity + colour dimensions; HTTP auth **deferred** — see [PLAN.md §12.4](./PLAN.md).)
+**Last updated:** 2026-06-11 (Phase 2 style metrics implemented: `BishopPairFrequency`, `MinorPieceComposition`.)
 
 ---
 
@@ -13,7 +13,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 | File | Role |
 |------|------|
 | [DESIGN.md](./DESIGN.md) | Requirements and locked decisions (facts, dimensions, C# vs SQL, rollups, year rules). |
-| [PLAN.md](./PLAN.md) | Implementation plan; **§11** (closed) + **§12** (metrics HTTP API) + **§12.4** (current suggested slice). |
+| [PLAN.md](./PLAN.md) | Implementation plan; **§11** (closed) + **§12** (metrics HTTP API) + **§12.6** (playing-style metrics backlog). |
+| [STYLE_METRICS.md](./STYLE_METRICS.md) | Style research, literature, metric catalogue, profile combinations, caveats. |
 | **AGENT_CONTEXT.md** (this file) | Current progress and **recommended next small step**. |
 
 **Global process skill:** `~/.cursor/skills/dpi-workflow/` (`dpi-workflow`) — 80/20 DESIGN+PLAN vs IMPLEMENT; applies in any repo.
@@ -24,15 +25,15 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
-- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, metrics discovery descriptions plus parameter hints, and independent metric player filters (`playerSurname`/`playerForenames` + `playerColour`). **Done (metrics surface):** `GameCountByEco`, `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`, and `PlayerResultSummary`. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
+- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, metrics discovery descriptions plus parameter hints, and independent metric player filters (`playerSurname`/`playerForenames` + `playerColour`). **Done (metrics surface):** `GameCountByEco`, `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`, `PlayerResultSummary`, `AverageCastlingPly`, `AverageMaterialVolatility`, `BishopPairFrequency`, `MinorPieceComposition`. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
 
 ---
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** No fixed planned PR is queued. Choose the next concrete analysis question before adding another metric, or do a small cleanup/test-hardening slice if one is called out by the maintainer.
+**Do next:** Implement **Phase 3** of [PLAN.md §12.6](./PLAN.md): `CaptureRate`, then `QueenTradeRate`.
 
-**Then:** Continue §12.4 item 4 tests as needed for each new metric. Optionally refresh [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) if deriver/summary hot paths change.
+**Then:** Phase 4 (`CentreMoveRate`, `ForwardMoveRate`) per §12.6.
 
 **Do not prioritize yet:** Dedicated HTTP **auth / rate limits** for `AnalyticsMetricsController` — **out of scope** until there is a **deployment or network exposure** plan (then treat as blocking; update PLAN §12.1 / §13). Optional hygiene: bind the dev host to **localhost** only.
 

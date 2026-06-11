@@ -28,6 +28,14 @@ internal static class MetricCatalog
                 "Player result summary from each player's perspective: wins, losses, draws, unknown results, total games, and score.",
             "AverageMaterialByPlayerAtMove" =>
                 "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
+            "AverageCastlingPly" =>
+                "Mean half-move of the filtered player's first castle; games where the player never castled are excluded from the average.",
+            "AverageMaterialVolatility" =>
+                "Mean per-game standard deviation of signed material balance from the player's perspective across all plies (optional ply window).",
+            "BishopPairFrequency" =>
+                "Mean per-game share of plies in a window where the player retains both bishops (default ply window 15–30).",
+            "MinorPieceComposition" =>
+                "Mean bishops minus knights on the player's side in a ply window; positive values favour bishops (default ply window 15–30).",
             _ => null
         };
     }
@@ -91,6 +99,35 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: moveNumber (defaults to 1; full move N maps to PlyIndex = N * 2 - 1).",
                 "Optional: minGameYear, maxGameYear, eco."
+            ],
+            "AverageCastlingPly" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Games where the player never castled are excluded from the average; see GamesWithCastling."
+            ],
+            "AverageMaterialVolatility" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex to restrict which plies contribute to each game's std dev."
+            ],
+            "BishopPairFrequency" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex (defaults to 15 and 30 when both omitted)."
+            ],
+            "MinorPieceComposition" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex (defaults to 15 and 30 when both omitted).",
+                "AverageMinorPieceDelta > 0 indicates a bishop-oriented minor-piece mix."
             ],
             _ => []
         };

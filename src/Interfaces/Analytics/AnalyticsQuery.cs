@@ -41,4 +41,14 @@ public sealed class AnalyticsQuery
     /// When null, the executor uses ply <c>4</c> (PLAN §5.3.4).
     /// </summary>
     public int? SummaryPlyIndex { get; init; }
+
+    /// <summary>
+    /// Inclusive lower bound on <c>GamePositionSummary.PlyIndex</c> for position-based style metrics.
+    /// </summary>
+    public int? MinPlyIndex { get; init; }
+
+    /// <summary>
+    /// Inclusive upper bound on <c>GamePositionSummary.PlyIndex</c> for position-based style metrics.
+    /// </summary>
+    public int? MaxPlyIndex { get; init; }
 }

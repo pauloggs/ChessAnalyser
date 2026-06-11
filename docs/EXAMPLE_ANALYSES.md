@@ -110,6 +110,13 @@ Current metric keys:
 - `GameCountByPlayer`
 - `PlayerResultSummary`
 - `AverageMaterialByPlayerAtMove`
+- `AverageCastlingPly`
+- `AverageMaterialVolatility`
+- `BishopPairFrequency`
+- `MinorPieceComposition`
+
+**Planned:** further playing-style metrics — see [STYLE_METRICS.md](./STYLE_METRICS.md) and
+[PLAN.md §12.6](./PLAN.md) Phase 3 onward.
 
 Metrics support the shared `AnalyticsQuery` filter shape where the filter is meaningful for that
 metric:
@@ -652,7 +659,192 @@ ORDER BY g.Id;
 
 ---
 
-## 14. Adding a new example analysis to this document
+## 14. Example analysis: average castling ply (playing style)
+
+### Question
+
+At what half-move does a player typically castle for the first time?
+
+### Why it is useful
+
+Early castling often indicates a pragmatic, king-safety-first approach; late or absent castling can
+signal riskier structures. Compare players with the same year and colour filters.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `AverageCastlingPly`
+- **Required:** choose a player (surname; forenames recommended)
+- Optional: `playerColour`, `minGameYear`, `maxGameYear`, `eco`
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "AverageCastlingPly",
+  "query": {
+    "playerSurname": "Petrosian",
+    "playerForenames": "Tigran",
+    "playerColour": "Any",
+    "minGameYear": 1950,
+    "maxGameYear": 1970
+  }
+}
+```
+
+### Result columns
+
+- `Player` — filtered player name
+- `GamesWithCastling` — games where the player castled at least once
+- `AverageCastlingPly` — mean ply of first castle (games without castling excluded from the average)
+
+### Notes
+
+- Requires `dbo.GameMove` with castling flags populated.
+- `playerSurname` is required; the API returns `400` if omitted.
+- Pair with `UncastledKingRate` (planned Phase 5) for a fuller king-safety picture.
+
+---
+
+## 15. Example analysis: average material volatility (playing style)
+
+### Question
+
+How much does the material balance swing during a player's games?
+
+### Why it is useful
+
+High volatility suggests dynamic, imbalanced fighting; low volatility suggests stable positional
+play. Useful for comparing Tal-like complexity against Karpov-like stability.
+
+### Run it in the UI
+
+In **Analytics metrics**:
+
+- Metric key: `AverageMaterialVolatility`
+- **Required:** choose a player
+- Optional: `playerColour`, `minGameYear`, `maxGameYear`, `eco`
+- Optional ply window: pass `minPlyIndex` / `maxPlyIndex` in the HTTP body (e.g. middlegame 15–40)
+
+Click **Run metric**.
+
+### Equivalent HTTP request
+
+```http
+POST /api/analytics/metrics/execute
+Content-Type: application/json
+```
+
+```json
+{
+  "metricKey": "AverageMaterialVolatility",
+  "query": {
+    "playerSurname": "Tal",
+    "playerForenames": "Mikhail",
+    "playerColour": "Any",
+    "minPlyIndex": 15,
+    "maxPlyIndex": 40
+  }
+}
+```
+
+### Result columns
+
+- `Player` — filtered player name
+- `GameCount` — games with at least two position summaries in the ply window (needed for std dev)
+- `AverageMaterialVolatility` — mean per-game sample standard deviation of signed material balance
+  from the player's perspective
+
+### Notes
+
+- Balance is `WhiteMaterial - BlackMaterial` when the player had White, reversed when Black.
+- Omit `minPlyIndex` / `maxPlyIndex` to include all plies (including ply `-1`).
+- Requires `dbo.GamePositionSummary` rows.
+
+---
+
+## 16. Example analysis: bishop pair frequency (playing style)
+
+### Question
+
+How often does a player retain both bishops during the middlegame?
+
+### Run it in the UI
+
+- Metric key: `BishopPairFrequency`
+- **Required:** player surname (and forenames recommended)
+- Optional: `playerColour`, year/ECO filters
+- Optional: `minPlyIndex` / `maxPlyIndex` (default **15–30** when both omitted)
+
+### Equivalent HTTP request
+
+```json
+{
+  "metricKey": "BishopPairFrequency",
+  "query": {
+    "playerSurname": "Karpov",
+    "playerForenames": "Anatoly",
+    "playerColour": "Any"
+  }
+}
+```
+
+### Result columns
+
+- `Player`, `GameCount`, `AverageBishopPairFrequency` (0–1), `MinPlyIndex`, `MaxPlyIndex`
+
+---
+
+## 17. Example analysis: minor piece composition (playing style)
+
+### Question
+
+Does the player tend toward bishops or knights on the board in the middlegame?
+
+### Run it in the UI
+
+- Metric key: `MinorPieceComposition`
+- **Required:** player surname
+- Optional ply window (default **15–30**)
+
+### Equivalent HTTP request
+
+```json
+{
+  "metricKey": "MinorPieceComposition",
+  "query": {
+    "playerSurname": "Tal",
+    "playerForenames": "Mikhail",
+    "minPlyIndex": 15,
+    "maxPlyIndex": 30
+  }
+}
+```
+
+### Result columns
+
+- `Player`, `GameCount`, `AverageMinorPieceDelta` (positive = bishop-oriented), `MinPlyIndex`, `MaxPlyIndex`
+
+---
+
+## 18. Playing-style metrics (overview)
+
+| Resource | Contents |
+|----------|----------|
+| [STYLE_METRICS.md](./STYLE_METRICS.md) | Literature review, style dimensions, profile combinations, caveats |
+| [PLAN.md §12.6](./PLAN.md) | Ordered implementation backlog (Phases 3–9) |
+
+---
+
+## 19. Adding a new example analysis to this document
 
 Use this template:
 
