@@ -1257,6 +1257,64 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Kingside vs queenside rates on the filtered player's first castle per game.
+        /// </summary>
+        public static string GetCastlingSidePreference =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            FirstCastlePly AS
+            (
+                SELECT fg.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND m.MovingSide = fg.PlayerSide
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY fg.GameId
+            ),
+            PerGame AS
+            (
+                SELECT fcp.GameId,
+                       CASE WHEN m.IsCastlingKingside = 1 THEN 1.0 ELSE 0.0 END AS IsKingside,
+                       CASE WHEN m.IsCastlingQueenside = 1 THEN 1.0 ELSE 0.0 END AS IsQueenside
+                FROM FirstCastlePly fcp
+                INNER JOIN FilteredGames fg ON fg.GameId = fcp.GameId
+                INNER JOIN dbo.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
+                WHERE m.MovingSide = fg.PlayerSide
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GamesWithCastling,
+                   AVG(IsKingside) AS KingsideRate,
+                   AVG(IsQueenside) AS QueensideRate
+            FROM PerGame;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>
