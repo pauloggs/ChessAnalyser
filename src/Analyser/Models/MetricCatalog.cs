@@ -135,7 +135,9 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex (defaults to 15 and 30 when both omitted).",
-                "AverageMinorPieceDelta > 0 indicates a bishop-oriented minor-piece mix."
+                "AverageMinorPieceDelta > 0 indicates a bishop-oriented minor-piece mix.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "CaptureRate" =>
             [

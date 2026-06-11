@@ -46,6 +46,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetMinorPieceCompositionAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MinorPieceCompositionRow>());
+        repo.Setup(r => r.GetPerPlayerMinorPieceCompositionAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CaptureRateRow>());
         repo.Setup(r => r.GetQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
@@ -64,7 +66,7 @@ public class MetricRegistryAndExecutorsTests
             new AverageCastlingPlyExecutor(repo.Object),
             new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
             new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new MinorPieceCompositionExecutor(repo.Object),
+            new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
             new CaptureRateExecutor(repo.Object),
             new QueenTradeRateExecutor(repo.Object)
         });
@@ -880,7 +882,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new MinorPieceCompositionExecutor(repo.Object);
+        var sut = new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -899,10 +901,65 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
+    public async Task MinorPieceCompositionExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetMinorPieceCompositionAsync(
+                It.IsAny<AnalyticsQuery>(),
+                15,
+                30,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<MinorPieceCompositionRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Tal",
+                    PlayerForenames = "Mikhail",
+                    GameCount = 90,
+                    AverageMinorPieceDelta = 0.6,
+                    MinPlyIndex = 15,
+                    MaxPlyIndex = 30
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerMinorPieceCompositionAsync(
+                It.IsAny<AnalyticsQuery>(),
+                15,
+                30,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 90, MetricValue = 0.6 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 85, MetricValue = 0.2 },
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 75, MetricValue = 0.4 }
+            });
+
+        var sut = new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageMinorPieceDelta", "MinPlyIndex", "MaxPlyIndex",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.6, result.Rows[0][2]);
+        Assert.Equal(0.3, (double)result.Rows[0][5]!, precision: 10);
+        Assert.Equal(0.3, (double)result.Rows[0][6]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][7]);
+        Assert.Equal(2, result.Rows[0][8]);
+    }
+
+    [Fact]
     public async Task MinorPieceCompositionExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new MinorPieceCompositionExecutor(repo.Object);
+        var sut = new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
