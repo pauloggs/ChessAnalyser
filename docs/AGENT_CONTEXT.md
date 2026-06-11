@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (PR #57 QueenTradeRate corpus benchmarks — conflicts with merged #56 resolved.)
+**Last updated:** 2026-06-11 (`CentreMoveRate` metric — PR in flight.)
 
 ---
 
@@ -27,7 +27,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics HTTP API + local **`wwwroot`** UI).
 - **Done (style metrics Phases 1–3):** `AverageCastlingPly`, `AverageMaterialVolatility`, `BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`, `QueenTradeRate`.
 - **Done (corpus benchmarks on main):** `AverageMaterialVolatility`, `AverageCastlingPly`, `BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate` (PR #56).
-- **In flight:** `QueenTradeRate` corpus benchmarks — [PR #57](https://github.com/pauloggs/ChessAnalyser/pull/57) (rebased onto main after #56 merge; conflicts resolved).
+- **Done (corpus benchmarks):** `QueenTradeRate` (PR #57).
+- **In flight:** `CentreMoveRate` spatial metric (Phase 4).
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
 
 ---
@@ -47,9 +48,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next (after PR #57 merges):** [PLAN.md §12.6 Phase 4](./PLAN.md) — implement **`CentreMoveRate`** (first spatial metric; corpus benchmark optional follow-up per §12.7 pattern).
+**Do next (after CentreMoveRate PR merges):** [PLAN.md §12.6 Phase 4](./PLAN.md) — implement **`ForwardMoveRate`**.
 
-**Then:** `ForwardMoveRate`, then Phase 5+ per PLAN.
+**Then:** Phase 5+ per PLAN; corpus benchmarks on Phase 4 metrics as follow-up PRs.
 
 **Do not prioritize yet:** HTTP auth / rate limits for metrics (PLAN §12.4 / §13).
 
