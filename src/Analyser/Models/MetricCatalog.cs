@@ -44,6 +44,8 @@ internal static class MetricCatalog
                 "Mean per-game share of the filtered player's moves landing on central squares d4, d5, e4, e5.",
             "ForwardMoveRate" =>
                 "Mean per-game share of the filtered player's moves landing in the opponent's half of the board.",
+            "CastlingSidePreference" =>
+                "Kingside vs queenside preference on the filtered player's first castle; rates are among games where the player castled.",
             _ => null
         };
     }
@@ -178,6 +180,13 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
                 "Forward for White means ToSquare rank index >= 4; for Black, rank index <= 3."
+            ],
+            "CastlingSidePreference" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "KingsideRate and QueensideRate sum to 1.0 among games with castling; games without castling are excluded."
             ],
             _ => []
         };

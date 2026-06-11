@@ -518,7 +518,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 5 — king safety extensions
 
-9. [ ] **`CastlingSidePreference`**
+9. [x] **`CastlingSidePreference`**
    - **Data:** `GameMove` castling rows for the player.
    - **Per game:** first castle only — kingside vs queenside.
    - **Aggregate:** `KingsideRate`, `QueensideRate` (proportions among games with castling).

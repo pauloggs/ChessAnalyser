@@ -233,6 +233,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Kingside vs queenside rates on the filtered player's first castle per game.
+        /// </summary>
+        Task<IReadOnlyList<CastlingSidePreferenceRow>> GetCastlingSidePreferenceAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1226,6 +1233,30 @@ namespace Repositories
                         Eco = NormalizeNonEmpty(query.Eco),
                         MinPlyIndex = query.MinPlyIndex,
                         MaxPlyIndex = query.MaxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<CastlingSidePreferenceRow>> GetCastlingSidePreferenceAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<CastlingSidePreferenceRow>(
+                new CommandDefinition(
+                    SqlStatements.GetCastlingSidePreference,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
                     },
                     cancellationToken: cancellationToken))).ToList();
 

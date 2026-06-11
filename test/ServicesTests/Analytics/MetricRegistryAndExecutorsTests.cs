@@ -62,6 +62,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<CentreMoveRateRow>());
         repo.Setup(r => r.GetForwardMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<ForwardMoveRateRow>());
+        repo.Setup(r => r.GetCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CastlingSidePreferenceRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -80,7 +82,8 @@ public class MetricRegistryAndExecutorsTests
             new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new CentreMoveRateExecutor(repo.Object),
-            new ForwardMoveRateExecutor(repo.Object)
+            new ForwardMoveRateExecutor(repo.Object),
+            new CastlingSidePreferenceExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -99,7 +102,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("QueenTradeRate", sut.MetricKeys);
         Assert.Contains("CentreMoveRate", sut.MetricKeys);
         Assert.Contains("ForwardMoveRate", sut.MetricKeys);
-        Assert.Equal(16, sut.MetricKeys.Count);
+        Assert.Contains("CastlingSidePreference", sut.MetricKeys);
+        Assert.Equal(17, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -1378,6 +1382,76 @@ public class MetricRegistryAndExecutorsTests
 
         repo.Verify(r => r.GetForwardMoveRateAsync(
             It.Is<AnalyticsQuery>(q => q.MinPlyIndex == 8 && q.MaxPlyIndex == 35),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CastlingSidePreferenceExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CastlingSidePreferenceRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GamesWithCastling = 80,
+                    KingsideRate = 0.75,
+                    QueensideRate = 0.25
+                }
+            });
+
+        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly"
+        });
+
+        Assert.Equal(["Player", "GamesWithCastling", "KingsideRate", "QueensideRate"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Karpov, Anatoly", result.Rows[0][0]);
+        Assert.Equal(80, result.Rows[0][1]);
+        Assert.Equal(0.75, result.Rows[0][2]);
+        Assert.Equal(0.25, result.Rows[0][3]);
+    }
+
+    [Fact]
+    public async Task CastlingSidePreferenceExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CastlingSidePreferenceExecutor_PassesFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CastlingSidePreferenceRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran",
+            MinGameYear = 1960,
+            MaxGameYear = 1970,
+            Eco = "A30"
+        };
+        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetCastlingSidePreferenceAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerSurname == "Petrosian"
+                && q.PlayerForenames == "Tigran"
+                && q.MinGameYear == 1960
+                && q.MaxGameYear == 1970
+                && q.Eco == "A30"),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }
