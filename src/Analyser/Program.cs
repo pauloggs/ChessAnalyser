@@ -82,6 +82,7 @@ builder.Services.AddSingleton<IPieceValues, ClassicalPieceValues>();
 builder.Services.AddScoped<IGamePositionSummaryFactory, GamePositionSummaryFactory>();
 builder.Services.AddScoped<IGameMoveDeriver, GameMoveDeriver>();
 builder.Services.AddScoped<IAnalyticsMaterializationService, AnalyticsMaterializationService>();
+builder.Services.AddSingleton<ICorpusBenchmarkCalculator, CorpusBenchmarkCalculator>();
 builder.Services.AddScoped<IMetricExecutor, AverageMaterialByYearAndColourExecutor>();
 builder.Services.AddScoped<IMetricExecutor, KnightMoveDestinationFrequencyExecutor>();
 builder.Services.AddScoped<IMetricExecutor, GameCountByEcoExecutor>();

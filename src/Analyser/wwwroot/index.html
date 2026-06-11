@@ -143,6 +143,13 @@
         <label>moveNumber <input type="number" id="qMoveNumber" value="1" min="1" step="1" /></label>
       </div>
     </div>
+    <div id="corpusBenchmarkFields" class="metric-fields" hidden>
+      <p class="hint">Corpus benchmark compares the selected player to other eligible players in this database using the same year, ECO, and colour filters. Percentiles are corpus-local, not universal chess history.</p>
+      <div class="row">
+        <label><input type="checkbox" id="qIncludeCorpusBenchmark" /> Include corpus benchmark</label>
+        <label>benchmarkMinGames <input type="number" id="qBenchmarkMinGames" placeholder="default 30" min="1" step="1" /></label>
+      </div>
+    </div>
     <button type="button" id="runMetric">Run metric</button>
     <div class="status" id="metricStatus"></div>
     <div id="metricTableWrap"></div>
@@ -389,22 +396,35 @@
       var metricPlayerFilters = document.getElementById('metricPlayerFilters');
       var sideMaterialFields = document.getElementById('sideMaterialFields');
       var playerComparisonFields = document.getElementById('playerComparisonFields');
+      var corpusBenchmarkFields = document.getElementById('corpusBenchmarkFields');
+
+      var CORPUS_BENCHMARK_METRICS = {
+        AverageMaterialVolatility: true
+      };
 
       function selectedMetricKey() {
         return (metricKeySel.value || '').trim();
+      }
+
+      function supportsCorpusBenchmark(key) {
+        return !!CORPUS_BENCHMARK_METRICS[key];
       }
 
       function updateMetricFields() {
         var key = selectedMetricKey();
         var isPlayerComparison = key === 'AverageMaterialByPlayerAtMove';
         var isSideMaterial = key === 'AverageMaterialByYearAndColour';
+        var isCorpusBenchmark = supportsCorpusBenchmark(key);
 
         playerComparisonFields.hidden = !isPlayerComparison;
         sideMaterialFields.hidden = !isSideMaterial;
         metricPlayerFilters.hidden = isPlayerComparison;
+        corpusBenchmarkFields.hidden = !isCorpusBenchmark;
 
         if (isPlayerComparison)
           metricStatus.textContent = 'Select Player A, optionally Player B, then choose colour and full move number.';
+        else if (isCorpusBenchmark)
+          metricStatus.textContent = 'Select a player, then optionally enable corpus benchmark to add percentile columns.';
         else
           metricStatus.textContent = '';
         metricStatus.className = 'status';
@@ -449,6 +469,14 @@
 
         if (eco != null) q.eco = eco;
         if (key === 'AverageMaterialByYearAndColour' && ply != null) q.summaryPlyIndex = ply;
+
+        if (supportsCorpusBenchmark(key)) {
+          if (document.getElementById('qIncludeCorpusBenchmark').checked)
+            q.includeCorpusBenchmark = true;
+          var benchmarkMinGames = numVal('qBenchmarkMinGames');
+          if (benchmarkMinGames != null) q.benchmarkMinGames = benchmarkMinGames;
+        }
+
         return Object.keys(q).length ? q : undefined;
       }
 

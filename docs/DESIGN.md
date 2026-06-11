@@ -42,6 +42,7 @@ The framework should make it **easy to add new metrics** and **efficient to run 
 | F-5 | **Grouping** | Support **GROUP BY** one or more dimensions (year, player, ECO bucket, decile of ply, etc.). |
 | F-6 | **Extensibility** | New statistic types should be addable **without** modifying unrelated metrics (plugin-like or registry pattern; see §6). |
 | F-7 | **Reproducibility** | Same inputs (DB snapshot + metric definition + parameters) → same outputs (deterministic implementation; document rounding if any). |
+| F-11 | **Corpus-relative benchmarks** | Per-player style metrics should optionally report **how a filtered player compares to other players in the same database slice** (same non-identity filters), not only a raw scalar. See §12. |
 
 ### 3.2 Data access and interfaces
 
@@ -161,7 +162,7 @@ Detailed interfaces belong in PLAN.md; this section captures the **design intent
 - Optional **“unknown year”** bucket if you later want visibility into games dropped from year reports.
 - **Playing-style metrics** (move/position fingerprints without engine evaluation): research in
   [STYLE_METRICS.md](./STYLE_METRICS.md); implementation sequence in [PLAN.md §12.6](./PLAN.md).
-  First targets: `AverageCastlingPly`, `MaterialVolatility`.
+- **Corpus benchmarks for style metrics:** design in §12; implementation in [PLAN.md §12.7](./PLAN.md).
 
 ---
 
@@ -181,6 +182,110 @@ Detailed interfaces belong in PLAN.md; this section captures the **design intent
 | §3 Functional | Task breakdown, libraries, migrations |
 | §4 NFR | Testing, indexing, performance tasks |
 | §8 Resolved decisions | Schema, jobs, executor boundaries |
+| §12 Corpus benchmarks | PLAN §12.7 |
+
+---
+
+## 12. Corpus-relative benchmarks (locked direction)
+
+### 12.1 Problem
+
+Raw per-player style scalars (e.g. `AverageMaterialVolatility = 1.34` for Fischer over 827 games)
+are **hard to interpret in isolation**. External tools (Chessiverse, ChessBase style reports, academic
+typology work) normalize player features against a **reference population** before presenting style
+labels or rankings.
+
+ChessAnalyser should do the same, but **honestly**: benchmarks are always **relative to the loaded
+corpus and active filters**, not universal chess history.
+
+### 12.2 What a benchmark is (and is not)
+
+| In scope | Out of scope |
+|----------|----------------|
+| **Corpus average** — mean of the same metric across eligible players in the DB slice | Fixed external GM norms (“Tal = 1.8 volatility”) |
+| **Delta from corpus** — subject value minus corpus average | Engine-based quality or ACPL |
+| **Percentile rank** — subject’s position in the corpus distribution (0–100) | Multi-tenant or cross-database normalization |
+| Same **non-identity** filters as the subject query (year, ECO, colour mode, ply window) | Benchmarks that ignore filter alignment |
+
+A benchmark answers: *“Compared with everyone else in **my** database under **these** filters, is
+this player high, low, or typical on this metric?”*
+
+### 12.3 Reference population (locked)
+
+1. Apply the metric’s **per-player** aggregation formula to **every player** who appears in games
+   matching the query’s **non-identity** filters (`minGameYear`, `maxGameYear`, `eco`, `playerColour`
+   when it narrows the game set, `minPlyIndex` / `maxPlyIndex`, etc.).
+2. **Exclude the subject player** from the corpus average and percentile calculation (leave-one-out
+   style) so self-inclusion does not bias the baseline when the subject has many games.
+3. Include only players with at least **`benchmarkMinGames`** appearances in the filtered slice
+   (default **30**; configurable on the query).
+4. The **subject row** is always returned when `playerSurname` is set, even if below
+   `benchmarkMinGames`; benchmark columns may be null with a documented reason when the corpus has
+   too few eligible players.
+
+### 12.4 Query contract (proposed)
+
+Extend **`AnalyticsQuery`** (PLAN §12.7):
+
+| Field | Type | Default | Purpose |
+|-------|------|---------|---------|
+| `includeCorpusBenchmark` | `bool?` | `false` for existing metrics until migrated; **`true` default for style metrics** once supported | When true, append benchmark columns. |
+| `benchmarkMinGames` | `int?` | `30` | Minimum games per player for inclusion in corpus distribution. |
+
+**Backward compatibility:** existing API consumers that omit `includeCorpusBenchmark` keep receiving
+today’s column set until they opt in (or until a documented migration window).
+
+### 12.5 Result shape (proposed)
+
+When `includeCorpusBenchmark = true`, append columns to the **single subject row** (not a second
+“All players” row — unlike `AverageMaterialByPlayerAtMove`, which uses explicit series rows):
+
+| Column | Meaning |
+|--------|---------|
+| `CorpusAverage` | Mean per-player metric value over eligible corpus players |
+| `DeltaFromCorpus` | Subject value − `CorpusAverage` |
+| `CorpusPercentile` | Percentile rank 0–100 within eligible corpus (higher = higher metric value) |
+| `CorpusEligiblePlayerCount` | Players with ≥ `benchmarkMinGames` in the slice |
+
+Keep the existing subject columns (`GameCount`, `AverageMaterialVolatility`, etc.) unchanged.
+
+**Rounding:** document in metric specs; suggest 2 decimal places for averages/deltas, 1 for
+percentile in presentation.
+
+### 12.6 Priority metrics
+
+Implement benchmarks **first** on metrics where raw units are opaque:
+
+1. `AverageMaterialVolatility` (proof of concept)
+2. `BishopPairFrequency`, `MinorPieceComposition`
+3. `AverageCastlingPly`
+
+New style metrics from PLAN §12.6 Phase 3 onward should ship **with** benchmark support when
+practical, using shared enrichment code.
+
+### 12.7 Architecture (sketch)
+
+- **Shared helper** (name flexible): given subject per-player value + SQL or repository method that
+  returns corpus distribution for the same metric definition and filters → compute
+  `CorpusAverage`, `DeltaFromCorpus`, `CorpusPercentile`.
+- Reuse the **per-player aggregation SQL** already used for the subject; wrap in an outer query or
+  C# pass over per-player rows — prefer one repository round-trip per metric where §8.5 allows.
+- **No new persisted tables** in v1; benchmarks are computed on read.
+- Optional v2: cache corpus aggregates per `(metricKey, filter hash)` if performance requires it.
+
+Pattern precedent: **`AverageMaterialByPlayerAtMove`** already compares Player A to an all-player
+baseline; corpus benchmarks generalize that idea for style metrics with percentile semantics.
+
+### 12.8 Interpretation and UI copy
+
+Documentation and `MetricCatalog` hints must state:
+
+- Percentiles are **corpus-local** (“78th percentile in this database with these filters”).
+- High/low is **not** good/bad — style fingerprint only.
+- Sparse corpora (few players or few games) produce unreliable benchmarks; surface
+  `CorpusEligiblePlayerCount`.
+
+See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 
 ---
 

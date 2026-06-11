@@ -7,6 +7,8 @@ namespace ServicesTests.Analytics;
 
 public class MetricRegistryAndExecutorsTests
 {
+    private static readonly CorpusBenchmarkCalculator CorpusBenchmarkCalculator = new();
+
     [Fact]
     public void MetricRegistry_ContainsRegisteredMetricKeys()
     {
@@ -52,7 +54,7 @@ public class MetricRegistryAndExecutorsTests
             new PlayerResultSummaryExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object),
             new AverageCastlingPlyExecutor(repo.Object),
-            new AverageMaterialVolatilityExecutor(repo.Object),
+            new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
             new BishopPairFrequencyExecutor(repo.Object),
             new MinorPieceCompositionExecutor(repo.Object)
         });
@@ -655,7 +657,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -673,7 +675,7 @@ public class MetricRegistryAndExecutorsTests
     public async Task AverageMaterialVolatilityExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
@@ -692,13 +694,55 @@ public class MetricRegistryAndExecutorsTests
             MinPlyIndex = 15,
             MaxPlyIndex = 40
         };
-        var sut = new AverageMaterialVolatilityExecutor(repo.Object);
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
         repo.Verify(r => r.GetAverageMaterialVolatilityAsync(
             It.Is<AnalyticsQuery>(q => q.MinPlyIndex == 15 && q.MaxPlyIndex == 40),
             It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AverageMaterialVolatilityExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AverageMaterialVolatilityRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Fischer",
+                    PlayerForenames = "Robert James",
+                    GameCount = 827,
+                    AverageMaterialVolatility = 1.34
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 827, MetricValue = 1.34 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 400, MetricValue = 1.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 350, MetricValue = 1.8 }
+            });
+
+        var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Robert James",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            ["Player", "GameCount", "AverageMaterialVolatility", "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"],
+            result.ColumnNames);
+        Assert.Equal(1.34, result.Rows[0][2]);
+        Assert.Equal(1.4, result.Rows[0][3]);
+        Assert.Equal(-0.06, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(50.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
