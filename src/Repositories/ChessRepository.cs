@@ -247,6 +247,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Proportion of filtered games where the player never castled.
+        /// </summary>
+        Task<IReadOnlyList<UncastledKingRateRow>> GetUncastledKingRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1280,6 +1287,30 @@ namespace Repositories
             var rows = (await connection.QueryAsync<OppositeSideCastlingRateRow>(
                 new CommandDefinition(
                     SqlStatements.GetOppositeSideCastlingRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<UncastledKingRateRow>> GetUncastledKingRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<UncastledKingRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetUncastledKingRate,
                     new
                     {
                         MinGameYear = query.MinGameYear,

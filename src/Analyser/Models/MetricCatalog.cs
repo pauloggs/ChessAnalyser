@@ -48,6 +48,8 @@ internal static class MetricCatalog
                 "Kingside vs queenside preference on the filtered player's first castle; rates are among games where the player castled.",
             "OppositeSideCastlingRate" =>
                 "Share of the filtered player's games where both sides castled to opposite wings (kingside vs queenside).",
+            "UncastledKingRate" =>
+                "Proportion of the filtered player's games where they never castled.",
             _ => null
         };
     }
@@ -196,6 +198,13 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "EligibleGameCount counts games where both White and Black castled; others are excluded."
+            ],
+            "UncastledKingRate" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "GameCount is all filtered appearances; UncastledKingRate is the share with no castling move."
             ],
             _ => []
         };

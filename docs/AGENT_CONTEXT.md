@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (`OppositeSideCastlingRate` metric — PR in flight.)
+**Last updated:** 2026-06-11 (`UncastledKingRate` metric — PR in flight.)
 
 ---
 
@@ -31,7 +31,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (Phase 4):** `CentreMoveRate` (PR #58).
 - **Done (Phase 4):** `ForwardMoveRate` (PR #59).
 - **Done (Phase 5):** `CastlingSidePreference` (PR #60).
-- **In flight:** `OppositeSideCastlingRate` (Phase 5).
+- **Done (Phase 5):** `OppositeSideCastlingRate` (PR #61).
+- **In flight:** `UncastledKingRate` (Phase 5 — completes king-safety extensions).
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
 
 ---
@@ -51,9 +52,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next (after OppositeSideCastlingRate PR merges):** [PLAN.md §12.6 Phase 5](./PLAN.md) — implement **`UncastledKingRate`**.
+**Do next (after UncastledKingRate PR merges):** [PLAN.md §12.6 Phase 6](./PLAN.md) — implement **`FirstQueenMovePly`**.
 
-**Then:** Phase 6 (`FirstQueenMovePly`, …) per PLAN; corpus benchmarks on Phase 4 metrics as follow-up PRs.
+**Then:** Phase 6+ per PLAN; corpus benchmarks on Phase 4–5 metrics as follow-up PRs.
 
 **Do not prioritize yet:** HTTP auth / rate limits for metrics (PLAN §12.4 / §13).
 

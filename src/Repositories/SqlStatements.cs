@@ -1399,6 +1399,57 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Proportion of filtered games where the player never castled.
+        /// </summary>
+        public static string GetUncastledKingRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            PerGame AS
+            (
+                SELECT fg.GameId,
+                       CASE
+                           WHEN EXISTS (
+                               SELECT 1
+                               FROM dbo.GameMove m
+                               WHERE m.GameId = fg.GameId
+                                 AND m.MovingSide = fg.PlayerSide
+                                 AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                           ) THEN 0.0
+                           ELSE 1.0
+                       END AS IsUncastled
+                FROM FilteredGames fg
+                WHERE fg.PlayerSide IS NOT NULL
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(IsUncastled) AS UncastledKingRate
+            FROM PerGame;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>

@@ -533,7 +533,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
     - **Aggregate:** proportion over eligible games.
     - **Result columns:** `EligibleGameCount`, `OppositeSideCastlingRate`.
 
-11. [ ] **`UncastledKingRate`**
+11. [x] **`UncastledKingRate`**
     - **Per game:** `1` if the filtered player never castled, else `0`.
     - **Aggregate:** proportion.
     - **Result columns:** `GameCount`, `UncastledKingRate`.
