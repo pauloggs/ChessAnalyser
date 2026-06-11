@@ -262,6 +262,8 @@
           var opt = document.createElement('option');
           opt.value = p.displayName || (p.surname || ('Player ' + p.id));
           opt.textContent = p.displayName || ('Player ' + p.id);
+          if (p.wasWorldChampion)
+            opt.title = 'World champion';
           opt.dataset.surname = p.surname || '';
           opt.dataset.forenames = p.forenames || '';
           select.appendChild(opt);

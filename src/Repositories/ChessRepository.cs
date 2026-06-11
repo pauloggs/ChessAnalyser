@@ -36,6 +36,9 @@ namespace Repositories
 
         Task<int> InsertPlayer(Player player);
 
+        /// <summary>Updates the world-champion metadata flag for a player row.</summary>
+        Task UpdatePlayerWasWorldChampionAsync(int playerId, bool wasWorldChampion, CancellationToken cancellationToken = default);
+
         Task<int> InsertGame(Game game);
 
         /// <summary>
@@ -515,9 +518,28 @@ namespace Repositories
             using var connection = GetOpenConnection();
             using (connection)
             {
-                var id = await connection.ExecuteScalarAsync<int>(SqlStatements.InsertPlayer, new { player.Surname, player.Forenames });
+                var id = await connection.ExecuteScalarAsync<int>(SqlStatements.InsertPlayer, new
+                {
+                    player.Surname,
+                    player.Forenames,
+                    player.WasWorldChampion
+                });
                 return id;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task UpdatePlayerWasWorldChampionAsync(
+            int playerId,
+            bool wasWorldChampion,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    SqlStatements.UpdatePlayerWasWorldChampion,
+                    new { Id = playerId, WasWorldChampion = wasWorldChampion },
+                    cancellationToken: cancellationToken));
         }
 
         public async Task<List<string>> GetProcessedGameIds()

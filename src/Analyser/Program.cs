@@ -1,5 +1,6 @@
 using Analyser;
 using Interfaces.Analytics;
+using Interfaces.DTO;
 using Microsoft.OpenApi.Models;
 using Repositories;
 using Services;
@@ -61,6 +62,7 @@ builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
+builder.Services.AddScoped<IPlayerMetadataSyncService, PlayerMetadataSyncService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
@@ -147,6 +149,16 @@ if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison
         $"{result.GamesPerSecond:F0} games/s, {result.DerivedRowsPerSecond:F0} summary+move rows/s " +
         $"({result.SummaryRowsPerIteration} summaries + {result.MoveRowsPerIteration} move per game). " +
         $"See docs/ANALYTICS_MATERIALIZATION_PERF.md for methodology (PLAN §11 item 12 / DESIGN NFR-3).");
+    return;
+}
+
+if (args.Any(a => string.Equals(a, "--sync-player-metadata", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
+    var outcome = await sync.SyncWorldChampionFlagsAsync();
+    Console.WriteLine(
+        $"Player metadata sync: checked={outcome.PlayersChecked}, updated={outcome.PlayersUpdated}.");
     return;
 }
 

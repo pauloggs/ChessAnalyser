@@ -116,7 +116,8 @@ public class AnalyserController(
                 Id = p.Id,
                 Surname = p.Surname?.Trim() ?? string.Empty,
                 Forenames = p.Forenames?.Trim() ?? string.Empty,
-                DisplayName = FormatPlayerDisplayName(p)
+                DisplayName = FormatPlayerDisplayName(p),
+                WasWorldChampion = p.WasWorldChampion
             })
             .ToList();
 
@@ -210,8 +211,9 @@ public class AnalyserController(
         if (surname.Length == 0)
             return forenames.Length == 0 ? $"Player {player.Id}" : forenames;
         if (forenames.Length == 0)
-            return surname;
+            return player.WasWorldChampion ? $"{surname} (WC)" : surname;
 
-        return $"{surname}, {forenames}";
+        var baseName = $"{surname}, {forenames}";
+        return player.WasWorldChampion ? $"{baseName} (WC)" : baseName;
     }
 }

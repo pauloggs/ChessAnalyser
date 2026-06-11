@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (`EcoDiversity` metric — PR in flight.)
+**Last updated:** 2026-06-11 (player metadata — world champion flag).
 
 ---
 
@@ -35,7 +35,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (Phase 5):** `UncastledKingRate` (PR #62).
 - **Done (Phase 6):** `FirstQueenMovePly`.
 - **Done (Phase 7):** `AverageGameLength`, `ShortDrawRate`.
-- **Done (Phase 8):** `EcoDiversity` (PR in flight).
+- **Done (Phase 8):** `EcoDiversity`.
+- **Done (player metadata):** `WasWorldChampion` on `dbo.Player` (PR in flight).
 - **Done (corpus benchmarks):** `CentreMoveRate`, `ForwardMoveRate`, `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`, `AverageGameLength`, `ShortDrawRate`, `EcoDiversity`.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
 
