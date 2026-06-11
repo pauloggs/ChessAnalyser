@@ -322,7 +322,13 @@ namespace Repositories
                    SUM(a.DrawCount) AS DrawCount,
                    SUM(a.UnknownCount) AS UnknownCount,
                    COUNT(*) AS TotalGameCount,
-                   CAST(SUM(a.WinCount) AS FLOAT) + (CAST(SUM(a.DrawCount) AS FLOAT) / 2.0) AS Score
+                   CAST(SUM(a.WinCount) AS FLOAT) + (CAST(SUM(a.DrawCount) AS FLOAT) / 2.0) AS Score,
+                   CASE
+                       WHEN SUM(a.WinCount) + SUM(a.LossCount) + SUM(a.DrawCount) = 0 THEN NULL
+                       ELSE (CAST(SUM(a.WinCount) AS FLOAT) + (CAST(SUM(a.DrawCount) AS FLOAT) / 2.0))
+                            / CAST(SUM(a.WinCount) + SUM(a.LossCount) + SUM(a.DrawCount) AS FLOAT)
+                            * 100.0
+                   END AS ScorePercentage
             FROM Appearance a
             INNER JOIN dbo.Player p ON p.Id = a.PlayerId
             GROUP BY p.Surname, p.Forenames

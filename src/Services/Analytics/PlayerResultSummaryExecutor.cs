@@ -26,12 +26,13 @@ public sealed class PlayerResultSummaryExecutor(IChessRepository repository) : I
                 r.DrawCount,
                 r.UnknownCount,
                 r.TotalGameCount,
-                r.Score
+                r.Score,
+                r.ScorePercentage
             };
 
         return new AnalyticsTableResult
         {
-            ColumnNames = ["Player", "WinCount", "LossCount", "DrawCount", "UnknownCount", "TotalGameCount", "Score"],
+            ColumnNames = ["Player", "WinCount", "LossCount", "DrawCount", "UnknownCount", "TotalGameCount", "Score", "ScorePercentage"],
             Rows = rows.Select(r => (IReadOnlyList<object?>)Row(r).ToList()).ToList()
         };
     }
