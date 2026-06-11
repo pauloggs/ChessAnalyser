@@ -95,6 +95,12 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         int? maxPlyIndex,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<BishopPairFrequencyRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerBishopPairFrequencyAsync(
+        AnalyticsQuery query,
+        int? minPlyIndex,
+        int? maxPlyIndex,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<MinorPieceCompositionRow>> GetMinorPieceCompositionAsync(
         AnalyticsQuery query,
         int? minPlyIndex,

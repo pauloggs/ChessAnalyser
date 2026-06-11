@@ -13,4 +13,12 @@ public sealed class BishopPairFrequencyRow
     public int? MinPlyIndex { get; init; }
 
     public int? MaxPlyIndex { get; init; }
+
+    public double? CorpusAverage { get; init; }
+
+    public double? DeltaFromCorpus { get; init; }
+
+    public double? CorpusPercentile { get; init; }
+
+    public int? CorpusEligiblePlayerCount { get; init; }
 }
