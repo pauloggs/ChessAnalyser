@@ -211,6 +211,14 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Per-player early queen trade rate aggregates for corpus benchmarks.
+        /// </summary>
+        Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerQueenTradeRateAsync(
+            AnalyticsQuery query,
+            int queenTradeMaxPly,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1125,6 +1133,30 @@ namespace Repositories
                         MaxGameYear = query.MaxGameYear,
                         PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
                         PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        QueenTradeMaxPly = queenTradeMaxPly
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerQueenTradeRateAsync(
+            AnalyticsQuery query,
+            int queenTradeMaxPly,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<PlayerStylePerPlayerMetricRow>(
+                new CommandDefinition(
+                    SqlStatements.GetPerPlayerQueenTradeRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
                         PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco),
                         QueenTradeMaxPly = queenTradeMaxPly

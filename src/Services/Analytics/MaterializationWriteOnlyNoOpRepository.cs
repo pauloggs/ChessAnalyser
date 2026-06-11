@@ -130,6 +130,11 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         int queenTradeMaxPly,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<QueenTradeRateRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerQueenTradeRateAsync(
+        AnalyticsQuery query,
+        int queenTradeMaxPly,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 

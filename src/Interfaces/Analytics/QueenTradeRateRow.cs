@@ -11,4 +11,12 @@ public sealed class QueenTradeRateRow
     public double? QueenTradeRate { get; init; }
 
     public int QueenTradeMaxPly { get; init; }
+
+    public double? CorpusAverage { get; init; }
+
+    public double? DeltaFromCorpus { get; init; }
+
+    public double? CorpusPercentile { get; init; }
+
+    public int? CorpusEligiblePlayerCount { get; init; }
 }
