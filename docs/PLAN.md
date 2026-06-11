@@ -731,16 +731,16 @@ player (e.g. Petrosian) on the same filters.
 
 **Branch:** `feat/fide-list-matcher`
 
-1. [ ] **`IFideRatingListReader`** — parse official FIDE **TXT** combined list (document column layout in code remarks; XML optional follow-up in same PR if trivial).
-2. [ ] **`FidePlayerRecord`** — `FideId`, `Name`, `Federation`, `Sex`, `Title`, `BirthYear`.
-3. [ ] **`IFidePlayerMatcher`** — match `Player` (surname, forenames) → `FidePlayerRecord?`:
+1. [x] **`IFideRatingListReader`** — parse official FIDE **TXT** combined list (document column layout in code remarks; XML optional follow-up in same PR if trivial).
+2. [x] **`FidePlayerRecord`** — `FideId`, `Name`, `Federation`, `Sex`, `Title`, `BirthYear`.
+3. [x] **`IFidePlayerMatcher`** — match `Player` (surname, forenames) → `FidePlayerRecord?`:
    - Use **`PlayerForenamesMatcher`**
    - Ambiguity resolution per DESIGN §13.5 (birth year + corpus game-year window from repository)
-4. [ ] Tests with **small inline fixture** strings (no committed 40MB file):
+4. [x] Tests with **small inline fixture** strings (no committed 40MB file):
    - Exact match `Carlsen, Magnus`
    - Abbreviated forenames
    - Ambiguous surname → no match or best-effort with birth year
-5. [ ] Document expected file location: e.g. `data/fide/README.md` — user downloads list locally; path passed to CLI.
+5. [x] Document expected file location: e.g. `data/fide/README.md` — user downloads list locally; path passed to CLI.
 
 **Acceptance:** matcher tests pass; no CLI yet.
 

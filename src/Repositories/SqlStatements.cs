@@ -56,6 +56,15 @@ namespace Repositories
             ORDER BY ChampionOrder, Surname, Forenames;
             """;
 
+        public static string GetPlayerCorpusActivity =>
+            """
+            SELECT MIN(g.GameYear) AS FirstGameYear,
+                   MAX(g.GameYear) AS LastGameYear
+            FROM dbo.Game g
+            WHERE g.GameYear IS NOT NULL
+              AND (g.WhitePlayerId = @PlayerId OR g.BlackPlayerId = @PlayerId);
+            """;
+
         public static string InsertGame =>
         """
         IF (NOT EXISTS (SELECT TOP 1 Id FROM dbo.Game WHERE GameId = @GameId))
