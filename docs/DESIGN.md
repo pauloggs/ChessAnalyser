@@ -296,7 +296,7 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 
 **Context (2026):** Many PGN collections carry **game** headers (event, date, ECO, result) and **player names** only. `[WhiteElo]`, `[WhiteTitle]`, and similar tags are often absent. Player attributes for filtering and cohort analysis must therefore come from **external reference data**, not from the PGN alone.
 
-**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`) is set from **`Ref.WorldChampion`** (migration `013`) via `IWorldChampionMatcher` on insert and `--sync-player-metadata` for backfill. §13 generalises enrichment (FIDE bulk sync) and defines **filter semantics** for analytics.
+**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`) is set from **`Ref.WorldChampion`** (migration `013`) via `IWorldChampionMatcher` on player insert; **`IPlayerFideMetadataEnricher`** re-applies world-champion and FIDE metadata idempotently (Migrations host after seed, end of ETL, and per game with **GameYear**). §13 defines **filter semantics** for analytics (filters not yet wired — PLAN §15.5+).
 
 ### 13.1 Goals
 
@@ -314,7 +314,7 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 | Rating **at game time** | Needs historical monthly rating series or `WhiteElo`/`BlackElo` on `Game`; not a static `Player` column. |
 | “World champion **when this game was played**” | Needs **reign periods**, not `WasWorldChampion` alone. |
 | Wikidata bulk import | Optional follow-up; FIDE + curated catalogs cover most filter needs first. |
-| Automatic enrichment during live PGN parse | FIDE metadata only when **`Ref.FidePlayer`** is loaded; world-champion flag on insert always. |
+| Network calls during ETL / migrations | Bulk FIDE file is local-only; optional Lichess fallback deferred. Parse and migrations succeed when catalog is empty (FIDE columns stay NULL). |
 | EAV / JSON metadata blob as primary store | v1 uses **indexed nullable columns** on `Player`; revisit if many new attribute types appear. |
 
 ### 13.3 Player schema (v1 enrichment columns)
@@ -359,7 +359,7 @@ PGN names are parsed to `(Surname, Forenames)` via `PlayerNameParser`. FIDE list
 
 1. **Normalise** trim and case for comparison; reuse **`PlayerForenamesMatcher`** for forename abbreviations (`A` vs `Alexander`).
 2. **Exact match** on normalised surname + forenames → assign `FideId` and fields.
-3. **Ambiguous** (multiple FIDE rows same surname, matcher ties) → score candidates with **birth year** (if set on either side) and **corpus activity** (`MIN`/`MAX` `GameYear` for that `PlayerId`); pick highest confidence only if above threshold; else leave `FideId` NULL and log/count as unmatched.
+3. **Ambiguous** (multiple FIDE rows same surname, matcher ties) → score candidates with **birth year** (if set on either side) and **corpus activity** (`MIN`/`MAX` `GameYear` for that `PlayerId`); **reject** candidates whose birth year is **after any known corpus game year** (homonym guard); pick highest confidence only if above threshold; else leave `FideId` NULL and log/count as unmatched.
 4. **No auto-merge** of distinct `Player` rows — homonyms stay separate unless manually corrected later.
 5. **Re-sync idempotent:** running sync again updates FIDE-sourced columns; never clears `WasWorldChampion` from catalog logic.
 
@@ -410,22 +410,24 @@ Express as a small list of conditions (extensible):
 ### 13.7 Architecture sketch
 
 ```
-PGN ingest → Player (name) + Game (dims)
+data/fide/players_list_foa.txt  (local, gitignored)
        ↓
---sync-player-metadata  → optional re-backfill WasWorldChampion + FIDE columns from Ref.*
-ETL new player insert   → auto-enrich when Ref.FidePlayer is loaded
-Migration 015 host      → seeds Ref.FidePlayer from data/fide/players_list_foa.txt when empty
+Migration 015 host  →  seed Ref.FidePlayer when empty  →  EnrichAllAsync (backfill dbo.Player)
        ↓
-AnalyticsQuery + PlayerMetadataFilter
+PGN ingest (ETL)  →  Player insert (WasWorldChampion on insert)
+                  →  per game: TryEnrichPlayerAsync(white/black, GameYear)
+                  →  end of load: EnrichAllAsync (idempotent)
+       ↓
+AnalyticsQuery + PlayerMetadataFilter  (PLAN §15.5+)
        ↓
 PlayerMetadataSql.Apply(filter, wp, bp, subjectContext)  →  AND … on FilteredGames
        ↓
 ICorpusBenchmarkCalculator (optional CorpusPool predicate)
 ```
 
-- **Services:** `IFideRatingListReader`, `IFidePlayerMatcher`, extend `IPlayerMetadataSyncService` (or sibling `IFideMetadataSyncService`).
-- **No network in default sync path** — user passes `--fide-list path/to/file.txt`.
-- **UI:** one “Player metadata” subsection under metrics and games (checkboxes / dropdowns mapping to predicates + role).
+- **Services:** `IFideRatingListReader`, `IFidePlayerMatcher`, `IPlayerFideMetadataEnricher`, `FidePlayerMatchContextBuilder`; `IPlayerMetadataSyncService` retained for legacy call sites.
+- **No network in default path** — configure `FideCatalog:ListPath` in `src/Migrations/appsettings.json`; see `data/fide/README.md`.
+- **UI:** one “Player metadata” subsection under metrics and games (checkboxes / dropdowns mapping to predicates + role) — PLAN §15.4+.
 
 ### 13.8 Interpretation
 

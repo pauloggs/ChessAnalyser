@@ -697,7 +697,7 @@ player (e.g. Petrosian) on the same filters.
 
 **Goal:** Enrich `dbo.Player` from **external reference data** (primarily FIDE bulk files) and support **optional metadata filters** on analytics and game browsing per [DESIGN.md §13](./DESIGN.md).
 
-**Decision (2026):** PGN files being loaded are **metadata-thin** (game headers + names). Player title, federation, sex, and birth year will **not** come from PGN tags in v1. Enrichment is a **post-load / post-ingest CLI step**, not inline with parse.
+**Decision (2026):** PGN files being loaded are **metadata-thin** (game headers + names). Player title, federation, sex, and birth year will **not** come from PGN tags in v1. Enrichment is **automatic and offline**: migrations seed `Ref.FidePlayer` and backfill existing players; ETL enriches each game's white/black using that game's **GameYear**, then runs a full idempotent pass — no separate Analyser CLI.
 
 **Non-goals for Stage 5 v1:** historical rating at game time, reign-period champion filters, Wikidata bulk import, Lichess fallback (optional later slice).
 
@@ -740,7 +740,7 @@ player (e.g. Petrosian) on the same filters.
    - Exact match `Carlsen, Magnus`
    - Abbreviated forenames
    - Ambiguous surname → no match or best-effort with birth year
-5. [x] Document expected file location: e.g. `data/fide/README.md` — user downloads list locally; path passed to CLI.
+5. [x] Document expected file location: `data/fide/README.md` — user downloads list locally; Migrations host loads it when `Ref.FidePlayer` is empty.
 
 **Acceptance:** matcher tests pass; no CLI yet.
 
@@ -752,11 +752,12 @@ player (e.g. Petrosian) on the same filters.
 
 1. [x] Migration **`014_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table.
 2. [x] Migration **`015_SeedRefFidePlayer.sql`** + Migrations host — load `data/fide/players_list_foa.txt` into Ref when empty; backfill `dbo.Player`.
-3. [x] **`IPlayerFideMetadataEnricher`** — backfill all players + enrich on ETL insert (`PlayerResolver`).
-4. [x] No manual Analyser CLI import — seed runs as part of `dotnet run --project src/Migrations`.
-5. [x] Service tests.
+3. [x] **`IPlayerFideMetadataEnricher`** — `EnrichAllAsync()` backfill + `TryEnrichPlayerAsync(playerId, gameYear)` on each persisted game (`EtlService`); `PlayerResolver` sets `WasWorldChampion` on insert only.
+4. [x] **Game-year verification** in `FidePlayerMatcher` — reject candidates whose birth year is after any corpus game year; clear incompatible stored FIDE metadata on re-enrichment.
+5. [x] No manual Analyser CLI import — seed runs as part of `dotnet run --project src/Migrations`.
+6. [x] Service tests (including homonym / Botvinnik fixture).
 
-**Acceptance:** migrations populate Ref + players when FIDE file is present; new ETL players auto-enriched; idempotent re-run.
+**Acceptance:** migrations populate Ref + players when FIDE file is present; new ETL players auto-enriched per game year; idempotent re-run.
 
 **Note:** ~1.8M-row catalog is streamed by the Migrations host (not a multi-GB SQL INSERT script in git).
 
