@@ -451,6 +451,64 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean first-castling ply for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerAverageCastlingPly =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            FirstCastle AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                  AND m.MovingSide = a.PlayerSide
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(CAST(CastlingPly AS FLOAT)) AS MetricValue
+            FROM FirstCastle
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Mean per-game sample standard deviation of signed material balance from the player's perspective.
         /// </summary>
         public static string GetAverageMaterialVolatility =>
