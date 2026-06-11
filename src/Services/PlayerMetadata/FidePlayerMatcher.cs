@@ -74,11 +74,45 @@ public sealed class FidePlayerMatcher : IFidePlayerMatcher
         if (matches.Count == 0)
             return Unmatched();
 
+        matches = matches.Where(m => IsCorpusCompatible(m.BirthYear, context)).ToList();
+        if (matches.Count == 0)
+            return Unmatched();
+
         if (matches.Count == 1)
             return Matched(matches[0]);
 
         return ResolveAmbiguous(matches, context);
     }
+
+    /// <summary>
+    /// True when corpus game years are consistent with the candidate birth year (DESIGN §13.5).
+    /// When corpus years or birth year are unknown, returns true (no basis to reject).
+    /// </summary>
+    internal static bool IsCorpusCompatible(short? candidateBirthYear, FidePlayerMatchContext? context)
+    {
+        if (context is null || candidateBirthYear is null)
+            return true;
+
+        if (context.KnownBirthYear is short knownBirth &&
+            Math.Abs(knownBirth - candidateBirthYear.Value) > 2)
+            return false;
+
+        if (context.CorpusFirstGameYear is not short first ||
+            context.CorpusLastGameYear is not short last)
+            return true;
+
+        var birth = candidateBirthYear.Value;
+        if (first < birth + MinCompetitiveAge)
+            return false;
+
+        if (last > birth + MaxPlausibleCareerEndAge)
+            return false;
+
+        return true;
+    }
+
+    private const int MinCompetitiveAge = 5;
+    private const int MaxPlausibleCareerEndAge = 100;
 
     private static FidePlayerMatchResult ResolveAmbiguous(
         IReadOnlyList<FidePlayerRecord> matches,
@@ -116,9 +150,9 @@ public sealed class FidePlayerMatcher : IFidePlayerMatcher
             context.CorpusLastGameYear is short last &&
             candidate.BirthYear is short birth)
         {
-            if (first >= birth + 8 && last <= birth + 100)
+            if (first >= birth + MinCompetitiveAge && last <= birth + MaxPlausibleCareerEndAge)
                 score += 30;
-            else if (first >= birth + 5 && last <= birth + 110)
+            else if (first >= birth + 3 && last <= birth + 110)
                 score += 10;
         }
 

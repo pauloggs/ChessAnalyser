@@ -122,6 +122,62 @@ public class FidePlayerMatcherTests
     }
 
     [Fact]
+    public void Match_SingleCandidate_IncompatibleCorpusYears_ReturnsUnmatched()
+    {
+        var records = new List<FidePlayerRecord>
+        {
+            new()
+            {
+                FideId = 2_805_650,
+                Surname = "Botvinnik",
+                Forenames = "Mikhail M",
+                BirthYear = 1983,
+                Federation = "ISR"
+            }
+        };
+
+        var sut = new FidePlayerMatcher();
+        sut.SetRecords(records);
+
+        var result = sut.Match(
+            "Botvinnik",
+            "Mikhail M",
+            new FidePlayerMatchContext { CorpusFirstGameYear = 1925, CorpusLastGameYear = 1970 });
+
+        Assert.Equal(FidePlayerMatchOutcome.Unmatched, result.Outcome);
+    }
+
+    [Fact]
+    public void Match_HomonymBotvinniks_PicksCorpusCompatibleRecord()
+    {
+        var records = new List<FidePlayerRecord>
+        {
+            new() { FideId = 2_805_650, Surname = "Botvinnik", Forenames = "Mikhail M", BirthYear = 1983 },
+            new() { FideId = 410_001, Surname = "Botvinnik", Forenames = "Mikhail", BirthYear = 1911, Federation = "RUS" }
+        };
+
+        var sut = new FidePlayerMatcher();
+        sut.SetRecords(records);
+
+        var result = sut.Match(
+            "Botvinnik",
+            "Mikhail M",
+            new FidePlayerMatchContext { CorpusFirstGameYear = 1925, CorpusLastGameYear = 1970 });
+
+        Assert.Equal(FidePlayerMatchOutcome.Matched, result.Outcome);
+        Assert.Equal(410_001, result.Record!.FideId);
+        Assert.Equal((short)1911, result.Record.BirthYear);
+    }
+
+    [Fact]
+    public void IsCorpusCompatible_RejectsGamesBeforeBirth()
+    {
+        Assert.False(FidePlayerMatcher.IsCorpusCompatible(
+            1983,
+            new FidePlayerMatchContext { CorpusFirstGameYear = 1925, CorpusLastGameYear = 1970 }));
+    }
+
+    [Fact]
     public void ScoreCandidate_CorpusYearsBoostsPlausibleCandidate()
     {
         var candidate = new FidePlayerRecord

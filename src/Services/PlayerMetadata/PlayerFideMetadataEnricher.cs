@@ -112,9 +112,13 @@ public sealed class PlayerFideMetadataEnricher(
                     break;
                 case FidePlayerMatchOutcome.Ambiguous:
                     ambiguous++;
+                    if (await TryClearIncompatibleMetadataAsync(player, activity, dryRun, cancellationToken))
+                        updated++;
                     break;
                 default:
                     unmatched++;
+                    if (await TryClearIncompatibleMetadataAsync(player, activity, dryRun, cancellationToken))
+                        updated++;
                     break;
             }
         }
@@ -147,4 +151,34 @@ public sealed class PlayerFideMetadataEnricher(
         string.Equals(player.Sex, metadata.Sex, StringComparison.Ordinal) &&
         string.Equals(player.FideTitle, metadata.FideTitle, StringComparison.Ordinal) &&
         player.BirthYear == metadata.BirthYear;
+
+    private async Task<bool> TryClearIncompatibleMetadataAsync(
+        Player player,
+        PlayerCorpusActivity? activity,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        if (player.FideId is null)
+            return false;
+
+        var context = new FidePlayerMatchContext
+        {
+            KnownBirthYear = player.BirthYear,
+            CorpusFirstGameYear = activity?.FirstGameYear,
+            CorpusLastGameYear = activity?.LastGameYear
+        };
+
+        if (FidePlayerMatcher.IsCorpusCompatible(player.BirthYear, context))
+            return false;
+
+        if (!dryRun)
+        {
+            await _repository.UpdatePlayerFideMetadataAsync(
+                player.Id,
+                new PlayerFideMetadata(),
+                cancellationToken).ConfigureAwait(false);
+        }
+
+        return true;
+    }
 }

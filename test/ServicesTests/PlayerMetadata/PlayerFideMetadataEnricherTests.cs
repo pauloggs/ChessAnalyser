@@ -99,4 +99,40 @@ public class PlayerFideMetadataEnricherTests
         Assert.False(enriched);
         repo.Verify(r => r.UpdatePlayerFideMetadataAsync(It.IsAny<int>(), It.IsAny<PlayerFideMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
     }
+
+    [Fact]
+    public async Task BackfillAllAsync_ClearsIncompatibleStoredMetadata()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayers()).ReturnsAsync(new List<Player>
+        {
+            new()
+            {
+                Id = 2340,
+                Surname = "Botvinnik",
+                Forenames = "Mikhail M",
+                WasWorldChampion = true,
+                FideId = 2_805_650,
+                Federation = "ISR",
+                BirthYear = 1983
+            }
+        });
+        repo.Setup(r => r.GetPlayerCorpusActivityAsync(2340, It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new PlayerCorpusActivity { FirstGameYear = 1925, LastGameYear = 1970 });
+
+        var matcher = new Mock<IFidePlayerMatcher>();
+        matcher.Setup(m => m.EnsureLoadedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        matcher.Setup(m => m.Match("Botvinnik", "Mikhail M", It.IsAny<FidePlayerMatchContext>()))
+            .Returns(new FidePlayerMatchResult { Outcome = FidePlayerMatchOutcome.Unmatched });
+
+        var sut = new PlayerFideMetadataEnricher(repo.Object, matcher.Object);
+        var result = await sut.BackfillAllAsync();
+
+        Assert.Equal(1, result.PlayersUnmatched);
+        Assert.Equal(1, result.PlayersUpdated);
+        repo.Verify(r => r.UpdatePlayerFideMetadataAsync(
+            2340,
+            It.Is<PlayerFideMetadata>(m => m.FideId == null),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
 }
