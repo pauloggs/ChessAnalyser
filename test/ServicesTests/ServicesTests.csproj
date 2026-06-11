@@ -49,6 +49,9 @@
     <None Update="TestData\Integration\etl_progress_sample.pgn">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
+    <None Update="PlayerMetadata\Fixtures\fide_sample.txt">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </None>
   </ItemGroup>
 
 </Project>

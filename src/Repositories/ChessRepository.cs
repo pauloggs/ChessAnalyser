@@ -45,6 +45,9 @@ namespace Repositories
         /// <summary>Returns classical world-champion name rows from <c>Ref.WorldChampion</c>.</summary>
         Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default);
 
+        /// <summary>First and last game year for a player in the corpus (nullable when no dated games).</summary>
+        Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(int playerId, CancellationToken cancellationToken = default);
+
         Task<int> InsertGame(Game game);
 
         /// <summary>
@@ -579,6 +582,19 @@ namespace Repositories
                 new CommandDefinition(SqlStatements.GetWorldChampions, cancellationToken: cancellationToken)))
                 .ToList();
             return list;
+        }
+
+        /// <inheritdoc />
+        public async Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(
+            int playerId,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.QuerySingleOrDefaultAsync<PlayerCorpusActivity>(
+                new CommandDefinition(
+                    SqlStatements.GetPlayerCorpusActivity,
+                    new { PlayerId = playerId },
+                    cancellationToken: cancellationToken));
         }
 
         public async Task<List<string>> GetProcessedGameIds()

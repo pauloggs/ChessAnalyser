@@ -39,4 +39,11 @@ public class SqlStatementsPlayerTests
         Assert.Contains("Ref.WorldChampion", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
         Assert.Contains("ChampionOrder", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void GetPlayerCorpusActivity_SelectsMinMaxGameYear()
+    {
+        Assert.Contains("MIN(g.GameYear)", SqlStatements.GetPlayerCorpusActivity, StringComparison.Ordinal);
+        Assert.Contains("MAX(g.GameYear)", SqlStatements.GetPlayerCorpusActivity, StringComparison.Ordinal);
+    }
 }

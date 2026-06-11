@@ -349,3 +349,11 @@ MigrationBackup/
 
 # Ionide (cross platform F# VS Code tools) working folder
 .ionide/
+
+# Local FIDE rating list downloads (see data/fide/README.md)
+data/fide/*
+!data/fide/README.md
+test/fide_sample/
+test/fide_sample.zip
+test/fide_combined/
+test/fide_combined.zip

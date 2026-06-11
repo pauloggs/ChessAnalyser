@@ -64,6 +64,8 @@ builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
 builder.Services.AddScoped<IWorldChampionMatcher, WorldChampionMatcher>();
+builder.Services.AddSingleton<IFideRatingListReader, FideRatingListReader>();
+builder.Services.AddScoped<IFidePlayerMatcher, FidePlayerMatcher>();
 builder.Services.AddScoped<IPlayerMetadataSyncService, PlayerMetadataSyncService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
