@@ -317,6 +317,22 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Share of the filtered player's draws that end at or below a ply threshold.
+        /// </summary>
+        Task<IReadOnlyList<ShortDrawRateRow>> GetShortDrawRateAsync(
+            AnalyticsQuery query,
+            int shortDrawMaxPly,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Per-player short-draw rate aggregates for corpus benchmarks.
+        /// </summary>
+        Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerShortDrawRateAsync(
+            AnalyticsQuery query,
+            int shortDrawMaxPly,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1588,6 +1604,56 @@ namespace Repositories
                         MaxGameYear = query.MaxGameYear,
                         PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<ShortDrawRateRow>> GetShortDrawRateAsync(
+            AnalyticsQuery query,
+            int shortDrawMaxPly,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<ShortDrawRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetShortDrawRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        ShortDrawMaxPly = shortDrawMaxPly
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerShortDrawRateAsync(
+            AnalyticsQuery query,
+            int shortDrawMaxPly,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<PlayerStylePerPlayerMetricRow>(
+                new CommandDefinition(
+                    SqlStatements.GetPerPlayerShortDrawRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        ShortDrawMaxPly = shortDrawMaxPly
                     },
                     cancellationToken: cancellationToken))).ToList();
 

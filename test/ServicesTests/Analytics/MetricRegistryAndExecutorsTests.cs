@@ -86,6 +86,10 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<AverageGameLengthRow>());
         repo.Setup(r => r.GetPerPlayerAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
+        repo.Setup(r => r.GetShortDrawRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ShortDrawRateRow>());
+        repo.Setup(r => r.GetPerPlayerShortDrawRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -109,7 +113,8 @@ public class MetricRegistryAndExecutorsTests
             new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator)
+            new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -133,7 +138,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("UncastledKingRate", sut.MetricKeys);
         Assert.Contains("FirstQueenMovePly", sut.MetricKeys);
         Assert.Contains("AverageGameLength", sut.MetricKeys);
-        Assert.Equal(21, sut.MetricKeys.Count);
+        Assert.Contains("ShortDrawRate", sut.MetricKeys);
+        Assert.Equal(22, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -2065,6 +2071,127 @@ public class MetricRegistryAndExecutorsTests
                 && q.PlayerForenames == "Tigran"
                 && q.PlayerColour == "Black"
                 && q.MaxGameYear == 1975),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task ShortDrawRateExecutor_MapsRowAndUsesDefaultMaxPly()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetShortDrawRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                20,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ShortDrawRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Petrosian",
+                    PlayerForenames = "Tigran",
+                    DrawCount = 30,
+                    ShortDrawRate = 0.2,
+                    ShortDrawMaxPly = 20
+                }
+            });
+
+        var sut = new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran"
+        });
+
+        Assert.Equal(["Player", "DrawCount", "ShortDrawRate", "ShortDrawMaxPly"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Petrosian, Tigran", result.Rows[0][0]);
+        Assert.Equal(30, result.Rows[0][1]);
+        Assert.Equal(0.2, result.Rows[0][2]);
+        Assert.Equal(20, result.Rows[0][3]);
+    }
+
+    [Fact]
+    public async Task ShortDrawRateExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task ShortDrawRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetShortDrawRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                20,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ShortDrawRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    DrawCount = 40,
+                    ShortDrawRate = 0.25,
+                    ShortDrawMaxPly = 20
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerShortDrawRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                20,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 40, MetricValue = 0.25 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 50, MetricValue = 0.10 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 35, MetricValue = 0.15 }
+            });
+
+        var sut = new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "DrawCount", "ShortDrawRate", "ShortDrawMaxPly",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal(0.25, result.Rows[0][2]);
+        Assert.Equal(20, result.Rows[0][3]);
+        Assert.Equal(0.125, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(0.125, (double)result.Rows[0][5]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][6]);
+        Assert.Equal(2, result.Rows[0][7]);
+    }
+
+    [Fact]
+    public async Task ShortDrawRateExecutor_PassesCustomMaxPlyToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetShortDrawRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                15,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<ShortDrawRateRow>());
+
+        var sut = new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            ShortDrawMaxPly = 15
+        });
+
+        repo.Verify(r => r.GetShortDrawRateAsync(
+            It.Is<AnalyticsQuery>(q => q.PlayerSurname == "Fischer" && q.ShortDrawMaxPly == 15),
+            15,
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

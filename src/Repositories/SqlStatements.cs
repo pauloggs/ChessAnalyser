@@ -2033,6 +2033,121 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Share of the filtered player's draws that end at or below a ply threshold.
+        /// </summary>
+        public static string GetShortDrawRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       g.Winner,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            DrawGames AS
+            (
+                SELECT fg.GameId,
+                       MAX(s.PlyIndex) AS MaxPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND fg.Winner = 'D'
+                GROUP BY fg.GameId
+            ),
+            PerDraw AS
+            (
+                SELECT CASE
+                           WHEN MaxPly <= @ShortDrawMaxPly THEN 1.0
+                           ELSE 0.0
+                       END AS IsShortDraw
+                FROM DrawGames
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS DrawCount,
+                   AVG(IsShortDraw) AS ShortDrawRate,
+                   @ShortDrawMaxPly AS ShortDrawMaxPly
+            FROM PerDraw;
+            """;
+
+        /// <summary>
+        /// Per-player short-draw rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerShortDrawRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       g.Winner,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            DrawGames AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       MAX(s.PlyIndex) AS MaxPly
+                FROM Appearances a
+                INNER JOIN dbo.Game g ON g.Id = a.GameId
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                WHERE g.Winner = 'D'
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(CASE
+                           WHEN MaxPly <= @ShortDrawMaxPly THEN 1.0
+                           ELSE 0.0
+                       END) AS MetricValue
+            FROM DrawGames
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>

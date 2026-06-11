@@ -191,6 +191,16 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
+    public Task<IReadOnlyList<ShortDrawRateRow>> GetShortDrawRateAsync(
+        AnalyticsQuery query,
+        int shortDrawMaxPly,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<ShortDrawRateRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerShortDrawRateAsync(
+        AnalyticsQuery query,
+        int shortDrawMaxPly,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 
