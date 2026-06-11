@@ -15,5 +15,8 @@ public sealed class FideMetadataSyncResult
 
     public int PlayersAmbiguous { get; init; }
 
+    /// <summary>Matched players skipped because another corpus row already owns the FIDE ID.</summary>
+    public int PlayersFideIdConflict { get; init; }
+
     public bool DryRun { get; init; }
 }

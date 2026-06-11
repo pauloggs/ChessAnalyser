@@ -9,6 +9,10 @@ ChessAnalyser does **not** commit official FIDE rating list downloads. Obtain a 
 3. Save the extracted `.txt` file here, for example:
    - `data/fide/players_list_foa.txt`
 
+The file is **not** in git (`data/fide/*` is gitignored). Until you download and save it, sync will fail with `FileNotFoundException`.
+
+Paths like `data/fide/players_list_foa.txt` are resolved from the **repo root** when you run `dotnet run --project src/Analyser` from the repo root. Absolute paths also work.
+
 ## Format
 
 FIDE publishes a **fixed-width** text file. The reader (`FideRatingListReader`) parses:

@@ -56,11 +56,21 @@ public sealed class PlayerMetadataSyncService(
         var records = await _fideRatingListReader.ReadAsync(fideListPath, cancellationToken).ConfigureAwait(false);
         _fidePlayerMatcher.SetRecords(records);
 
-        var players = await _repository.GetPlayers().ConfigureAwait(false);
+        var players = (await _repository.GetPlayers().ConfigureAwait(false))
+            .OrderBy(p => p.Id)
+            .ToList();
         var updated = 0;
         var matched = 0;
         var unmatched = 0;
         var ambiguous = 0;
+        var fideIdConflict = 0;
+
+        var fideIdOwner = new Dictionary<int, int>();
+        foreach (var existing in players)
+        {
+            if (existing.FideId is int existingFideId)
+                fideIdOwner[existingFideId] = existing.Id;
+        }
 
         foreach (var player in players)
         {
@@ -84,11 +94,22 @@ public sealed class PlayerMetadataSyncService(
                     if (MetadataEquals(player, metadata))
                         break;
 
+                    if (metadata.FideId is int fideId &&
+                        fideIdOwner.TryGetValue(fideId, out var ownerId) &&
+                        ownerId != player.Id)
+                    {
+                        fideIdConflict++;
+                        break;
+                    }
+
                     if (!dryRun)
                     {
                         await _repository.UpdatePlayerFideMetadataAsync(player.Id, metadata, cancellationToken)
                             .ConfigureAwait(false);
                     }
+
+                    if (metadata.FideId is int assignedFideId)
+                        fideIdOwner[assignedFideId] = player.Id;
 
                     updated++;
                     break;
@@ -108,6 +129,7 @@ public sealed class PlayerMetadataSyncService(
             PlayersMatched = matched,
             PlayersUnmatched = unmatched,
             PlayersAmbiguous = ambiguous,
+            PlayersFideIdConflict = fideIdConflict,
             DryRun = dryRun
         };
     }

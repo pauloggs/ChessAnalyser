@@ -202,6 +202,44 @@ public class PlayerMetadataSyncServiceTests
         repo.Verify(r => r.UpdatePlayerFideMetadataAsync(It.IsAny<int>(), It.IsAny<PlayerFideMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
     }
 
+    [Fact]
+    public async Task SyncFideMetadataAsync_SkipsSecondPlayerWhenFideIdAlreadyClaimed()
+    {
+        var fideRecord = new FidePlayerRecord
+        {
+            FideId = 2406144,
+            Surname = "Smith",
+            Forenames = "John",
+            Federation = "USA"
+        };
+
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetPlayers()).ReturnsAsync(new List<Player>
+        {
+            new() { Id = 1, Surname = "Smith", Forenames = "John" },
+            new() { Id = 2, Surname = "Smith", Forenames = "J." }
+        });
+        repo.Setup(r => r.GetPlayerCorpusActivityAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync((PlayerCorpusActivity?)null);
+
+        var reader = new Mock<IFideRatingListReader>();
+        reader.Setup(r => r.ReadAsync("list.txt", It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<FidePlayerRecord> { fideRecord });
+
+        var matcher = new Mock<IFidePlayerMatcher>();
+        matcher.Setup(m => m.Match(It.IsAny<string>(), It.IsAny<string>(), It.IsAny<FidePlayerMatchContext>()))
+            .Returns(new FidePlayerMatchResult { Outcome = FidePlayerMatchOutcome.Matched, Record = fideRecord });
+
+        var sut = CreateSut(repo.Object, worldChampionMatcher: null, reader.Object, matcher.Object);
+        var result = await sut.SyncFideMetadataAsync("list.txt");
+
+        Assert.Equal(2, result.PlayersMatched);
+        Assert.Equal(1, result.PlayersUpdated);
+        Assert.Equal(1, result.PlayersFideIdConflict);
+        repo.Verify(r => r.UpdatePlayerFideMetadataAsync(1, It.IsAny<PlayerFideMetadata>(), It.IsAny<CancellationToken>()), Times.Once);
+        repo.Verify(r => r.UpdatePlayerFideMetadataAsync(2, It.IsAny<PlayerFideMetadata>(), It.IsAny<CancellationToken>()), Times.Never);
+    }
+
     private static PlayerMetadataSyncService CreateSut(
         IChessRepository repository,
         IWorldChampionMatcher? worldChampionMatcher = null,

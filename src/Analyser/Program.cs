@@ -189,11 +189,13 @@ if (args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.Ordi
 
     await using var scope = app.Services.CreateAsyncScope();
     var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
-    var outcome = await sync.SyncFideMetadataAsync(fidePath, dryRun);
+    var resolvedPath = CliFilePathResolver.Resolve(fidePath);
+    var outcome = await sync.SyncFideMetadataAsync(resolvedPath, dryRun);
     Console.WriteLine(
         $"FIDE metadata sync{(outcome.DryRun ? " (dry run)" : "")}: " +
         $"checked={outcome.PlayersChecked}, matched={outcome.PlayersMatched}, " +
-        $"updated={outcome.PlayersUpdated}, unmatched={outcome.PlayersUnmatched}, ambiguous={outcome.PlayersAmbiguous}.");
+        $"updated={outcome.PlayersUpdated}, unmatched={outcome.PlayersUnmatched}, ambiguous={outcome.PlayersAmbiguous}, " +
+        $"fideIdConflict={outcome.PlayersFideIdConflict}.");
     return;
 }
 
