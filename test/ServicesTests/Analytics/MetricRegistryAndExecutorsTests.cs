@@ -54,6 +54,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<CaptureRateRow>());
         repo.Setup(r => r.GetQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<QueenTradeRateRow>());
+        repo.Setup(r => r.GetPerPlayerQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -70,7 +72,7 @@ public class MetricRegistryAndExecutorsTests
             new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
             new CaptureRateExecutor(repo.Object),
-            new QueenTradeRateExecutor(repo.Object)
+            new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -1093,7 +1095,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new QueenTradeRateExecutor(repo.Object);
+        var sut = new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Petrosian",
@@ -1108,10 +1110,62 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
+    public async Task QueenTradeRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetQueenTradeRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                40,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<QueenTradeRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Petrosian",
+                    PlayerForenames = "Tigran",
+                    GameCount = 90,
+                    QueenTradeRate = 0.60,
+                    QueenTradeMaxPly = 40
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerQueenTradeRateAsync(
+                It.IsAny<AnalyticsQuery>(),
+                40,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.60 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 80, MetricValue = 0.30 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 70, MetricValue = 0.45 }
+            });
+
+        var sut = new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "QueenTradeRate", "QueenTradeMaxPly",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.60, result.Rows[0][2]);
+        Assert.Equal(0.375, result.Rows[0][4]);
+        Assert.Equal(0.225, (double)result.Rows[0][5]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][6]);
+        Assert.Equal(2, result.Rows[0][7]);
+    }
+
+    [Fact]
     public async Task QueenTradeRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new QueenTradeRateExecutor(repo.Object);
+        var sut = new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
@@ -1135,7 +1189,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new QueenTradeRateExecutor(repo.Object);
+        var sut = new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Karpov",

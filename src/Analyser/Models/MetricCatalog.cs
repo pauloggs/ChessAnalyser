@@ -153,7 +153,9 @@ internal static class MetricCatalog
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional: queenTradeMaxPly (defaults to 40 when omitted)."
+                "Optional: queenTradeMaxPly (defaults to 40 when omitted).",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             _ => []
         };

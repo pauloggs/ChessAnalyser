@@ -1007,6 +1007,73 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player early queen trade rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerQueenTradeRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            FirstQueenTrade AS
+            (
+                SELECT fg.GameId,
+                       MIN(s.PlyIndex) AS QueenTradePly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                WHERE s.WhiteQueenCount <> 1 OR s.BlackQueenCount <> 1
+                GROUP BY fg.GameId
+            ),
+            PerGame AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       CASE
+                           WHEN ft.QueenTradePly IS NOT NULL AND ft.QueenTradePly <= @QueenTradeMaxPly THEN 1.0
+                           ELSE 0.0
+                       END AS EarlyQueenTrade
+                FROM Appearances a
+                LEFT JOIN FirstQueenTrade ft ON ft.GameId = a.GameId
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(EarlyQueenTrade) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>
