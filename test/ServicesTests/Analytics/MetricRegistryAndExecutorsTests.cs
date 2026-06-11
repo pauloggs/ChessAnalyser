@@ -42,6 +42,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetBishopPairFrequencyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<BishopPairFrequencyRow>());
+        repo.Setup(r => r.GetPerPlayerBishopPairFrequencyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetMinorPieceCompositionAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int?>(), It.IsAny<int?>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<MinorPieceCompositionRow>());
         repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
@@ -61,7 +63,7 @@ public class MetricRegistryAndExecutorsTests
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object),
             new AverageCastlingPlyExecutor(repo.Object),
             new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new BishopPairFrequencyExecutor(repo.Object),
+            new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new MinorPieceCompositionExecutor(repo.Object),
             new CaptureRateExecutor(repo.Object),
             new QueenTradeRateExecutor(repo.Object)
@@ -779,7 +781,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new BishopPairFrequencyExecutor(repo.Object);
+        var sut = new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Karpov",
@@ -793,10 +795,65 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
+    public async Task BishopPairFrequencyExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetBishopPairFrequencyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                15,
+                30,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<BishopPairFrequencyRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GameCount = 120,
+                    AverageBishopPairFrequency = 0.55,
+                    MinPlyIndex = 15,
+                    MaxPlyIndex = 30
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerBishopPairFrequencyAsync(
+                It.IsAny<AnalyticsQuery>(),
+                15,
+                30,
+                It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 120, MetricValue = 0.55 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 80, MetricValue = 0.35 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 70, MetricValue = 0.45 }
+            });
+
+        var sut = new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageBishopPairFrequency", "MinPlyIndex", "MaxPlyIndex",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.55, result.Rows[0][2]);
+        Assert.Equal(0.4, result.Rows[0][5]);
+        Assert.Equal(0.15, (double)result.Rows[0][6]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][7]);
+        Assert.Equal(2, result.Rows[0][8]);
+    }
+
+    [Fact]
     public async Task BishopPairFrequencyExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new BishopPairFrequencyExecutor(repo.Object);
+        var sut = new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }

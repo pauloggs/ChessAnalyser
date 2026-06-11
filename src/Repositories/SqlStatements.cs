@@ -636,6 +636,79 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean bishop-pair frequency for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerBishopPairFrequency =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       g.WhitePlayerId,
+                       g.BlackPlayerId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PerPly AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       CASE
+                           WHEN a.PlayerSide = 'W' AND s.WhiteBishopCount = 2 THEN 1.0
+                           WHEN a.PlayerSide = 'B' AND s.BlackBishopCount = 2 THEN 1.0
+                           ELSE 0.0
+                       END AS HasBishopPair
+                FROM Appearances a
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGame AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       AVG(HasBishopPair) AS BishopPairFrequency
+                FROM PerPly
+                GROUP BY PlayerSurname, PlayerForenames, GameId
+                HAVING COUNT(*) > 0
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(BishopPairFrequency) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Mean per-game average of bishops minus knights on the filtered player's side in a ply window.
         /// </summary>
         public static string GetMinorPieceComposition =>
