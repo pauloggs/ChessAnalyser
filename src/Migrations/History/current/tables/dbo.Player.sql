@@ -17,4 +17,4 @@ CREATE TABLE [dbo].[Player](
 ) ON [PRIMARY]
 
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
-ALTER TABLE [dbo].[Player] ADD  DEFAULT ((0)) FOR [WasWorldChampion]
+ALTER TABLE [dbo].[Player] ADD  CONSTRAINT [DF_Player_WasWorldChampion]  DEFAULT ((0)) FOR [WasWorldChampion]
