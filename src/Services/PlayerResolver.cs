@@ -18,14 +18,16 @@ namespace Services
         Task ResolveGamePlayersAsync(Game game);
     }
 
-    public class PlayerResolver(IChessRepository chessRepository) : IPlayerResolver
+    public class PlayerResolver(IChessRepository chessRepository, IWorldChampionMatcher worldChampionMatcher) : IPlayerResolver
     {
         private readonly IChessRepository _chessRepository = chessRepository;
+        private readonly IWorldChampionMatcher _worldChampionMatcher = worldChampionMatcher;
         private readonly Dictionary<(string Surname, string Forenames), int> _cache = new();
 
         public async Task LoadKnownPlayersAsync()
         {
             _cache.Clear();
+            await _worldChampionMatcher.EnsureLoadedAsync().ConfigureAwait(false);
             var players = await _chessRepository.GetPlayers();
             foreach (var p in players)
             {
@@ -80,7 +82,7 @@ namespace Services
             {
                 Surname = surname,
                 Forenames = forenamesNorm,
-                WasWorldChampion = WorldChampionCatalog.IsWorldChampion(surname, forenamesNorm)
+                WasWorldChampion = _worldChampionMatcher.IsWorldChampion(surname, forenamesNorm)
             };
             id = await _chessRepository.InsertPlayer(player);
             _cache[key] = id;

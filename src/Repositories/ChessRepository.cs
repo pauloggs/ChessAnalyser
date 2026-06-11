@@ -42,6 +42,9 @@ namespace Repositories
         /// <summary>Updates FIDE-sourced metadata columns for a player row (DESIGN §13.3).</summary>
         Task UpdatePlayerFideMetadataAsync(int playerId, PlayerFideMetadata metadata, CancellationToken cancellationToken = default);
 
+        /// <summary>Returns classical world-champion name rows from <c>Ref.WorldChampion</c>.</summary>
+        Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default);
+
         Task<int> InsertGame(Game game);
 
         /// <summary>
@@ -566,6 +569,16 @@ namespace Repositories
                         metadata.BirthYear
                     },
                     cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var list = (await connection.QueryAsync<WorldChampionRef>(
+                new CommandDefinition(SqlStatements.GetWorldChampions, cancellationToken: cancellationToken)))
+                .ToList();
+            return list;
         }
 
         public async Task<List<string>> GetProcessedGameIds()
