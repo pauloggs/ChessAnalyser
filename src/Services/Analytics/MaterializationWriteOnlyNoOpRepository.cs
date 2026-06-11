@@ -201,6 +201,14 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         int shortDrawMaxPly,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
+    public Task<IReadOnlyList<EcoDiversityRow>> GetEcoDiversityAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<EcoDiversityRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerEcoDiversityAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 

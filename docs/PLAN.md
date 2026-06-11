@@ -569,7 +569,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 8 — repertoire shape
 
-15. [ ] **`EcoDiversity`**
+15. [x] **`EcoDiversity`**
     - **Data:** `Game.Eco` for games involving the player.
     - **Aggregate:** `COUNT(DISTINCT Eco)` (exclude null ECO).
     - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `EcoDiversity`.

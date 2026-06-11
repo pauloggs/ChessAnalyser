@@ -90,6 +90,10 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<ShortDrawRateRow>());
         repo.Setup(r => r.GetPerPlayerShortDrawRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
+        repo.Setup(r => r.GetEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<EcoDiversityRow>());
+        repo.Setup(r => r.GetPerPlayerEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -114,7 +118,8 @@ public class MetricRegistryAndExecutorsTests
             new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator)
+            new ShortDrawRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new EcoDiversityExecutor(repo.Object, CorpusBenchmarkCalculator)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -139,7 +144,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("FirstQueenMovePly", sut.MetricKeys);
         Assert.Contains("AverageGameLength", sut.MetricKeys);
         Assert.Contains("ShortDrawRate", sut.MetricKeys);
-        Assert.Equal(22, sut.MetricKeys.Count);
+        Assert.Contains("EcoDiversity", sut.MetricKeys);
+        Assert.Equal(23, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -2196,6 +2202,118 @@ public class MetricRegistryAndExecutorsTests
         repo.Verify(r => r.GetShortDrawRateAsync(
             It.Is<AnalyticsQuery>(q => q.PlayerSurname == "Fischer" && q.ShortDrawMaxPly == 15),
             15,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task EcoDiversityExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EcoDiversityRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GameCount = 200,
+                    EcoDiversity = 42
+                }
+            });
+
+        var sut = new EcoDiversityExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly"
+        });
+
+        Assert.Equal(["Player", "GameCount", "EcoDiversity"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Karpov, Anatoly", result.Rows[0][0]);
+        Assert.Equal(200, result.Rows[0][1]);
+        Assert.Equal(42, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task EcoDiversityExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new EcoDiversityExecutor(repo.Object, CorpusBenchmarkCalculator);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task EcoDiversityExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<EcoDiversityRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GameCount = 100,
+                    EcoDiversity = 25
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 100, MetricValue = 25 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 15 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 80, MetricValue = 20 }
+            });
+
+        var sut = new EcoDiversityExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "EcoDiversity",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal(25, result.Rows[0][2]);
+        Assert.Equal(17.5, (double)result.Rows[0][3]!, precision: 10);
+        Assert.Equal(7.5, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
+    }
+
+    [Fact]
+    public async Task EcoDiversityExecutor_PassesFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetEcoDiversityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<EcoDiversityRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Bobby",
+            PlayerColour = "White",
+            MinGameYear = 1970
+        };
+        var sut = new EcoDiversityExecutor(repo.Object, CorpusBenchmarkCalculator);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetEcoDiversityAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerSurname == "Fischer"
+                && q.PlayerForenames == "Bobby"
+                && q.PlayerColour == "White"
+                && q.MinGameYear == 1970),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

@@ -56,6 +56,8 @@ internal static class MetricCatalog
                 "How long are this player's games on average? Higher values mean longer games in half-moves; lower values mean shorter games.",
             "ShortDrawRate" =>
                 "How often are this player's draws short? Higher values mean more of their drawn games end at or below the ply threshold (ChessBase fighting-spirit proxy).",
+            "EcoDiversity" =>
+                "How varied is this player's opening repertoire? Higher values mean they have played more distinct ECO codes.",
             _ => null
         };
     }
@@ -262,6 +264,16 @@ internal static class MetricCatalog
                 "DrawCount is the number of filtered draws; non-draws are excluded.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility (applied to draw count)."
+            ],
+            "EcoDiversity" =>
+            [
+                "How it's computed: COUNT(DISTINCT Eco) over filtered appearances; null or blank ECO values are excluded from the count.",
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "GameCount is all filtered appearances (including games without ECO).",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             _ => []
         };
