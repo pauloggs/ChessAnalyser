@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (`FirstQueenMovePly` metric — PR in flight.)
+**Last updated:** 2026-06-11 (`AverageGameLength` metric — PR in flight.)
 
 ---
 
@@ -34,7 +34,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (Phase 5):** `OppositeSideCastlingRate` (PR #61).
 - **Done (Phase 5):** `UncastledKingRate` (PR #62).
 - **Done (Phase 6):** `FirstQueenMovePly`.
-- **Done (corpus benchmarks):** `CentreMoveRate`, `ForwardMoveRate`, `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`.
+- **Done (Phase 7):** `AverageGameLength` (PR in flight).
+- **Done (corpus benchmarks):** `CentreMoveRate`, `ForwardMoveRate`, `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`, `AverageGameLength`.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
 
 ---
@@ -54,9 +55,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** [PLAN.md §12.6 Phase 7](./PLAN.md) — implement **`AverageGameLength`**.
+**Do next:** [PLAN.md §12.6 Phase 7](./PLAN.md) — implement **`ShortDrawRate`**.
 
-**Then:** `ShortDrawRate` and Phase 7+ per PLAN.
+**Then:** Phase 8 (`EcoDiversity`, `EcoConcentration`) per PLAN.
 
 **Do not prioritize yet:** HTTP auth / rate limits for metrics (PLAN §12.4 / §13).
 

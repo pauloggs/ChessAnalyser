@@ -52,6 +52,8 @@ internal static class MetricCatalog
                 "How often does this player leave the king uncastled? Higher values mean they more frequently play games without castling.",
             "FirstQueenMovePly" =>
                 "How early does this player move their queen? Lower values mean an earlier first queen move. Games where the queen never moved are excluded.",
+            "AverageGameLength" =>
+                "How long are this player's games on average? Higher values mean longer games in half-moves; lower values mean shorter games.",
             _ => null
         };
     }
@@ -235,6 +237,15 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Games where the queen never moved are excluded; see GamesWithQueenMove.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
+            ],
+            "AverageGameLength" =>
+            [
+                "How it's computed: per game, MAX(PlyIndex) from GamePositionSummary; then averaged across filtered appearances.",
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
