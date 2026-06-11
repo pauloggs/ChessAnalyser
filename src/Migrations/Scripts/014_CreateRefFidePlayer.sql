@@ -1,5 +1,5 @@
 -- Idempotent: FIDE player catalog in Ref schema (DESIGN §13.4).
--- Populated by --import-fide-catalog (official rating list TXT); not seeded here.
+-- Populated automatically by the Migrations host from data/fide/players_list_foa.txt (migration 015).
 
 IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = N'Ref')
     EXEC(N'CREATE SCHEMA Ref');

@@ -341,10 +341,8 @@ Add to **`dbo.Player`** (migration after `011`):
    - Future: women's world champion, pre-FIDE notables — same `Ref` schema pattern.
 
 2. **FIDE official rating list (bulk, offline)**  
-   - User supplies a monthly **TXT** file from [ratings.fide.com/download_lists.phtml](https://ratings.fide.com/download_lists.phtml) once per snapshot via **`--import-fide-catalog`**, which loads **`Ref.FidePlayer`**.  
-   - Matching at ETL and backfill reads from **`Ref.FidePlayer`** (same pattern as `Ref.WorldChampion`).  
-   - Fields used: ID, name, federation, sex, title, birth year.  
-   - **Current-list snapshot only** in v1 — not full rating history.
+   - Place **`data/fide/players_list_foa.txt`** locally (gitignored). Migration **`015`** loads it into **`Ref.FidePlayer`** automatically when the catalog is empty.  
+   - Matching at ETL and backfill reads from **`Ref.FidePlayer`** (same pattern as `Ref.WorldChampion`).
 
 3. **Lichess FIDE API (optional fallback, network)**  
    - `GET /api/fide/player?term=…` for players **unmatched** after bulk pass.  
@@ -414,9 +412,9 @@ Express as a small list of conditions (extensible):
 ```
 PGN ingest → Player (name) + Game (dims)
        ↓
---import-fide-catalog   → Ref.FidePlayer (from FIDE TXT; periodic refresh)
---sync-player-metadata  → WasWorldChampion (Ref.WorldChampion) + FIDE columns (Ref.FidePlayer)
-ETL new player insert   → auto-enrich FIDE metadata from Ref.FidePlayer when catalog loaded
+--sync-player-metadata  → optional re-backfill WasWorldChampion + FIDE columns from Ref.*
+ETL new player insert   → auto-enrich when Ref.FidePlayer is loaded
+Migration 015 host      → seeds Ref.FidePlayer from data/fide/players_list_foa.txt when empty
        ↓
 AnalyticsQuery + PlayerMetadataFilter
        ↓

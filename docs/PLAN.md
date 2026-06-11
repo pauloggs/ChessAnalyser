@@ -746,26 +746,19 @@ player (e.g. Petrosian) on the same filters.
 
 ---
 
-### 15.3 Sync CLI — `--import-fide-catalog` (PR 3)
+### 15.3 Ref.FidePlayer catalog + automatic seed (PR 3)
 
 **Branch:** `feat/ref-fide-player-catalog`
 
 1. [x] Migration **`014_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table.
-2. [x] **`--import-fide-catalog <path>`** — load official FIDE TXT into `Ref.FidePlayer`, then backfill `dbo.Player`.
+2. [x] Migration **`015_SeedRefFidePlayer.sql`** + Migrations host — load `data/fide/players_list_foa.txt` into Ref when empty; backfill `dbo.Player`.
 3. [x] **`IPlayerFideMetadataEnricher`** — backfill all players + enrich on ETL insert (`PlayerResolver`).
-4. [x] **`--sync-player-metadata`** — world-champion flags + FIDE backfill from `Ref.FidePlayer` (no file path).
-5. [x] **`FideMetadataSyncResult`** includes `PlayersFideIdConflict` when duplicate corpus rows match the same FIDE ID.
-6. [x] Service tests with mocked reader/matcher/repository.
+4. [x] No manual Analyser CLI import — seed runs as part of `dotnet run --project src/Migrations`.
+5. [x] Service tests.
 
-**Acceptance:** import populates Ref catalog and backfills players; new ETL players auto-enriched; idempotent re-run.
+**Acceptance:** migrations populate Ref + players when FIDE file is present; new ETL players auto-enriched; idempotent re-run.
 
-**Note:** `--sync-fide-metadata` remains as alias for `--import-fide-catalog`.
-
----
-
-### 15.3 (legacy) Direct file → Player sync
-
-Superseded by §15.3 above (`Ref.FidePlayer` catalog). Original slice merged the reader/matcher/backfill building blocks.
+**Note:** ~1.8M-row catalog is streamed by the Migrations host (not a multi-GB SQL INSERT script in git).
 
 ---
 
