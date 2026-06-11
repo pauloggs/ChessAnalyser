@@ -173,6 +173,15 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Per-player minor-piece composition aggregates for corpus benchmarks.
+        /// </summary>
+        Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerMinorPieceCompositionAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Mean per-game capture rate for the filtered player's moves.
         /// </summary>
         Task<IReadOnlyList<CaptureRateRow>> GetCaptureRateAsync(
@@ -977,6 +986,32 @@ namespace Repositories
                         MaxGameYear = query.MaxGameYear,
                         PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
                         PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = minPlyIndex,
+                        MaxPlyIndex = maxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerMinorPieceCompositionAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<PlayerStylePerPlayerMetricRow>(
+                new CommandDefinition(
+                    SqlStatements.GetPerPlayerMinorPieceComposition,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
                         PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco),
                         MinPlyIndex = minPlyIndex,

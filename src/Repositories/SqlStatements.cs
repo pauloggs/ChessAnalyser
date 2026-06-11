@@ -766,6 +766,78 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean minor-piece composition for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerMinorPieceComposition =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       g.WhitePlayerId,
+                       g.BlackPlayerId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PerPly AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       CASE a.PlayerSide
+                           WHEN 'W' THEN CAST(s.WhiteBishopCount - s.WhiteKnightCount AS FLOAT)
+                           WHEN 'B' THEN CAST(s.BlackBishopCount - s.BlackKnightCount AS FLOAT)
+                       END AS MinorPieceDelta
+                FROM Appearances a
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGame AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       AVG(MinorPieceDelta) AS AvgMinorPieceDelta
+                FROM PerPly
+                GROUP BY PlayerSurname, PlayerForenames, GameId
+                HAVING COUNT(*) > 0
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(AvgMinorPieceDelta) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Mean per-game capture rate for the filtered player's moves (capture ⇔ CapturedPiece IS NOT NULL).
         /// </summary>
         public static string GetCaptureRate =>
