@@ -29,29 +29,29 @@ internal static class MetricCatalog
             "AverageMaterialByPlayerAtMove" =>
                 "Average material at a full move for Player A compared with Player B, or all players, with colour mode Any/White/Black.",
             "AverageCastlingPly" =>
-                "Mean half-move of the filtered player's first castle; games where the player never castled are excluded from the average.",
+                "When does this player typically castle? Lower values mean an earlier first castle; higher values mean they delay castling more often. Games without castling are excluded from the average.",
             "AverageMaterialVolatility" =>
-                "Mean per-game standard deviation of signed material balance from the player's perspective across all plies (optional ply window).",
+                "How much does the material balance swing during this player's games? Higher values suggest more dynamic, tactical play; lower values suggest steadier positions.",
             "BishopPairFrequency" =>
-                "Mean per-game share of plies in a window where the player retains both bishops (default ply window 15–30).",
+                "How often does this player keep both bishops during the middlegame? Higher values mean they retain the bishop pair in more of the sampled positions.",
             "MinorPieceComposition" =>
-                "Mean bishops minus knights on the player's side in a ply window; positive values favour bishops (default ply window 15–30).",
+                "Is this player's minor-piece mix bishop-heavy or knight-heavy? Positive values favour bishops; negative values favour knights.",
             "CaptureRate" =>
-                "Mean per-game share of the filtered player's moves that are captures.",
+                "How capture-happy is this player? Higher values mean a larger share of their moves are captures.",
             "QueenTradeRate" =>
-                "Share of games where queens are no longer both on the board on or before a ply threshold (default queenTradeMaxPly 40).",
+                "How often do queens come off the board early in this player's games? Higher values mean queens are traded on or before the ply threshold more often.",
             "CentreMoveRate" =>
-                "Mean per-game share of the filtered player's moves landing on central squares d4, d5, e4, e5.",
+                "How often does this player play to the central squares? Higher values mean more moves land on d4, d5, e4, or e5.",
             "ForwardMoveRate" =>
-                "Mean per-game share of the filtered player's moves landing in the opponent's half of the board.",
+                "How often does this player push into the opponent's half? Higher values suggest more aggressive, forward play.",
             "CastlingSidePreference" =>
-                "Kingside vs queenside preference on the filtered player's first castle; rates are among games where the player castled. Corpus benchmarks compare KingsideRate.",
+                "Does this player prefer kingside or queenside castling? Among games where they castled, KingsideRate + QueensideRate = 1.",
             "OppositeSideCastlingRate" =>
-                "Share of the filtered player's games where both sides castled to opposite wings (kingside vs queenside).",
+                "How often do both players castle on opposite wings in this player's games? Higher values suggest more opposite-side castling structures.",
             "UncastledKingRate" =>
-                "Proportion of the filtered player's games where they never castled.",
+                "How often does this player leave the king uncastled? Higher values mean they more frequently play games without castling.",
             "FirstQueenMovePly" =>
-                "Mean half-move ply of the filtered player's first queen move; games without a queen move are excluded.",
+                "How early does this player move their queen? Lower values mean an earlier first queen move. Games where the queen never moved are excluded.",
             _ => null
         };
     }
@@ -118,24 +118,27 @@ internal static class MetricCatalog
             ],
             "AverageCastlingPly" =>
             [
+                "How it's computed: half-move ply of the player's first castling move per game, then averaged.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Games where the player never castled are excluded from the average; see GamesWithCastling.",
+                "Games where the player never castled are excluded; see GamesWithCastling.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "AverageMaterialVolatility" =>
             [
+                "How it's computed: per game, standard deviation of (your material − opponent's material) at each ply using classical piece values; then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Optional: minPlyIndex, maxPlyIndex to restrict which plies contribute to each game's std dev.",
+                "Optional: minPlyIndex, maxPlyIndex to limit which plies contribute (e.g. middlegame only).",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "BishopPairFrequency" =>
             [
+                "How it's computed: per game, share of plies in the window where the player has both bishops; then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
@@ -145,16 +148,17 @@ internal static class MetricCatalog
             ],
             "MinorPieceComposition" =>
             [
+                "How it's computed: per ply in the window, bishops minus knights on the player's side; averaged per game, then across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex (defaults to 15 and 30 when both omitted).",
-                "AverageMinorPieceDelta > 0 indicates a bishop-oriented minor-piece mix.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "CaptureRate" =>
             [
+                "How it's computed: per game, captures divided by total moves (capture = move with CapturedPiece set); then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
@@ -164,6 +168,7 @@ internal static class MetricCatalog
             ],
             "QueenTradeRate" =>
             [
+                "How it's computed: per game, 1 if queens are not both on the board on or before queenTradeMaxPly, else 0; then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
@@ -173,57 +178,63 @@ internal static class MetricCatalog
             ],
             "CentreMoveRate" =>
             [
+                "How it's computed: per game, moves to d4/d5/e4/e5 divided by total moves; then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
-                "Centre squares are d4, d5, e4, e5 (ToSquare 27, 28, 35, 36).",
+                "Centre squares: d4, d5, e4, e5 (ToSquare 27, 28, 35, 36).",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "ForwardMoveRate" =>
             [
+                "How it's computed: per game, moves into the opponent's half divided by total moves; then averaged across games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
-                "Forward for White means ToSquare rank index >= 4; for Black, rank index <= 3.",
+                "Opponent's half: White ToSquare rank index ≥ 4; Black ToSquare rank index ≤ 3 (a1 = 0).",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "CastlingSidePreference" =>
             [
+                "How it's computed: first castling move per game only; kingside = 1 and queenside = 0, then averaged to KingsideRate (QueensideRate is the complement).",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "KingsideRate and QueensideRate sum to 1.0 among games with castling; games without castling are excluded.",
+                "Games without castling are excluded.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount (benchmarks KingsideRate).",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "OppositeSideCastlingRate" =>
             [
+                "How it's computed: among games where both White and Black castled, 1 if they chose opposite wings (kingside vs queenside), else 0; then averaged.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "EligibleGameCount counts games where both White and Black castled; others are excluded.",
+                "EligibleGameCount counts games where both sides castled; others are excluded.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "UncastledKingRate" =>
             [
+                "How it's computed: per game, 1 if the player has no castling move, else 0; then averaged over all filtered games.",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "GameCount is all filtered appearances; UncastledKingRate is the share with no castling move.",
+                "GameCount is all filtered appearances.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "FirstQueenMovePly" =>
             [
+                "How it's computed: half-move ply of the player's first queen move per game, then averaged (raw ply, not normalized by game length).",
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "GamesWithQueenMove counts games where the queen moved at least once; average is raw ply (not normalized by game length).",
+                "Games where the queen never moved are excluded; see GamesWithQueenMove.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
