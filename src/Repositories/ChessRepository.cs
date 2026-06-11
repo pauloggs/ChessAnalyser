@@ -240,6 +240,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Proportion of filtered games where both sides castled to opposite wings.
+        /// </summary>
+        Task<IReadOnlyList<OppositeSideCastlingRateRow>> GetOppositeSideCastlingRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1249,6 +1256,30 @@ namespace Repositories
             var rows = (await connection.QueryAsync<CastlingSidePreferenceRow>(
                 new CommandDefinition(
                     SqlStatements.GetCastlingSidePreference,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<OppositeSideCastlingRateRow>> GetOppositeSideCastlingRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<OppositeSideCastlingRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetOppositeSideCastlingRate,
                     new
                     {
                         MinGameYear = query.MinGameYear,
