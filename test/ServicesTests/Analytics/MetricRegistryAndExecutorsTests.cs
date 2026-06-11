@@ -456,15 +456,16 @@ public class MetricRegistryAndExecutorsTests
         repo.Setup(r => r.GetPlayerResultSummariesAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PlayerResultSummaryRow>
             {
-                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", WinCount = 12, LossCount = 3, DrawCount = 10, UnknownCount = 1, TotalGameCount = 26, Score = 17 },
-                new() { PlayerSurname = "Tal", PlayerForenames = "", WinCount = 5, LossCount = 2, DrawCount = 4, UnknownCount = 0, TotalGameCount = 11, Score = 7 }
+                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", WinCount = 12, LossCount = 3, DrawCount = 10, UnknownCount = 1, TotalGameCount = 26, Score = 17, ScorePercentage = 68.0 },
+                new() { PlayerSurname = "Example", PlayerForenames = "", WinCount = 10, LossCount = 4, DrawCount = 6, UnknownCount = 0, TotalGameCount = 20, Score = 13, ScorePercentage = 65.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "", WinCount = 5, LossCount = 2, DrawCount = 4, UnknownCount = 0, TotalGameCount = 11, Score = 7, ScorePercentage = 63.63636363636363 }
             });
 
         var sut = new PlayerResultSummaryExecutor(repo.Object);
         var result = await sut.ExecuteAsync(new AnalyticsQuery());
 
-        Assert.Equal(["Player", "WinCount", "LossCount", "DrawCount", "UnknownCount", "TotalGameCount", "Score"], result.ColumnNames);
-        Assert.Equal(2, result.Rows.Count);
+        Assert.Equal(["Player", "WinCount", "LossCount", "DrawCount", "UnknownCount", "TotalGameCount", "Score", "ScorePercentage"], result.ColumnNames);
+        Assert.Equal(3, result.Rows.Count);
         Assert.Equal("Kasparov, Garry", result.Rows[0][0]);
         Assert.Equal(12, result.Rows[0][1]);
         Assert.Equal(3, result.Rows[0][2]);
@@ -472,7 +473,10 @@ public class MetricRegistryAndExecutorsTests
         Assert.Equal(1, result.Rows[0][4]);
         Assert.Equal(26, result.Rows[0][5]);
         Assert.Equal(17d, result.Rows[0][6]);
-        Assert.Equal("Tal", result.Rows[1][0]);
+        Assert.Equal(68.0, result.Rows[0][7]);
+        Assert.Equal("Example", result.Rows[1][0]);
+        Assert.Equal(65.0, result.Rows[1][7]);
+        Assert.Equal("Tal", result.Rows[2][0]);
     }
 
     [Fact]

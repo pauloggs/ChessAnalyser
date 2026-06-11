@@ -17,4 +17,9 @@ public sealed class PlayerResultSummaryRow
     public int TotalGameCount { get; init; }
 
     public double Score { get; init; }
+
+    /// <summary>
+    /// Normalised performance: (wins + 0.5 × draws) ÷ (wins + losses + draws) × 100. Null when there are no decisive-or-draw games.
+    /// </summary>
+    public double? ScorePercentage { get; init; }
 }
