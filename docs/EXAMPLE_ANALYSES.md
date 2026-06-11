@@ -747,26 +747,33 @@ Content-Type: application/json
 {
   "metricKey": "AverageMaterialVolatility",
   "query": {
-    "playerSurname": "Tal",
-    "playerForenames": "Mikhail",
+    "playerSurname": "Fischer",
+    "playerForenames": "Robert James",
     "playerColour": "Any",
-    "minPlyIndex": 15,
-    "maxPlyIndex": 40
+    "includeCorpusBenchmark": true,
+    "benchmarkMinGames": 30
   }
 }
 ```
 
 ### Result columns
 
-- `Player` — filtered player name
-- `GameCount` — games with at least two position summaries in the ply window (needed for std dev)
-- `AverageMaterialVolatility` — mean per-game sample standard deviation of signed material balance
-  from the player's perspective
+Without `includeCorpusBenchmark`:
+
+- `Player`, `GameCount`, `AverageMaterialVolatility`
+
+With `includeCorpusBenchmark: true` (also adds):
+
+- `CorpusAverage` — mean volatility of other eligible players in the same DB slice
+- `DeltaFromCorpus` — subject minus corpus average
+- `CorpusPercentile` — rank 0–100 among eligible corpus players
+- `CorpusEligiblePlayerCount` — players with at least `benchmarkMinGames` games
 
 ### Notes
 
 - Balance is `WhiteMaterial - BlackMaterial` when the player had White, reversed when Black.
 - Omit `minPlyIndex` / `maxPlyIndex` to include all plies (including ply `-1`).
+- Benchmarks are **corpus-local** — interpret percentiles relative to your loaded database.
 - Requires `dbo.GamePositionSummary` rows.
 
 ---

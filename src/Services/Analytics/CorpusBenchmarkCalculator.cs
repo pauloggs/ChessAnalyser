@@ -2,9 +2,6 @@ using Interfaces.Analytics;
 
 namespace Services.Analytics;
 
-/// <summary>
-/// Leave-one-out corpus mean and percentile for style metrics (DESIGN §12).
-/// </summary>
 public sealed class CorpusBenchmarkCalculator : ICorpusBenchmarkCalculator
 {
     public CorpusBenchmarkResult Compute(
@@ -17,44 +14,42 @@ public sealed class CorpusBenchmarkCalculator : ICorpusBenchmarkCalculator
         ArgumentNullException.ThrowIfNull(subjectSurname);
         ArgumentNullException.ThrowIfNull(perPlayerRows);
 
-        if (subjectValue is null)
-            return Empty();
+        if (benchmarkMinGames < 1)
+            throw new ArgumentOutOfRangeException(nameof(benchmarkMinGames));
 
         var eligible = perPlayerRows
-            .Where(r => r.GameCount >= benchmarkMinGames && r.MetricValue.HasValue)
+            .Where(r => r.GameCount >= benchmarkMinGames && r.MetricValue is not null)
             .ToList();
 
-        var corpusValues = eligible
-            .Where(r => !IsSubject(r, subjectSurname, subjectForenames))
+        var corpus = eligible
+            .Where(r => !PlayerIdentityMatches(r, subjectSurname, subjectForenames))
             .Select(r => r.MetricValue!.Value)
             .ToList();
 
-        var eligiblePlayerCount = eligible.Count(r => !IsSubject(r, subjectSurname, subjectForenames));
-
-        if (corpusValues.Count == 0)
+        if (corpus.Count == 0 || subjectValue is null)
         {
             return new CorpusBenchmarkResult
             {
-                CorpusEligiblePlayerCount = eligiblePlayerCount
+                CorpusEligiblePlayerCount = corpus.Count
             };
         }
 
-        var corpusAverage = corpusValues.Average();
+        var average = corpus.Average();
+        var percentile = ComputePercentile(subjectValue.Value, corpus);
 
         return new CorpusBenchmarkResult
         {
-            CorpusAverage = corpusAverage,
-            DeltaFromCorpus = subjectValue.Value - corpusAverage,
-            CorpusPercentile = ComputePercentile(subjectValue.Value, corpusValues),
-            CorpusEligiblePlayerCount = eligiblePlayerCount
+            CorpusAverage = average,
+            DeltaFromCorpus = subjectValue.Value - average,
+            CorpusPercentile = percentile,
+            CorpusEligiblePlayerCount = corpus.Count
         };
     }
 
     public static double ComputePercentile(double subjectValue, IReadOnlyList<double> corpusValues)
     {
-        ArgumentNullException.ThrowIfNull(corpusValues);
         if (corpusValues.Count == 0)
-            return double.NaN;
+            throw new ArgumentException("Corpus must not be empty.", nameof(corpusValues));
 
         if (subjectValue < corpusValues.Min())
             return 0;
@@ -66,16 +61,15 @@ public sealed class CorpusBenchmarkCalculator : ICorpusBenchmarkCalculator
         return 100.0 * less / corpusValues.Count;
     }
 
-    private static bool IsSubject(PlayerStylePerPlayerMetricRow row, string subjectSurname, string? subjectForenames)
+    private static bool PlayerIdentityMatches(
+        PlayerStylePerPlayerMetricRow row, string surname, string? forenames)
     {
-        if (!string.Equals(row.PlayerSurname, subjectSurname, StringComparison.Ordinal))
+        if (!string.Equals(row.PlayerSurname, surname, StringComparison.Ordinal))
             return false;
 
-        if (subjectForenames is null)
+        if (forenames is null)
             return true;
 
-        return string.Equals(row.PlayerForenames ?? string.Empty, subjectForenames, StringComparison.Ordinal);
+        return string.Equals(row.PlayerForenames ?? string.Empty, forenames, StringComparison.Ordinal);
     }
-
-    private static CorpusBenchmarkResult Empty() => new();
 }

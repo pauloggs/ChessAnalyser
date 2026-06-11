@@ -58,12 +58,12 @@ public sealed class AnalyticsQuery
     public int? QueenTradeMaxPly { get; init; }
 
     /// <summary>
-    /// When true, eligible style metrics append corpus-relative benchmark columns (default false).
+    /// When true, eligible style metrics append corpus benchmark columns (DESIGN §12).
     /// </summary>
     public bool? IncludeCorpusBenchmark { get; init; }
 
     /// <summary>
-    /// Minimum games for a player to enter the corpus distribution (default 30).
+    /// Minimum games per player for corpus benchmark eligibility (default 30).
     /// </summary>
     public int? BenchmarkMinGames { get; init; }
 }

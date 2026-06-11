@@ -18,7 +18,7 @@ public class CorpusBenchmarkCalculatorTests
             {
                 new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 50, MetricValue = 1.5 }
             },
-            30);
+            benchmarkMinGames: 30);
 
         Assert.Null(result.CorpusAverage);
         Assert.Null(result.DeltaFromCorpus);
@@ -27,28 +27,28 @@ public class CorpusBenchmarkCalculatorTests
     }
 
     [Fact]
-    public void Compute_ExcludesSubjectFromCorpusMeanAndPercentile()
+    public void Compute_ExcludesSubjectFromCorpusAverage()
     {
         var result = _sut.Compute(
-            3.0,
+            1.4,
             "Fischer",
             "Robert James",
             new List<PlayerStylePerPlayerMetricRow>
             {
-                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 50, MetricValue = 3.0 },
-                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 40, MetricValue = 1.0 },
-                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 40, MetricValue = 2.0 }
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 50, MetricValue = 1.4 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 40, MetricValue = 1.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 35, MetricValue = 1.8 }
             },
-            30);
+            benchmarkMinGames: 30);
 
-        Assert.Equal(1.5, result.CorpusAverage);
-        Assert.Equal(1.5, result.DeltaFromCorpus);
-        Assert.Equal(100, result.CorpusPercentile);
+        Assert.Equal(1.4, result.CorpusAverage);
+        Assert.Equal(0, result.DeltaFromCorpus);
+        Assert.Equal(50, result.CorpusPercentile);
         Assert.Equal(2, result.CorpusEligiblePlayerCount);
     }
 
     [Fact]
-    public void Compute_RespectsBenchmarkMinGames()
+    public void Compute_IgnoresPlayersBelowBenchmarkMinGames()
     {
         var result = _sut.Compute(
             2.0,
@@ -57,20 +57,20 @@ public class CorpusBenchmarkCalculatorTests
             new List<PlayerStylePerPlayerMetricRow>
             {
                 new() { PlayerSurname = "Fischer", GameCount = 50, MetricValue = 2.0 },
-                new() { PlayerSurname = "Tal", GameCount = 10, MetricValue = 5.0 },
-                new() { PlayerSurname = "Petrosian", GameCount = 40, MetricValue = 1.0 }
+                new() { PlayerSurname = "Short", GameCount = 5, MetricValue = 0.5 }
             },
-            30);
+            benchmarkMinGames: 30);
 
-        Assert.Equal(1.0, result.CorpusAverage);
-        Assert.Equal(1, result.CorpusEligiblePlayerCount);
+        Assert.Null(result.CorpusAverage);
+        Assert.Equal(0, result.CorpusEligiblePlayerCount);
     }
 
     [Theory]
-    [InlineData(0.5, new[] { 1.0, 2.0, 3.0 }, 0)]
+    [InlineData(1.0, new[] { 1.0, 2.0, 3.0 }, 0)]
+    [InlineData(3.0, new[] { 1.0, 2.0, 3.0 }, 66.666666666666686)]
     [InlineData(2.0, new[] { 1.0, 2.0, 3.0 }, 33.333333333333336)]
     [InlineData(4.0, new[] { 1.0, 2.0, 3.0 }, 100)]
-    public void ComputePercentile_UsesStrictLessThanOrdering(double subject, double[] corpus, double expected)
+    public void ComputePercentile_RanksSubjectAgainstCorpus(double subject, double[] corpus, double expected)
     {
         var percentile = CorpusBenchmarkCalculator.ComputePercentile(subject, corpus);
         Assert.Equal(expected, percentile, precision: 10);

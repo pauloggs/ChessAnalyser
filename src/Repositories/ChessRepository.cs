@@ -139,7 +139,7 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Per-player mean material volatility for corpus benchmarks.
+        /// Per-player material volatility aggregates for corpus benchmarks.
         /// </summary>
         Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageMaterialVolatilityAsync(
             AnalyticsQuery query,

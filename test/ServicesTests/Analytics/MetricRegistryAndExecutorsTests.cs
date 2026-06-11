@@ -716,7 +716,7 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
-    public async Task AverageMaterialVolatilityExecutor_AppendsBenchmarkColumnsWhenRequested()
+    public async Task AverageMaterialVolatilityExecutor_AppendsBenchmarkColumns_WhenRequested()
     {
         var repo = new Mock<IChessRepository>();
         repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
@@ -726,16 +726,16 @@ public class MetricRegistryAndExecutorsTests
                 {
                     PlayerSurname = "Fischer",
                     PlayerForenames = "Robert James",
-                    GameCount = 50,
+                    GameCount = 827,
                     AverageMaterialVolatility = 1.34
                 }
             });
         repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
             {
-                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 50, MetricValue = 1.34 },
-                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 40, MetricValue = 2.0 },
-                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 40, MetricValue = 1.0 }
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 827, MetricValue = 1.34 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 400, MetricValue = 1.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 350, MetricValue = 1.8 }
             });
 
         var sut = new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator);
@@ -750,8 +750,9 @@ public class MetricRegistryAndExecutorsTests
         Assert.Equal(
             ["Player", "GameCount", "AverageMaterialVolatility", "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"],
             result.ColumnNames);
-        Assert.Equal(1.5, result.Rows[0][3]);
-        Assert.Equal(-0.16, Convert.ToDouble(result.Rows[0][4]), precision: 10);
+        Assert.Equal(1.34, result.Rows[0][2]);
+        Assert.Equal(1.4, result.Rows[0][3]);
+        Assert.Equal(-0.06, (double)result.Rows[0][4]!, precision: 10);
         Assert.Equal(50.0, result.Rows[0][5]);
         Assert.Equal(2, result.Rows[0][6]);
     }

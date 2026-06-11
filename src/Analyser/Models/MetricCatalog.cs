@@ -117,7 +117,8 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which plies contribute to each game's std dev.",
-                "Optional: includeCorpusBenchmark, benchmarkMinGames (default 30) for corpus-relative columns."
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "BishopPairFrequency" =>
             [
