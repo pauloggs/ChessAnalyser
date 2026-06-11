@@ -1,6 +1,7 @@
 using Interfaces.DTO;
 using Repositories;
 using Services.Helpers;
+using Services.PlayerMetadata;
 
 namespace Services
 {
@@ -75,7 +76,12 @@ namespace Services
                     return p.Id;
                 }
             }
-            var player = new Player { Surname = surname, Forenames = forenamesNorm };
+            var player = new Player
+            {
+                Surname = surname,
+                Forenames = forenamesNorm,
+                WasWorldChampion = WorldChampionCatalog.IsWorldChampion(surname, forenamesNorm)
+            };
             id = await _chessRepository.InsertPlayer(player);
             _cache[key] = id;
             return id;

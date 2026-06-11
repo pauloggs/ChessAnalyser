@@ -12,5 +12,8 @@ namespace Interfaces.DTO
 
         /// <summary>Forenames (given names). No leading or trailing spaces. May be empty.</summary>
         public string Forenames { get; set; } = string.Empty;
+
+        /// <summary>True when this player has held the classical world championship (curated catalog).</summary>
+        public bool WasWorldChampion { get; set; }
     }
 }

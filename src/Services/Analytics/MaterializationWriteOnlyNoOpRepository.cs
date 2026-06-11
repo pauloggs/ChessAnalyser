@@ -27,6 +27,9 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
 
     public Task<int> InsertPlayer(Player player) => Throw<int>();
 
+    public Task UpdatePlayerWasWorldChampionAsync(int playerId, bool wasWorldChampion, CancellationToken cancellationToken = default) =>
+        Throw();
+
     public Task<int> InsertGame(Game game) => Throw<int>();
 
     public Task InsertBoardPositions(Game game, int gameId) => Throw();

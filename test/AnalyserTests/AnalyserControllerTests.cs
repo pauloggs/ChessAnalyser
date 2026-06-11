@@ -93,9 +93,9 @@ namespace ControllerTests
         {
             var players = new List<Player>
             {
-                new() { Id = 2, Surname = "Tal", Forenames = "Mikhail" },
-                new() { Id = 1, Surname = "Botvinnik", Forenames = "Mikhail" },
-                new() { Id = 3, Surname = "Capablanca", Forenames = "" }
+                new() { Id = 2, Surname = "Tal", Forenames = "Mikhail", WasWorldChampion = true },
+                new() { Id = 1, Surname = "Botvinnik", Forenames = "Mikhail", WasWorldChampion = true },
+                new() { Id = 3, Surname = "Capablanca", Forenames = "", WasWorldChampion = false }
             };
             var chessRepoMock = new Mock<IChessRepository>();
             chessRepoMock.Setup(r => r.GetPlayers()).ReturnsAsync(players);
@@ -118,9 +118,12 @@ namespace ControllerTests
             Assert.Equal([1, 3, 2], options.Select(o => o.Id).ToArray());
             Assert.Equal("Botvinnik", options[0].Surname);
             Assert.Equal("Mikhail", options[0].Forenames);
-            Assert.Equal("Botvinnik, Mikhail", options[0].DisplayName);
+            Assert.Equal("Botvinnik, Mikhail (WC)", options[0].DisplayName);
+            Assert.True(options[0].WasWorldChampion);
             Assert.Equal("Capablanca", options[1].DisplayName);
-            Assert.Equal("Tal, Mikhail", options[2].DisplayName);
+            Assert.False(options[1].WasWorldChampion);
+            Assert.Equal("Tal, Mikhail (WC)", options[2].DisplayName);
+            Assert.True(options[2].WasWorldChampion);
         }
 
         [Fact]

@@ -37,6 +37,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 | `008_CreateGamePositionSummaryTable.sql` | Creates `dbo.GamePositionSummary` rollup table (material + piece-count scalars per ply) for analytics reads without bitboard decoding. |
 | `009_CreateDeleteGameStoredProcedure.sql` | Creates `dbo.DeleteGameById` to delete a game and dependent rows in one explicit transaction (instead of FK cascades on analytics tables). |
 | `010_RemoveCascadeDeletesFromGameDependencies.sql` | Enforces strict no-cascade FKs from `BoardPosition`, `GameMove`, and `GamePositionSummary` to `Game` (drops/recreates FK if cascade is present). |
+| `011_AddPlayerWasWorldChampionColumn.sql` | Adds `WasWorldChampion` bit on `dbo.Player` (curated classical world-champion metadata). |
 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 
@@ -48,6 +49,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 - **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
 - **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
+- **Player metadata:** after migration `011`, run `dotnet run --project src/Analyser -- --sync-player-metadata` to apply the world-champion catalog to existing `dbo.Player` rows. New players pick up the flag on insert during ETL.
 
 ## Schema history snapshot
 

@@ -4,6 +4,7 @@ CREATE TABLE [dbo].[Player](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[WasWorldChampion] [bit] NOT NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -16,3 +17,4 @@ CREATE TABLE [dbo].[Player](
 ) ON [PRIMARY]
 
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
+ALTER TABLE [dbo].[Player] ADD  CONSTRAINT [DF_Player_WasWorldChampion]  DEFAULT ((0)) FOR [WasWorldChampion]
