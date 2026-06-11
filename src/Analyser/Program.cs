@@ -102,6 +102,7 @@ builder.Services.AddScoped<IMetricExecutor, ForwardMoveRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, CastlingSidePreferenceExecutor>();
 builder.Services.AddScoped<IMetricExecutor, OppositeSideCastlingRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, UncastledKingRateExecutor>();
+builder.Services.AddScoped<IMetricExecutor, FirstQueenMovePlyExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 

@@ -542,7 +542,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 6 — queen timing
 
-12. [ ] **`FirstQueenMovePly`**
+12. [x] **`FirstQueenMovePly`**
     - **Data:** `GameMove` where `MovedPiece = 'Q'` for the player's side.
     - **Per game:** `MIN(PlyIndex)` of queen moves; normalize optionally as
       `first_queen_ply / max_ply` (document if normalization is included — v1 can report raw ply).
