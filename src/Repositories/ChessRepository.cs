@@ -164,6 +164,21 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Mean per-game capture rate for the filtered player's moves.
+        /// </summary>
+        Task<IReadOnlyList<CaptureRateRow>> GetCaptureRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Proportion of games with an early queen trade on or before the ply threshold.
+        /// </summary>
+        Task<IReadOnlyList<QueenTradeRateRow>> GetQueenTradeRateAsync(
+            AnalyticsQuery query,
+            int queenTradeMaxPly,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -931,6 +946,58 @@ namespace Repositories
                         Eco = NormalizeNonEmpty(query.Eco),
                         MinPlyIndex = minPlyIndex,
                         MaxPlyIndex = maxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<CaptureRateRow>> GetCaptureRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<CaptureRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetCaptureRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = query.MinPlyIndex,
+                        MaxPlyIndex = query.MaxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<QueenTradeRateRow>> GetQueenTradeRateAsync(
+            AnalyticsQuery query,
+            int queenTradeMaxPly,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<QueenTradeRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetQueenTradeRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        QueenTradeMaxPly = queenTradeMaxPly
                     },
                     cancellationToken: cancellationToken))).ToList();
 

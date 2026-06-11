@@ -53,6 +53,11 @@ public sealed class AnalyticsQuery
     public int? MaxPlyIndex { get; init; }
 
     /// <summary>
+    /// For <c>QueenTradeRate</c> — queens exchanged on or before this ply count as an early trade (default 40).
+    /// </summary>
+    public int? QueenTradeMaxPly { get; init; }
+
+    /// <summary>
     /// When true, eligible style metrics append corpus benchmark columns (DESIGN §12).
     /// </summary>
     public bool? IncludeCorpusBenchmark { get; init; }
