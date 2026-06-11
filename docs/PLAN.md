@@ -506,7 +506,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageCentreMoveRate`.
    - **Optional v2:** extend centre ring to c3–f6 (document if added).
 
-8. [ ] **`ForwardMoveRate`**
+8. [x] **`ForwardMoveRate`**
    - **Question:** How often does a player advance into the opponent's half?
    - **Data:** `GameMove` — `ToSquare` rank index (0–7) compared to moving side (White: rank ≥ 4;
      Black: rank ≤ 3).

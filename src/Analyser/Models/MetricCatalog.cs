@@ -42,6 +42,8 @@ internal static class MetricCatalog
                 "Share of games where queens are no longer both on the board on or before a ply threshold (default queenTradeMaxPly 40).",
             "CentreMoveRate" =>
                 "Mean per-game share of the filtered player's moves landing on central squares d4, d5, e4, e5.",
+            "ForwardMoveRate" =>
+                "Mean per-game share of the filtered player's moves landing in the opponent's half of the board.",
             _ => null
         };
     }
@@ -168,6 +170,14 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
                 "Centre squares are d4, d5, e4, e5 (ToSquare 27, 28, 35, 36)."
+            ],
+            "ForwardMoveRate" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
+                "Forward for White means ToSquare rank index >= 4; for Black, rank index <= 3."
             ],
             _ => []
         };
