@@ -43,6 +43,7 @@ The framework should make it **easy to add new metrics** and **efficient to run 
 | F-6 | **Extensibility** | New statistic types should be addable **without** modifying unrelated metrics (plugin-like or registry pattern; see §6). |
 | F-7 | **Reproducibility** | Same inputs (DB snapshot + metric definition + parameters) → same outputs (deterministic implementation; document rounding if any). |
 | F-11 | **Corpus-relative benchmarks** | Per-player style metrics should optionally report **how a filtered player compares to other players in the same database slice** (same non-identity filters), not only a raw scalar. See §12. |
+| F-12 | **Player metadata enrichment and filtering** | **`Player`** rows may carry **externally sourced** attributes (FIDE identity, title, federation, sex, birth year, curated honour flags). Analytics and game browsing must support **optional filters** on those attributes with explicit **role semantics** (any side, white, black, opponent, corpus pool). See §13. |
 
 ### 3.2 Data access and interfaces
 
@@ -65,6 +66,7 @@ Dimensions should be **first-class** in the design even if not all are implement
 | Colour / side | Derived from schema + ply convention | Document in PLAN/implementations and tests (NFR-5). |
 | Piece type / square | Bitboards at primary fact; move rows for “piece moved to S” | Mitigate cost via rollups and derived **move** fact (§3.4). |
 | ECO, Event, Site, … | **Explicit columns** on `Game` where needed for filters | §3.5 — indexed, filterable fields; not inferred from free text in v1. |
+| **Player metadata** (title, federation, sex, birth year, curated flags) | **`Player`** columns populated by **offline enrichment** (§13) | Not inferred from sparse PGN tags in v1; filters join `dbo.Player` on game white/black IDs. |
 
 ### 3.4 Fact model (locked)
 
@@ -183,6 +185,7 @@ Detailed interfaces belong in PLAN.md; this section captures the **design intent
 | §4 NFR | Testing, indexing, performance tasks |
 | §8 Resolved decisions | Schema, jobs, executor boundaries |
 | §12 Corpus benchmarks | PLAN §12.7 |
+| §13 Player metadata | PLAN §15 |
 
 ---
 
@@ -289,4 +292,147 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 
 ---
 
-*Implementation references [PLAN.md](./PLAN.md) in this folder. Update [AGENT_CONTEXT.md](./AGENT_CONTEXT.md) when milestones change.*
+## 13. Player metadata enrichment and filtering
+
+**Context (2026):** Many PGN collections carry **game** headers (event, date, ECO, result) and **player names** only. `[WhiteElo]`, `[WhiteTitle]`, and similar tags are often absent. Player attributes for filtering and cohort analysis must therefore come from **external reference data**, not from the PGN alone.
+
+**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`, `WorldChampionCatalog`, `--sync-player-metadata`) is the **first curated flag**. §13 generalises enrichment (FIDE bulk sync) and defines **filter semantics** for analytics.
+
+### 13.1 Goals
+
+| Goal | Notes |
+|------|--------|
+| **Enrich `Player` after ingest** | Populate stable identity and biographical fields without blocking PGN parse. |
+| **Offline-first bulk sync** | Primary path uses a **local FIDE rating list file** (no network during sync). |
+| **Extensible filtering** | One filter model covers world champion today and title/federation/sex later — not one boolean per feature in `AnalyticsQuery`. |
+| **Shared SQL** | Player-metadata predicates apply via a **single reusable fragment** in `FilteredGames` / `Appearances` CTEs — not copy-pasted per metric. |
+
+### 13.2 Non-goals (v1)
+
+| Out of scope | Reason |
+|--------------|--------|
+| Rating **at game time** | Needs historical monthly rating series or `WhiteElo`/`BlackElo` on `Game`; not a static `Player` column. |
+| “World champion **when this game was played**” | Needs **reign periods**, not `WasWorldChampion` alone. |
+| Wikidata bulk import | Optional follow-up; FIDE + curated catalogs cover most filter needs first. |
+| Automatic enrichment during live PGN parse | Enrichment runs in a **separate CLI step** so large loads are not blocked by I/O or matching. |
+| EAV / JSON metadata blob as primary store | v1 uses **indexed nullable columns** on `Player`; revisit if many new attribute types appear. |
+
+### 13.3 Player schema (v1 enrichment columns)
+
+Add to **`dbo.Player`** (migration after `011`):
+
+| Column | Type | Source | Notes |
+|--------|------|--------|--------|
+| `FideId` | `INT NULL` | FIDE list | Unique when not null; stable join key for re-sync. |
+| `Federation` | `CHAR(3) NULL` | FIDE `FED` | ISO-style federation code (e.g. NOR, IND, URS). |
+| `Sex` | `CHAR(1) NULL` | FIDE `SEX` | `M` or `F` only when known. |
+| `FideTitle` | `NVARCHAR(8) NULL` | FIDE `TIT` | Normalised: `GM`, `IM`, `WGM`, `FM`, `WFM`, `CM`, `WCM`, or NULL (untitled). |
+| `BirthYear` | `SMALLINT NULL` | FIDE `B-day` | Year only; used for disambiguation and age cohorts. |
+| `WasWorldChampion` | `BIT NOT NULL` | **Curated catalog** | Already present; **not** overwritten by FIDE sync. |
+
+**Derived (query-time, not stored v1):** `IsTitled` ⇔ `FideTitle IS NOT NULL`.
+
+**Indexes:** unique filtered index on `FideId` WHERE `FideId IS NOT NULL`; nonclustered index on `(Federation)`, `(FideTitle)` WHERE NOT NULL — add if query plans show scans.
+
+### 13.4 Enrichment sources (priority order)
+
+1. **Curated C# catalogs** (zero network, highest precision)  
+   - `WorldChampionCatalog` — classical world champions (existing).  
+   - Future: women's world champion, pre-FIDE notables — same pattern as `011`.
+
+2. **FIDE official rating list (bulk, offline)**  
+   - User supplies a monthly **TXT or XML** file from [ratings.fide.com/download_lists.phtml](https://ratings.fide.com/download_lists.phtml) (or a pinned copy under `data/fide/` documented in repo).  
+   - Fields used: ID, name, federation, sex, title, birth year.  
+   - **Current-list snapshot only** in v1 — not full rating history.
+
+3. **Lichess FIDE API (optional fallback, network)**  
+   - `GET /api/fide/player?term=…` for players **unmatched** after bulk pass.  
+   - Deferred to a later PLAN slice; bulk file is the default.
+
+4. **Wikidata SPARQL (optional follow-up)**  
+   - Birth/death, aliases, FIDE ID for notable players missing from FIDE — not required for v1.
+
+**Licence / usage:** FIDE download data is public; document in `Migrations/README.md` that users must obtain their own list file. Do not commit multi-megabyte FIDE dumps to git unless the maintainer explicitly adds a pinned fixture for tests.
+
+### 13.5 Name matching (locked behaviour)
+
+PGN names are parsed to `(Surname, Forenames)` via `PlayerNameParser`. FIDE lists use **`Surname, Forenames`** (comma form). Matching rules:
+
+1. **Normalise** trim and case for comparison; reuse **`PlayerForenamesMatcher`** for forename abbreviations (`A` vs `Alexander`).
+2. **Exact match** on normalised surname + forenames → assign `FideId` and fields.
+3. **Ambiguous** (multiple FIDE rows same surname, matcher ties) → score candidates with **birth year** (if set on either side) and **corpus activity** (`MIN`/`MAX` `GameYear` for that `PlayerId`); pick highest confidence only if above threshold; else leave `FideId` NULL and log/count as unmatched.
+4. **No auto-merge** of distinct `Player` rows — homonyms stay separate unless manually corrected later.
+5. **Re-sync idempotent:** running sync again updates FIDE-sourced columns; never clears `WasWorldChampion` from catalog logic.
+
+Store match outcome optionally in sync result (`PlayersMatched`, `PlayersAmbiguous`, `PlayersUnmatched`) — no separate audit table in v1.
+
+### 13.6 Filter model
+
+Player metadata filters are **orthogonal** to identity filters (`PlayerSurname`, `PlayerForenames`, `PlayerColour`).
+
+#### 13.6.1 Roles
+
+| Role | Meaning | Example |
+|------|---------|---------|
+| `AnySide` | White **or** Black in the game satisfies the predicate | Games involving a GM |
+| `White` | White player only | GM played White |
+| `Black` | Black player only | GM played Black |
+| `SubjectOpponent` | The **other** player relative to the metric subject (style metrics) | Fischer vs world champions |
+| `CorpusPool` | Restrict **corpus benchmark** eligible players, not the game set | Percentile among GMs only |
+
+A single API request may combine **game-set** role (e.g. `AnySide`) with **corpus** role (e.g. `CorpusPool`) when both apply.
+
+#### 13.6.2 Predicates (v1)
+
+Express as a small list of conditions (extensible):
+
+| Predicate key | Operators | Example |
+|---------------|-----------|---------|
+| `wasWorldChampion` | `eq` bool | `true` |
+| `fideTitle` | `eq`, `in` | `GM` or `["GM","IM"]` |
+| `isTitled` | `eq` bool | titled vs untitled |
+| `federation` | `eq`, `in` | `NOR` |
+| `sex` | `eq` | `F` |
+| `birthYearMin` / `birthYearMax` | implicit range | cohort born before 1950 |
+
+**JSON shape (illustrative):** nested under `AnalyticsQuery`, e.g. `playerMetadataFilter: { "gameRole": "AnySide", "corpusRole": null, "predicates": [ { "key": "wasWorldChampion", "op": "eq", "value": true } ] }`. Exact property names fixed in PLAN §15.
+
+#### 13.6.3 Surfaces
+
+| Surface | v1 priority |
+|---------|-------------|
+| **`AnalyticsQuery`** → metric SQL | High — shared fragment |
+| **`GamePageFilters`** → `GET /GetGames` | High — same predicates, simpler UI |
+| **`GET /GetPlayers`** (dropdown filter) | Medium — optional query params |
+| **ETL / ingest** | No — metadata not used to reject games |
+
+**Backward compatibility:** omitting `playerMetadataFilter` preserves today's behaviour.
+
+### 13.7 Architecture sketch
+
+```
+PGN ingest → Player (name) + Game (dims)
+       ↓
+--sync-player-metadata  → WasWorldChampion (catalog)
+--sync-fide-metadata    → FideId, Federation, Sex, FideTitle, BirthYear (FIDE file)
+       ↓
+AnalyticsQuery + PlayerMetadataFilter
+       ↓
+PlayerMetadataSql.Apply(filter, wp, bp, subjectContext)  →  AND … on FilteredGames
+       ↓
+ICorpusBenchmarkCalculator (optional CorpusPool predicate)
+```
+
+- **Services:** `IFideRatingListReader`, `IFidePlayerMatcher`, extend `IPlayerMetadataSyncService` (or sibling `IFideMetadataSyncService`).
+- **No network in default sync path** — user passes `--fide-list path/to/file.txt`.
+- **UI:** one “Player metadata” subsection under metrics and games (checkboxes / dropdowns mapping to predicates + role).
+
+### 13.8 Interpretation
+
+- Federation and title reflect **FIDE list snapshot date**, not necessarily the value at every game year in the corpus.
+- Filters mean “player **is recorded as** X in enriched metadata”, not “would have been X at game time” unless documented otherwise.
+- Sparse enrichment (many NULL `FideId`) is expected for historical amateurs — corpus-derived filters (min games in DB) remain separate.
+
+---
+
+*Implementation references [PLAN.md §15](./PLAN.md). Update [AGENT_CONTEXT.md](./AGENT_CONTEXT.md) when milestones change.*

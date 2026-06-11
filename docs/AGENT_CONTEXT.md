@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (player metadata — world champion flag).
+**Last updated:** 2026-06-11 (DESIGN §13 / PLAN §15 — player metadata draft).
 
 ---
 
@@ -12,8 +12,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 | File | Role |
 |------|------|
-| [DESIGN.md](./DESIGN.md) | Requirements and locked decisions; **§12** corpus benchmarks (F-11). |
-| [PLAN.md](./PLAN.md) | Implementation plan; **§12.6** (style metrics), **§12.7** (corpus benchmarks). |
+| [DESIGN.md](./DESIGN.md) | Requirements and locked decisions; **§12** corpus benchmarks; **§13** player metadata. |
+| [PLAN.md](./PLAN.md) | Implementation plan; **§12.6** (style metrics), **§12.7** (corpus benchmarks), **§15** (player metadata). |
 | [STYLE_METRICS.md](./STYLE_METRICS.md) | Style research, literature, metric catalogue, profile combinations, caveats. |
 | **AGENT_CONTEXT.md** (this file) | Current progress and **recommended next small step**. |
 
@@ -25,20 +25,11 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics HTTP API + local **`wwwroot`** UI).
-- **Done (style metrics Phases 1–3):** `AverageCastlingPly`, `AverageMaterialVolatility`, `BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`, `QueenTradeRate`.
-- **Done (corpus benchmarks on main):** `AverageMaterialVolatility`, `AverageCastlingPly`, `BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate` (PR #56).
-- **Done (corpus benchmarks):** `QueenTradeRate` (PR #57).
-- **Done (Phase 4):** `CentreMoveRate` (PR #58).
-- **Done (Phase 4):** `ForwardMoveRate` (PR #59).
-- **Done (Phase 5):** `CastlingSidePreference` (PR #60).
-- **Done (Phase 5):** `OppositeSideCastlingRate` (PR #61).
-- **Done (Phase 5):** `UncastledKingRate` (PR #62).
-- **Done (Phase 6):** `FirstQueenMovePly`.
-- **Done (Phase 7):** `AverageGameLength`, `ShortDrawRate`.
-- **Done (Phase 8):** `EcoDiversity`.
-- **Done (player metadata):** `WasWorldChampion` on `dbo.Player` (PR in flight).
-- **Done (corpus benchmarks):** `CentreMoveRate`, `ForwardMoveRate`, `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`, `AverageGameLength`, `ShortDrawRate`, `EcoDiversity`.
-- **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
+- **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
+- **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
+- **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `WorldChampionCatalog`, `--sync-player-metadata` (PR #70).
+- **In design (not implemented):** [DESIGN §13](./DESIGN.md) / [PLAN §15](./PLAN.md) — FIDE enrichment columns, `--sync-fide-metadata`, metadata filters.
+- **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
 
@@ -57,11 +48,15 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** [PLAN.md §12.6 Phase 8](./PLAN.md) — implement **`EcoConcentration`**.
+**Do next:** [PLAN §15.1](./PLAN.md) — migration **`012`** + DTO/repo for **`FideId`**, **`Federation`**, **`Sex`**, **`FideTitle`**, **`BirthYear`** on `dbo.Player` (schema only, no sync yet).
 
-**Then:** Phase 9+ per PLAN.
+**Then (in order):** §15.2 FIDE matcher → §15.3 `--sync-fide-metadata` CLI → §15.4 API → §15.5–15.7 filters.
 
-**Do not prioritize yet:** HTTP auth / rate limits for metrics (PLAN §12.4 / §13).
+**Parallel / after enrichment usable:** §12.6 **`EcoConcentration`** when maintainer wants style metrics again.
+
+**Do not prioritize yet:** HTTP auth / rate limits (PLAN §13); Lichess/Wikidata fallback (§15.8).
+
+**Note:** User may be running a large PGN parse — avoid starting the app or heavy DB work unless asked.
 
 ---
 
@@ -76,6 +71,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **`dbo.GameMove`** + **`dbo.GamePositionSummary`** — derived on ETL/backfill; required for style metrics.
 - **Corpus benchmarks:** opt-in `includeCorpusBenchmark` + `benchmarkMinGames` (default 30); shared `ICorpusBenchmarkCalculator`.
+- **Player metadata today:** `WasWorldChampion` only; FIDE columns and filters per §13/§15.
 - **Conventions:** [PLAN.md §7](./PLAN.md), [DESIGN.md §8](./DESIGN.md).
 
 ---
