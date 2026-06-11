@@ -21,6 +21,9 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
 
     public Task<List<Player>> GetPlayers() => Throw<List<Player>>();
 
+    public Task<Player?> GetPlayerByIdAsync(int playerId, CancellationToken cancellationToken = default) =>
+        Throw<Player?>();
+
     public Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames) => Throw<int?>();
 
     public Task<List<Player>> GetPlayersBySurname(string surname) => Throw<List<Player>>();

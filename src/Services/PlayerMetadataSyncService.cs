@@ -46,5 +46,5 @@ public sealed class PlayerMetadataSyncService(
     public Task<FideMetadataSyncResult> BackfillFideMetadataAsync(
         bool dryRun = false,
         CancellationToken cancellationToken = default) =>
-        _playerFideMetadataEnricher.BackfillAllAsync(dryRun, cancellationToken);
+        _playerFideMetadataEnricher.EnrichAllAsync(dryRun, cancellationToken);
 }

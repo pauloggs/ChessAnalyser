@@ -28,6 +28,9 @@ namespace Repositories
 
         Task<List<Player>> GetPlayers();
 
+        /// <summary>Returns one player row by id, or null when missing.</summary>
+        Task<Player?> GetPlayerByIdAsync(int playerId, CancellationToken cancellationToken = default);
+
         /// <summary>Returns the Player Id if a row exists with the given Surname and Forenames; otherwise null.</summary>
         Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames);
 
@@ -509,6 +512,17 @@ namespace Repositories
                 var list = (await connection.QueryAsync<Player>(SqlStatements.GetPlayers)).ToList();
                 return list;
             }
+        }
+
+        /// <inheritdoc />
+        public async Task<Player?> GetPlayerByIdAsync(int playerId, CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.QuerySingleOrDefaultAsync<Player>(
+                new CommandDefinition(
+                    SqlStatements.GetPlayerById,
+                    new { Id = playerId },
+                    cancellationToken: cancellationToken));
         }
 
         public async Task<int?> GetPlayerIdBySurnameAndForenames(string surname, string forenames)

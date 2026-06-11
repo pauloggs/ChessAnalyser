@@ -22,7 +22,7 @@ public class FideCatalogImportServiceTests
         var matcher = new Mock<IFidePlayerMatcher>();
         var backfill = new FideMetadataSyncResult { PlayersChecked = 5, PlayersUpdated = 1 };
         var enricher = new Mock<IPlayerFideMetadataEnricher>();
-        enricher.Setup(e => e.BackfillAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(backfill);
+        enricher.Setup(e => e.EnrichAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(backfill);
 
         var sut = new FideCatalogImportService(repo.Object, reader.Object, matcher.Object, enricher.Object);
         var result = await sut.ImportAndBackfillAsync("list.txt");
@@ -46,7 +46,7 @@ public class FideCatalogImportServiceTests
 
         var matcher = new Mock<IFidePlayerMatcher>();
         var enricher = new Mock<IPlayerFideMetadataEnricher>();
-        enricher.Setup(e => e.BackfillAllAsync(true, It.IsAny<CancellationToken>()))
+        enricher.Setup(e => e.EnrichAllAsync(true, It.IsAny<CancellationToken>()))
             .ReturnsAsync(new FideMetadataSyncResult { DryRun = true });
 
         var sut = new FideCatalogImportService(

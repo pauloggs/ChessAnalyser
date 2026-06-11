@@ -3,23 +3,32 @@ using Interfaces.DTO;
 namespace Services.PlayerMetadata;
 
 /// <summary>
-/// Applies FIDE metadata from <c>Ref.FidePlayer</c> onto <see cref="Player"/> rows.
+/// Idempotent player metadata enrichment from <c>Ref.*</c> catalogs and corpus game years.
 /// </summary>
 public interface IPlayerFideMetadataEnricher
 {
     /// <summary>
-    /// Matches one player against the loaded FIDE catalog and updates FIDE columns when confident.
+    /// Enriches one player (world champion flag + FIDE metadata). Safe to call repeatedly.
     /// </summary>
     Task<bool> TryEnrichPlayerAsync(
         int playerId,
-        string surname,
-        string forenames,
+        short? observedGameYear = null,
         CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Recomputes FIDE metadata for every corpus player from <c>Ref.FidePlayer</c>.
+    /// Enriches one player when surname/forenames are already known (e.g. before first game is persisted).
     /// </summary>
-    Task<FideMetadataSyncResult> BackfillAllAsync(
+    Task<bool> TryEnrichPlayerAsync(
+        int playerId,
+        string? surname,
+        string? forenames,
+        short? observedGameYear = null,
+        CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Idempotent pass over all players: world-champion flags and FIDE metadata from Ref catalogs.
+    /// </summary>
+    Task<FideMetadataSyncResult> EnrichAllAsync(
         bool dryRun = false,
         CancellationToken cancellationToken = default);
 }

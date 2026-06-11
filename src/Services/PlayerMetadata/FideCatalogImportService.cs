@@ -38,7 +38,7 @@ public sealed class FideCatalogImportService(
             _fidePlayerMatcher.LoadCatalogSnapshot(records);
         }
 
-        var backfill = await _playerFideMetadataEnricher.BackfillAllAsync(dryRun, cancellationToken)
+        var backfill = await _playerFideMetadataEnricher.EnrichAllAsync(dryRun, cancellationToken)
             .ConfigureAwait(false);
 
         return new FideCatalogImportResult

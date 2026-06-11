@@ -21,13 +21,11 @@ namespace Services
     public class PlayerResolver(
         IChessRepository chessRepository,
         IWorldChampionMatcher worldChampionMatcher,
-        IFidePlayerMatcher fidePlayerMatcher,
-        IPlayerFideMetadataEnricher playerFideMetadataEnricher) : IPlayerResolver
+        IFidePlayerMatcher fidePlayerMatcher) : IPlayerResolver
     {
         private readonly IChessRepository _chessRepository = chessRepository;
         private readonly IWorldChampionMatcher _worldChampionMatcher = worldChampionMatcher;
         private readonly IFidePlayerMatcher _fidePlayerMatcher = fidePlayerMatcher;
-        private readonly IPlayerFideMetadataEnricher _playerFideMetadataEnricher = playerFideMetadataEnricher;
         private readonly Dictionary<(string Surname, string Forenames), int> _cache = new();
 
         public async Task LoadKnownPlayersAsync()
@@ -93,7 +91,6 @@ namespace Services
             };
             id = await _chessRepository.InsertPlayer(player);
             _cache[key] = id;
-            await _playerFideMetadataEnricher.TryEnrichPlayerAsync(id, surname, forenamesNorm).ConfigureAwait(false);
             return id;
         }
     }

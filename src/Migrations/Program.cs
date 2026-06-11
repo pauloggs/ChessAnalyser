@@ -40,8 +40,7 @@ var fideListPath = RepoRootPath.Resolve(fideListRelative);
 
 await SeedRefFidePlayerRunner.RunIfNeededAsync(connectionString, fideListPath);
 
-if (await SeedRefFidePlayerRunner.CatalogHasRowsAsync(connectionString))
-    await PlayerMetadataBackfillRunner.RunAsync(configuration);
+await PlayerMetadataBackfillRunner.RunAsync(configuration);
 
 Console.ForegroundColor = ConsoleColor.Green;
 Console.WriteLine("Migrations completed successfully.");

@@ -53,7 +53,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 - **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
 - **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
-- **Player metadata:** migrations through `015` seed `Ref.FidePlayer` from `data/fide/players_list_foa.txt` (when present and catalog empty) and backfill `dbo.Player` automatically. New players during ETL are enriched when the catalog is loaded. Optional: `--sync-player-metadata` on the Analyser host to re-run backfill without re-seeding.
+- **Player metadata:** migrations through `015` seed `Ref.FidePlayer` and run idempotent player metadata enrichment automatically. PGN load (ETL) enriches players per game and runs a full enrichment pass at the end — no separate manual commands.
 
 ## Schema history snapshot
 

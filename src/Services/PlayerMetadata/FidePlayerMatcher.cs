@@ -93,19 +93,26 @@ public sealed class FidePlayerMatcher : IFidePlayerMatcher
         if (context is null || candidateBirthYear is null)
             return true;
 
-        if (context.KnownBirthYear is short knownBirth &&
-            Math.Abs(knownBirth - candidateBirthYear.Value) > 2)
+        var birth = candidateBirthYear.Value;
+
+        if (context.CorpusFirstGameYear is short first && birth > first)
             return false;
 
-        if (context.CorpusFirstGameYear is not short first ||
-            context.CorpusLastGameYear is not short last)
+        if (context.CorpusLastGameYear is short last && birth > last)
+            return false;
+
+        if (context.KnownBirthYear is short knownBirth &&
+            Math.Abs(knownBirth - birth) > 2)
+            return false;
+
+        if (context.CorpusFirstGameYear is not short firstYear ||
+            context.CorpusLastGameYear is not short lastYear)
             return true;
 
-        var birth = candidateBirthYear.Value;
-        if (first < birth + MinCompetitiveAge)
+        if (firstYear < birth + MinCompetitiveAge)
             return false;
 
-        if (last > birth + MaxPlausibleCareerEndAge)
+        if (lastYear > birth + MaxPlausibleCareerEndAge)
             return false;
 
         return true;

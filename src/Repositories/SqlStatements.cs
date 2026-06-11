@@ -49,6 +49,14 @@ namespace Repositories
             WHERE Id = @Id;
             """;
 
+        public static string GetPlayerById =>
+            """
+            SELECT Id, Surname, Forenames, WasWorldChampion,
+                   FideId, Federation, Sex, FideTitle, BirthYear
+            FROM dbo.Player
+            WHERE Id = @Id;
+            """;
+
         public static string GetWorldChampions =>
             """
             SELECT Id, Surname, Forenames, ChampionOrder, ReignStartYear, ReignEndYear

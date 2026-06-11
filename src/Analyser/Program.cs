@@ -156,23 +156,6 @@ if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison
     return;
 }
 
-if (args.Any(a => string.Equals(a, "--sync-player-metadata", StringComparison.OrdinalIgnoreCase)))
-{
-    var dryRun = args.Any(a => string.Equals(a, "--dry-run", StringComparison.OrdinalIgnoreCase));
-    await using var scope = app.Services.CreateAsyncScope();
-    var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
-    var wcOutcome = await sync.SyncWorldChampionFlagsAsync();
-    var fideOutcome = await sync.BackfillFideMetadataAsync(dryRun);
-    Console.WriteLine(
-        $"World champion sync: checked={wcOutcome.PlayersChecked}, updated={wcOutcome.PlayersUpdated}.");
-    Console.WriteLine(
-        $"FIDE metadata backfill{(fideOutcome.DryRun ? " (dry run)" : "")} from Ref.FidePlayer: " +
-        $"checked={fideOutcome.PlayersChecked}, matched={fideOutcome.PlayersMatched}, " +
-        $"updated={fideOutcome.PlayersUpdated}, unmatched={fideOutcome.PlayersUnmatched}, ambiguous={fideOutcome.PlayersAmbiguous}, " +
-        $"fideIdConflict={fideOutcome.PlayersFideIdConflict}.");
-    return;
-}
-
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

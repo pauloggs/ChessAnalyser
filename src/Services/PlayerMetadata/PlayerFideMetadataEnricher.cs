@@ -6,52 +6,59 @@ namespace Services.PlayerMetadata;
 /// <inheritdoc />
 public sealed class PlayerFideMetadataEnricher(
     IChessRepository repository,
-    IFidePlayerMatcher fidePlayerMatcher) : IPlayerFideMetadataEnricher
+    IFidePlayerMatcher fidePlayerMatcher,
+    IWorldChampionMatcher worldChampionMatcher) : IPlayerFideMetadataEnricher
 {
     private readonly IChessRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly IFidePlayerMatcher _fidePlayerMatcher =
         fidePlayerMatcher ?? throw new ArgumentNullException(nameof(fidePlayerMatcher));
+    private readonly IWorldChampionMatcher _worldChampionMatcher =
+        worldChampionMatcher ?? throw new ArgumentNullException(nameof(worldChampionMatcher));
+
+    /// <inheritdoc />
+    public Task<bool> TryEnrichPlayerAsync(
+        int playerId,
+        short? observedGameYear = null,
+        CancellationToken cancellationToken = default) =>
+        TryEnrichPlayerAsync(playerId, surname: null, forenames: null, observedGameYear, cancellationToken);
 
     /// <inheritdoc />
     public async Task<bool> TryEnrichPlayerAsync(
         int playerId,
-        string surname,
-        string forenames,
+        string? surname,
+        string? forenames,
+        short? observedGameYear = null,
         CancellationToken cancellationToken = default)
     {
-        await _fidePlayerMatcher.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureCatalogsLoadedAsync(cancellationToken).ConfigureAwait(false);
 
-        var activity = await _repository.GetPlayerCorpusActivityAsync(playerId, cancellationToken).ConfigureAwait(false);
-        var match = _fidePlayerMatcher.Match(
-            surname,
-            forenames,
-            new FidePlayerMatchContext
-            {
-                CorpusFirstGameYear = activity?.FirstGameYear,
-                CorpusLastGameYear = activity?.LastGameYear
-            });
-
-        if (match.Outcome != FidePlayerMatchOutcome.Matched || match.Record is null)
+        var player = await _repository.GetPlayerByIdAsync(playerId, cancellationToken).ConfigureAwait(false);
+        if (player is null)
             return false;
 
-        var metadata = ToMetadata(match.Record);
-        if (metadata.FideId is int fideId)
-        {
-            var existingOwner = await _repository.GetPlayerIdByFideIdAsync(fideId, cancellationToken).ConfigureAwait(false);
-            if (existingOwner is int ownerId && ownerId != playerId)
-                return false;
-        }
+        if (surname is not null)
+            player.Surname = surname;
+        if (forenames is not null)
+            player.Forenames = forenames;
 
-        await _repository.UpdatePlayerFideMetadataAsync(playerId, metadata, cancellationToken).ConfigureAwait(false);
-        return true;
+        var activity = await _repository.GetPlayerCorpusActivityAsync(playerId, cancellationToken).ConfigureAwait(false);
+        var context = FidePlayerMatchContextBuilder.FromActivity(activity, observedGameYear);
+
+        var updated = false;
+        if (await SyncWorldChampionFlagAsync(player, dryRun: false, cancellationToken).ConfigureAwait(false))
+            updated = true;
+
+        var result = await ApplyFideMetadataAsync(player, context, dryRun: false, fideIdOwner: null, cancellationToken)
+            .ConfigureAwait(false);
+        return updated || result.Updated;
     }
 
     /// <inheritdoc />
-    public async Task<FideMetadataSyncResult> BackfillAllAsync(
+    public async Task<FideMetadataSyncResult> EnrichAllAsync(
         bool dryRun = false,
         CancellationToken cancellationToken = default)
     {
-        await _fidePlayerMatcher.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+        await EnsureCatalogsLoadedAsync(cancellationToken).ConfigureAwait(false);
 
         var players = (await _repository.GetPlayers().ConfigureAwait(false))
             .OrderBy(p => p.Id)
@@ -75,50 +82,29 @@ public sealed class PlayerFideMetadataEnricher(
 
             var activity = await _repository.GetPlayerCorpusActivityAsync(player.Id, cancellationToken)
                 .ConfigureAwait(false);
-            var context = new FidePlayerMatchContext
-            {
-                KnownBirthYear = player.BirthYear,
-                CorpusFirstGameYear = activity?.FirstGameYear,
-                CorpusLastGameYear = activity?.LastGameYear
-            };
+            var context = FidePlayerMatchContextBuilder.FromActivity(activity);
 
-            var match = _fidePlayerMatcher.Match(player.Surname, player.Forenames, context);
-            switch (match.Outcome)
+            if (await SyncWorldChampionFlagAsync(player, dryRun, cancellationToken).ConfigureAwait(false))
+                updated++;
+
+            var result = await ApplyFideMetadataAsync(player, context, dryRun, fideIdOwner, cancellationToken)
+                .ConfigureAwait(false);
+
+            if (result.Updated)
+                updated++;
+
+            switch (result.MatchOutcome)
             {
                 case FidePlayerMatchOutcome.Matched:
                     matched++;
-                    var metadata = ToMetadata(match.Record!);
-                    if (MetadataEquals(player, metadata))
-                        break;
-
-                    if (metadata.FideId is int fideId &&
-                        fideIdOwner.TryGetValue(fideId, out var ownerId) &&
-                        ownerId != player.Id)
-                    {
+                    if (result.FideIdConflict)
                         fideIdConflict++;
-                        break;
-                    }
-
-                    if (!dryRun)
-                    {
-                        await _repository.UpdatePlayerFideMetadataAsync(player.Id, metadata, cancellationToken)
-                            .ConfigureAwait(false);
-                    }
-
-                    if (metadata.FideId is int assignedFideId)
-                        fideIdOwner[assignedFideId] = player.Id;
-
-                    updated++;
                     break;
                 case FidePlayerMatchOutcome.Ambiguous:
                     ambiguous++;
-                    if (await TryClearIncompatibleMetadataAsync(player, activity, dryRun, cancellationToken))
-                        updated++;
                     break;
                 default:
                     unmatched++;
-                    if (await TryClearIncompatibleMetadataAsync(player, activity, dryRun, cancellationToken))
-                        updated++;
                     break;
             }
         }
@@ -133,6 +119,79 @@ public sealed class PlayerFideMetadataEnricher(
             PlayersFideIdConflict = fideIdConflict,
             DryRun = dryRun
         };
+    }
+
+    private async Task EnsureCatalogsLoadedAsync(CancellationToken cancellationToken)
+    {
+        await _fidePlayerMatcher.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+        await _worldChampionMatcher.EnsureLoadedAsync(cancellationToken).ConfigureAwait(false);
+    }
+
+    private async Task<bool> SyncWorldChampionFlagAsync(
+        Player player,
+        bool dryRun,
+        CancellationToken cancellationToken)
+    {
+        var shouldBeChampion = _worldChampionMatcher.IsWorldChampion(player.Surname, player.Forenames);
+        if (player.WasWorldChampion == shouldBeChampion)
+            return false;
+
+        if (!dryRun)
+        {
+            await _repository.UpdatePlayerWasWorldChampionAsync(player.Id, shouldBeChampion, cancellationToken)
+                .ConfigureAwait(false);
+        }
+
+        return true;
+    }
+
+    private async Task<FideApplyResult> ApplyFideMetadataAsync(
+        Player player,
+        FidePlayerMatchContext context,
+        bool dryRun,
+        Dictionary<int, int>? fideIdOwner,
+        CancellationToken cancellationToken)
+    {
+        var match = _fidePlayerMatcher.Match(player.Surname, player.Forenames, context);
+        switch (match.Outcome)
+        {
+            case FidePlayerMatchOutcome.Matched:
+            {
+                var metadata = ToMetadata(match.Record!);
+                if (MetadataEquals(player, metadata))
+                    return new FideApplyResult(FidePlayerMatchOutcome.Matched, Updated: false, FideIdConflict: false);
+
+                if (metadata.FideId is int fideId)
+                {
+                    if (fideIdOwner is not null &&
+                        fideIdOwner.TryGetValue(fideId, out var ownerId) &&
+                        ownerId != player.Id)
+                        return new FideApplyResult(FidePlayerMatchOutcome.Matched, Updated: false, FideIdConflict: true);
+
+                    var existingOwner = await _repository.GetPlayerIdByFideIdAsync(fideId, cancellationToken)
+                        .ConfigureAwait(false);
+                    if (existingOwner is int otherId && otherId != player.Id)
+                        return new FideApplyResult(FidePlayerMatchOutcome.Matched, Updated: false, FideIdConflict: true);
+                }
+
+                if (!dryRun)
+                {
+                    await _repository.UpdatePlayerFideMetadataAsync(player.Id, metadata, cancellationToken)
+                        .ConfigureAwait(false);
+                }
+
+                if (metadata.FideId is int assignedFideId)
+                    fideIdOwner?[assignedFideId] = player.Id;
+
+                return new FideApplyResult(FidePlayerMatchOutcome.Matched, Updated: true, FideIdConflict: false);
+            }
+            default:
+            {
+                var cleared = await TryClearIncompatibleMetadataAsync(player, context, dryRun, cancellationToken)
+                    .ConfigureAwait(false);
+                return new FideApplyResult(match.Outcome, Updated: cleared, FideIdConflict: false);
+            }
+        }
     }
 
     private static PlayerFideMetadata ToMetadata(FidePlayerRecord record) =>
@@ -154,19 +213,12 @@ public sealed class PlayerFideMetadataEnricher(
 
     private async Task<bool> TryClearIncompatibleMetadataAsync(
         Player player,
-        PlayerCorpusActivity? activity,
+        FidePlayerMatchContext context,
         bool dryRun,
         CancellationToken cancellationToken)
     {
         if (player.FideId is null)
             return false;
-
-        var context = new FidePlayerMatchContext
-        {
-            KnownBirthYear = player.BirthYear,
-            CorpusFirstGameYear = activity?.FirstGameYear,
-            CorpusLastGameYear = activity?.LastGameYear
-        };
 
         if (FidePlayerMatcher.IsCorpusCompatible(player.BirthYear, context))
             return false;
@@ -181,4 +233,9 @@ public sealed class PlayerFideMetadataEnricher(
 
         return true;
     }
+
+    private readonly record struct FideApplyResult(
+        FidePlayerMatchOutcome MatchOutcome,
+        bool Updated,
+        bool FideIdConflict);
 }

@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Services.PlayerMetadata;
 
 namespace Services
 {
@@ -18,7 +19,8 @@ namespace Services
         IPersistenceService persistenceService,
         IBoardPositionService boardPositionService,
         IEtlProgressStore progressStore,
-        IPlayerResolver playerResolver) : IEtlService
+        IPlayerResolver playerResolver,
+        IPlayerFideMetadataEnricher playerMetadataEnricher) : IEtlService
     {
         private readonly IFileHandler _fileHandler = fileHandler;
         private readonly IPgnParser _pgnParser = pgnParser;
@@ -26,6 +28,7 @@ namespace Services
         private readonly IBoardPositionService _boardPositionService = boardPositionService;
         private readonly IEtlProgressStore _progressStore = progressStore;
         private readonly IPlayerResolver _playerResolver = playerResolver;
+        private readonly IPlayerFideMetadataEnricher _playerMetadataEnricher = playerMetadataEnricher;
 
         public async Task LoadGamesToDatabase(string filePath, IProgress<EtlProgress>? progress = null)
         {
@@ -172,6 +175,14 @@ namespace Services
                             await _persistenceService.InsertGames(list);
                             totalGamesProcessed++;
                             processedIds.Add(list[0].GameId);
+
+                            if (game.GameYear is short gameYear)
+                            {
+                                if (game.WhitePlayerId is int whiteId)
+                                    await _playerMetadataEnricher.TryEnrichPlayerAsync(whiteId, gameYear);
+                                if (game.BlackPlayerId is int blackId)
+                                    await _playerMetadataEnricher.TryEnrichPlayerAsync(blackId, gameYear);
+                            }
                         }
 
                         await _persistenceService.InsertParseErrors(parseErrors);
@@ -179,6 +190,8 @@ namespace Services
                 }
 
                 Report(totalFiles, null, 0, 0, "Completed", null);
+
+                await _playerMetadataEnricher.EnrichAllAsync();
             }
             catch (Exception ex)
             {

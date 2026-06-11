@@ -39,7 +39,7 @@ public class PlayerMetadataSyncServiceTests
     {
         var expected = new FideMetadataSyncResult { PlayersChecked = 10, PlayersUpdated = 3 };
         var enricher = new Mock<IPlayerFideMetadataEnricher>();
-        enricher.Setup(e => e.BackfillAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
+        enricher.Setup(e => e.EnrichAllAsync(false, It.IsAny<CancellationToken>())).ReturnsAsync(expected);
 
         var sut = new PlayerMetadataSyncService(
             Mock.Of<IChessRepository>(),

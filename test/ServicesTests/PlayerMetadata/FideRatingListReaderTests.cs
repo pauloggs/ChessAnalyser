@@ -170,6 +170,22 @@ public class FidePlayerMatcherTests
     }
 
     [Fact]
+    public void IsCorpusCompatible_RejectsBirthYearAfterEarliestGame()
+    {
+        Assert.False(FidePlayerMatcher.IsCorpusCompatible(
+            1983,
+            new FidePlayerMatchContext { CorpusFirstGameYear = 1925, CorpusLastGameYear = 1970 }));
+    }
+
+    [Fact]
+    public void IsCorpusCompatible_RejectsBirthYearAfterSingleObservedGame()
+    {
+        Assert.False(FidePlayerMatcher.IsCorpusCompatible(
+            1990,
+            new FidePlayerMatchContext { CorpusFirstGameYear = 1985, CorpusLastGameYear = 1985 }));
+    }
+
+    [Fact]
     public void IsCorpusCompatible_RejectsGamesBeforeBirth()
     {
         Assert.False(FidePlayerMatcher.IsCorpusCompatible(
