@@ -1,20 +1,22 @@
+SET ANSI_NULLS ON
+SET QUOTED_IDENTIFIER ON
 CREATE TABLE [Ref].[FidePlayer](
 	[FideId] [int] NOT NULL,
-	[Surname] [nvarchar](200) NOT NULL,
-	[Forenames] [nvarchar](400) NOT NULL,
-	[Federation] [char](3) NULL,
-	[Sex] [char](1) NULL,
-	[FideTitle] [nvarchar](8) NULL,
+	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Federation] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Sex] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[FideTitle] [nvarchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
 	[BirthYear] [smallint] NULL,
  CONSTRAINT [PK_Ref_FidePlayer] PRIMARY KEY CLUSTERED 
 (
 	[FideId] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-GO
+
+SET ANSI_PADDING ON
 
 CREATE NONCLUSTERED INDEX [IX_Ref_FidePlayer_Surname] ON [Ref].[FidePlayer]
 (
 	[Surname] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-GO
