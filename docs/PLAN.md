@@ -750,13 +750,13 @@ player (e.g. Petrosian) on the same filters.
 
 **Branch:** `feat/sync-fide-metadata-cli`
 
-1. [ ] Extend **`IPlayerMetadataSyncService`** (or add **`IFideMetadataSyncService`**) with `SyncFideMetadataAsync(fideListPath, …)`.
-2. [ ] **`Program.cs`:** `--sync-fide-metadata <path>` (and optional `--dry-run`).
-3. [ ] For each DB player: match → update FIDE columns; **do not** touch `WasWorldChampion`.
-4. [ ] **`PlayerMetadataSyncResult`** (or new result type): `PlayersChecked`, `PlayersUpdated`, `PlayersMatched`, `PlayersUnmatched`, `PlayersAmbiguous`.
-5. [ ] Keep existing **`--sync-player-metadata`** for world-champion catalog only.
-6. [ ] Update **`Migrations/README.md`**: run order after load — `--sync-fide-metadata` then `--sync-player-metadata` (order between the two is flexible; WC catalog does not depend on FIDE).
-7. [ ] Service tests with mocked reader/matcher/repository.
+1. [x] Extend **`IPlayerMetadataSyncService`** (or add **`IFideMetadataSyncService`**) with `SyncFideMetadataAsync(fideListPath, …)`.
+2. [x] **`Program.cs`:** `--sync-fide-metadata <path>` (and optional `--dry-run`).
+3. [x] For each DB player: match → update FIDE columns; **do not** touch `WasWorldChampion`.
+4. [x] **`FideMetadataSyncResult`**: `PlayersChecked`, `PlayersUpdated`, `PlayersMatched`, `PlayersUnmatched`, `PlayersAmbiguous`.
+5. [x] Keep existing **`--sync-player-metadata`** for world-champion catalog only.
+6. [x] Update **`Migrations/README.md`**: run order after load — `--sync-fide-metadata` then `--sync-player-metadata` (order between the two is flexible; WC catalog does not depend on FIDE).
+7. [x] Service tests with mocked reader/matcher/repository.
 
 **Acceptance:** running CLI against a test DB + small fixture file updates matched rows; idempotent second run.
 

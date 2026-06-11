@@ -166,6 +166,37 @@ if (args.Any(a => string.Equals(a, "--sync-player-metadata", StringComparison.Or
     return;
 }
 
+if (args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase)))
+{
+    string? fidePath = null;
+    var dryRun = false;
+    for (var i = 0; i < args.Length; i++)
+    {
+        if (string.Equals(args[i], "--dry-run", StringComparison.OrdinalIgnoreCase))
+            dryRun = true;
+        if (string.Equals(args[i], "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase)
+            && i + 1 < args.Length
+            && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
+            fidePath = args[i + 1];
+    }
+
+    if (string.IsNullOrWhiteSpace(fidePath))
+    {
+        Console.Error.WriteLine("Usage: --sync-fide-metadata <path> [--dry-run]");
+        Environment.ExitCode = 1;
+        return;
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
+    var outcome = await sync.SyncFideMetadataAsync(fidePath, dryRun);
+    Console.WriteLine(
+        $"FIDE metadata sync{(outcome.DryRun ? " (dry run)" : "")}: " +
+        $"checked={outcome.PlayersChecked}, matched={outcome.PlayersMatched}, " +
+        $"updated={outcome.PlayersUpdated}, unmatched={outcome.PlayersUnmatched}, ambiguous={outcome.PlayersAmbiguous}.");
+    return;
+}
+
 // Configure the HTTP request pipeline.
 if (app.Environment.IsDevelopment())
 {

@@ -51,7 +51,10 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 - **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
 - **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
-- **Player metadata:** after migration `011`, run migrations through `013`, then `dotnet run --project src/Analyser -- --sync-player-metadata` to backfill `WasWorldChampion` on existing `dbo.Player` rows from `Ref.WorldChampion`. New players pick up the flag on insert during ETL.
+- **Player metadata:** after migrations through `013`, run (order between the two sync commands is flexible):
+  - `dotnet run --project src/Analyser -- --sync-fide-metadata <path-to-fide-list.txt>` — optional `--dry-run` to preview matches without writing. Updates `FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear` from an official FIDE rating list TXT file (see `data/fide/README.md`).
+  - `dotnet run --project src/Analyser -- --sync-player-metadata` — backfills `WasWorldChampion` from `Ref.WorldChampion`.
+  New players pick up the world-champion flag on insert during ETL.
 
 ## Schema history snapshot
 

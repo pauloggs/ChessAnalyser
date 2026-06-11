@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (PLAN §15.2 — FIDE list reader + matcher).
+**Last updated:** 2026-06-11 (PLAN §15.3 — `--sync-fide-metadata` CLI).
 
 ---
 
@@ -30,7 +30,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `Ref.WorldChampion` reference table, `--sync-player-metadata` (migrations `011`/`013`).
 - **Done (player metadata v1 schema):** FIDE columns on `dbo.Player` + `UpdatePlayerFideMetadataAsync` (PLAN §15.1).
 - **Done (player metadata §15.2):** `FideRatingListReader`, `FidePlayerMatcher`, `GetPlayerCorpusActivityAsync`.
-- **Next (player metadata):** PLAN §15.3 `--sync-fide-metadata` CLI.
+- **Done (player metadata §15.3):** `--sync-fide-metadata <path>` CLI (+ `--dry-run`), `FideMetadataSyncResult`, service tests.
+- **Next (player metadata):** PLAN §15.4 API — expose metadata on player picker.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
@@ -50,9 +51,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** [PLAN §15.3](./PLAN.md) — `--sync-fide-metadata <path>` CLI.
+**Do next:** [PLAN §15.4](./PLAN.md) — expose player metadata on API / player picker.
 
-**Then (in order):** §15.4 API → §15.5–15.7 filters.
+**Then (in order):** §15.5–15.7 filters.
 
 **Parallel / after enrichment usable:** §12.6 **`EcoConcentration`** when maintainer wants style metrics again.
 
