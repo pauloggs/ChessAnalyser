@@ -28,7 +28,11 @@ Override the file path in `src/Migrations/appsettings.json`:
 
 ## During PGN load
 
-After the catalog is present, **new players** created during ETL receive FIDE metadata automatically when a confident name match exists.
+Each persisted game enriches both players using that game's **GameYear**. At the end of every load, a full idempotent enrichment pass runs automatically. No manual sync commands.
+
+## Date verification
+
+A FIDE candidate is rejected when their birth year is **after any game year** in the corpus (e.g. birth 1983 cannot match a player whose games start in 1925). Wrong assignments are cleared on the next enrichment pass.
 
 ## Refreshing the catalog
 
