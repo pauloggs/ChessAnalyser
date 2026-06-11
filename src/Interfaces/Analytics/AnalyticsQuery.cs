@@ -58,6 +58,11 @@ public sealed class AnalyticsQuery
     public int? QueenTradeMaxPly { get; init; }
 
     /// <summary>
+    /// For <c>ShortDrawRate</c> — draws at or below this ply count as short (default 20).
+    /// </summary>
+    public int? ShortDrawMaxPly { get; init; }
+
+    /// <summary>
     /// When true, eligible style metrics append corpus benchmark columns (DESIGN §12).
     /// </summary>
     public bool? IncludeCorpusBenchmark { get; init; }

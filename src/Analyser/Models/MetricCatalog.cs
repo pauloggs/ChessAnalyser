@@ -54,6 +54,8 @@ internal static class MetricCatalog
                 "How early does this player move their queen? Lower values mean an earlier first queen move. Games where the queen never moved are excluded.",
             "AverageGameLength" =>
                 "How long are this player's games on average? Higher values mean longer games in half-moves; lower values mean shorter games.",
+            "ShortDrawRate" =>
+                "How often are this player's draws short? Higher values mean more of their drawn games end at or below the ply threshold (ChessBase fighting-spirit proxy).",
             _ => null
         };
     }
@@ -248,6 +250,17 @@ internal static class MetricCatalog
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
+            ],
+            "ShortDrawRate" =>
+            [
+                "How it's computed: among draws only (Winner = D), 1 if MAX(PlyIndex) <= shortDrawMaxPly, else 0; then averaged.",
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: shortDrawMaxPly (defaults to 20 when omitted).",
+                "DrawCount is the number of filtered draws; non-draws are excluded.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility (applied to draw count)."
             ],
             _ => []
         };

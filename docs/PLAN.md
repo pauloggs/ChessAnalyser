@@ -559,7 +559,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
     - **Aggregate:** `AVG(max_ply)` for games involving the filtered player.
     - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageGameLengthPly`.
 
-14. [ ] **`ShortDrawRate`**
+14. [x] **`ShortDrawRate`**
     - **Data:** `Game.Winner` draw detection + game length.
     - **Per game:** among draws only, `1` if `max_ply <= shortDrawMaxPly` (default **20**), else `0`.
     - **Aggregate:** proportion of draws that are short (ChessBase **Fighting Spirit** proxy).
