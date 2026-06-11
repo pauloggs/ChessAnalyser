@@ -5,6 +5,11 @@ CREATE TABLE [dbo].[Player](
 	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[WasWorldChampion] [bit] NOT NULL,
+	[FideId] [int] NULL,
+	[Federation] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[Sex] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[FideTitle] [nvarchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
+	[BirthYear] [smallint] NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -16,5 +21,11 @@ CREATE TABLE [dbo].[Player](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
+CREATE UNIQUE NONCLUSTERED INDEX [UX_Player_FideId] ON [dbo].[Player]
+(
+	[FideId] ASC
+)
+WHERE ([FideId] IS NOT NULL)
+WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
 ALTER TABLE [dbo].[Player] ADD  CONSTRAINT [DF_Player_WasWorldChampion]  DEFAULT ((0)) FOR [WasWorldChampion]

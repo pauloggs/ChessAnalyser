@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (DESIGN §13 / PLAN §15 — player metadata draft).
+**Last updated:** 2026-06-11 (PLAN §15.1 — player FIDE columns).
 
 ---
 
@@ -28,7 +28,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
 - **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
 - **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `WorldChampionCatalog`, `--sync-player-metadata` (PR #70).
-- **In design (not implemented):** [DESIGN §13](./DESIGN.md) / [PLAN §15](./PLAN.md) — FIDE enrichment columns, `--sync-fide-metadata`, metadata filters.
+- **Done (player metadata v1 schema):** FIDE columns on `dbo.Player` + `UpdatePlayerFideMetadataAsync` (PLAN §15.1, branch `feat/player-fide-columns`).
+- **Next (player metadata):** PLAN §15.2 FIDE list reader + matcher.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
@@ -48,9 +49,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** [PLAN §15.1](./PLAN.md) — migration **`012`** + DTO/repo for **`FideId`**, **`Federation`**, **`Sex`**, **`FideTitle`**, **`BirthYear`** on `dbo.Player` (schema only, no sync yet).
+**Do next:** [PLAN §15.2](./PLAN.md) — FIDE TXT reader + **`IFidePlayerMatcher`**.
 
-**Then (in order):** §15.2 FIDE matcher → §15.3 `--sync-fide-metadata` CLI → §15.4 API → §15.5–15.7 filters.
+**Then (in order):** §15.3 `--sync-fide-metadata` CLI → §15.4 API → §15.5–15.7 filters.
 
 **Parallel / after enrichment usable:** §12.6 **`EcoConcentration`** when maintainer wants style metrics again.
 
