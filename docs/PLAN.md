@@ -693,6 +693,156 @@ player (e.g. Petrosian) on the same filters.
 
 ---
 
+## 15. Stage 5 — Player metadata enrichment and filtering
+
+**Goal:** Enrich `dbo.Player` from **external reference data** (primarily FIDE bulk files) and support **optional metadata filters** on analytics and game browsing per [DESIGN.md §13](./DESIGN.md).
+
+**Decision (2026):** PGN files being loaded are **metadata-thin** (game headers + names). Player title, federation, sex, and birth year will **not** come from PGN tags in v1. Enrichment is a **post-load / post-ingest CLI step**, not inline with parse.
+
+**Non-goals for Stage 5 v1:** historical rating at game time, reign-period champion filters, Wikidata bulk import, Lichess fallback (optional later slice).
+
+**Workflow:** Same as §3 — **one PR per slice** below; update [AGENT_CONTEXT.md](./AGENT_CONTEXT.md) when each slice merges.
+
+**Paused parallel track:** [§12.6 Phase 8 `EcoConcentration`](#phase-8--repertoire-shape) remains unchecked; implement **after** Stage 5 slice 1–3 if the maintainer is loading PGNs and wants enriched players first.
+
+---
+
+### 15.1 Schema — FIDE columns on `Player` (PR 1)
+
+**Branch:** `feat/player-fide-columns`
+
+1. [ ] Migration **`012_AddPlayerFideMetadataColumns.sql`** (idempotent `ALTER`):
+   - `FideId INT NULL`
+   - `Federation CHAR(3) NULL`
+   - `Sex CHAR(1) NULL`
+   - `FideTitle NVARCHAR(8) NULL`
+   - `BirthYear SMALLINT NULL`
+   - Unique filtered index: `UX_Player_FideId` ON `(FideId)` WHERE `FideId IS NOT NULL`
+2. [ ] Update **`Migrations/History/current/tables/dbo.Player.sql`** exporter snapshot.
+3. [ ] Extend **`Interfaces/DTO/Player.cs`**, **`SqlStatements`** (select/insert/update player).
+4. [ ] Repository methods: `UpdatePlayerFideMetadataAsync` (or single update DTO).
+5. [ ] Unit tests: DTO mapping / SQL parameter round-trip (mock repo or integration if pattern exists).
+
+**Acceptance:** `dotnet test` passes; existing ETL unchanged; new columns NULL for all players.
+
+---
+
+### 15.2 FIDE list reader and name matcher (PR 2)
+
+**Branch:** `feat/fide-list-matcher`
+
+1. [ ] **`IFideRatingListReader`** — parse official FIDE **TXT** combined list (document column layout in code remarks; XML optional follow-up in same PR if trivial).
+2. [ ] **`FidePlayerRecord`** — `FideId`, `Name`, `Federation`, `Sex`, `Title`, `BirthYear`.
+3. [ ] **`IFidePlayerMatcher`** — match `Player` (surname, forenames) → `FidePlayerRecord?`:
+   - Use **`PlayerForenamesMatcher`**
+   - Ambiguity resolution per DESIGN §13.5 (birth year + corpus game-year window from repository)
+4. [ ] Tests with **small inline fixture** strings (no committed 40MB file):
+   - Exact match `Carlsen, Magnus`
+   - Abbreviated forenames
+   - Ambiguous surname → no match or best-effort with birth year
+5. [ ] Document expected file location: e.g. `data/fide/README.md` — user downloads list locally; path passed to CLI.
+
+**Acceptance:** matcher tests pass; no CLI yet.
+
+---
+
+### 15.3 Sync CLI — `--sync-fide-metadata` (PR 3)
+
+**Branch:** `feat/sync-fide-metadata-cli`
+
+1. [ ] Extend **`IPlayerMetadataSyncService`** (or add **`IFideMetadataSyncService`**) with `SyncFideMetadataAsync(fideListPath, …)`.
+2. [ ] **`Program.cs`:** `--sync-fide-metadata <path>` (and optional `--dry-run`).
+3. [ ] For each DB player: match → update FIDE columns; **do not** touch `WasWorldChampion`.
+4. [ ] **`PlayerMetadataSyncResult`** (or new result type): `PlayersChecked`, `PlayersUpdated`, `PlayersMatched`, `PlayersUnmatched`, `PlayersAmbiguous`.
+5. [ ] Keep existing **`--sync-player-metadata`** for world-champion catalog only.
+6. [ ] Update **`Migrations/README.md`**: run order after load — `--sync-fide-metadata` then `--sync-player-metadata` (order between the two is flexible; WC catalog does not depend on FIDE).
+7. [ ] Service tests with mocked reader/matcher/repository.
+
+**Acceptance:** running CLI against a test DB + small fixture file updates matched rows; idempotent second run.
+
+**Manual note:** maintainer may run this after large PGN parse completes — no need to run during parse.
+
+---
+
+### 15.4 API — expose metadata on player picker (PR 4)
+
+**Branch:** `feat/player-metadata-api`
+
+1. [ ] Extend **`PlayerOptionResponse`** / **`GetPlayers`**: `fideId`, `federation`, `sex`, `fideTitle`, `birthYear`, `wasWorldChampion` (already).
+2. [ ] Optional query params on **`GetPlayers`**: `wasWorldChampion`, `fideTitle`, `isTitled` — filter dropdown list only.
+3. [ ] **`wwwroot`**: show title/federation in player dropdown when present (minimal — no full filter UI yet).
+4. [ ] Controller tests.
+
+**Acceptance:** enriched players visible in UI after sync.
+
+---
+
+### 15.5 Filter infrastructure (PR 5)
+
+**Branch:** `feat/player-metadata-filter-model`
+
+1. [ ] **`PlayerMetadataFilter`**, **`PlayerMetadataPredicate`**, **`PlayerMetadataGameRole`**, **`PlayerMetadataCorpusRole`** in `Interfaces/Analytics/`.
+2. [ ] Add optional **`PlayerMetadataFilter`** to **`AnalyticsQuery`** and HTTP DTOs.
+3. [ ] **`PlayerMetadataSql`** (or static helper in `Repositories`) — `AppendGameFilter(filter, whiteAlias, blackAlias, subjectSide?)` returning parameterized SQL + DTO params.
+4. [ ] Unit tests for SQL fragment generation (known predicate → expected clause).
+5. [ ] **`MetricCatalog`** / DESIGN cross-link: document which metrics honour game vs corpus roles in v1.
+
+**Acceptance:** infrastructure only; no metric behaviour change until §15.6.
+
+---
+
+### 15.6 Filter rollout — games browser + pilot metrics (PR 6)
+
+**Branch:** `feat/player-metadata-filters-pilot`
+
+**Pilot scope (prove semantics before ~100 CTE migration):**
+
+1. [ ] **`GamePageFilters`** + **`GetGames`** SQL — `AnySide` / `White` / `Black` for `wasWorldChampion` and `fideTitle` / `isTitled`.
+2. [ ] **`GameCountByYear`** (or **`PlayerResultSummary`**) — same game-set filter via shared fragment.
+3. [ ] One **style metric** with **`SubjectOpponent`** pilot — e.g. `CaptureRate` + “opponent was world champion”.
+4. [ ] **`ICorpusBenchmarkCalculator`** path — **`CorpusPool`** predicate `wasWorldChampion: true` on one benchmark-enabled metric.
+5. [ ] **`wwwroot`**: metadata filter controls on Games tab + pilot metric section.
+6. [ ] Executor + SQL integration tests.
+
+**Acceptance:** documented examples in [EXAMPLE_ANALYSES.md](./EXAMPLE_ANALYSES.md) (e.g. “games involving a world champion by year”).
+
+---
+
+### 15.7 Filter rollout — remaining metrics (PR 7+)
+
+**Branch(es):** `feat/player-metadata-filters-metrics` (may split by metric category if diff too large)
+
+1. [ ] Apply shared **`PlayerMetadataSql`** to all **`FilteredGames` / `Appearances`** CTEs in **`SqlStatements.cs`** (mechanical pass; one PR if reviewable, else split corpus-wide vs style metrics).
+2. [ ] Verify **`includeCorpusBenchmark`** respects **`CorpusPool`** on all benchmark-enabled style metrics.
+3. [ ] Regression: existing metric tests without filter unchanged.
+
+---
+
+### 15.8 Optional follow-ups (not scheduled)
+
+| Slice | Content |
+|-------|---------|
+| Lichess FIDE search fallback | Network lookup for unmatched names after bulk sync |
+| `WasWomensWorldChampion` catalog | Same pattern as `WorldChampionCatalog` |
+| Wikidata SPARQL batch | Birth/death, aliases for pre-FIDE players |
+| `WhiteElo` / `BlackElo` on **`Game`** | When PGNs include tags; enables strength-at-game filters later |
+| Reign-period table | “Champion at time of game” |
+
+---
+
+### 15.9 Testing summary
+
+| Layer | Tests |
+|-------|--------|
+| FIDE reader | Parse fixture TXT; bad line handling |
+| Matcher | Exact, abbreviated, ambiguous, birth-year tie-break |
+| Sync service | Mock file + repo; idempotent update; WC flag preserved |
+| SQL fragment | Each predicate + role combination |
+| API / UI | GetPlayers fields; GetGames with metadata filter |
+| Metrics | Pilot + regression without filter |
+
+---
+
 ## 13. Risks and mitigations
 
 | Risk | Mitigation |
@@ -702,6 +852,8 @@ player (e.g. Petrosian) on the same filters.
 | Transaction size for huge games | Batch inserts inside per-game transaction or chunk by N plies (rare games > 500 plies). |
 | Unauthenticated metrics HTTP endpoint | **Accepted for local-only solo use** (see §12.1, §12.4). Before **deployment or network exposure**, add rate limits, auth, or strict network restriction and document the chosen approach. |
 | Misleading benchmark percentiles on tiny corpora | Require `benchmarkMinGames`; return `CorpusEligiblePlayerCount`; document corpus-local interpretation (DESIGN §12.8). |
+| Wrong FIDE match (homonyms) | Conservative matching (DESIGN §13.5); leave `FideId` NULL when ambiguous; report counts in sync result; optional manual fix later. |
+| Stale title/federation vs game year | Document snapshot semantics (DESIGN §13.8); defer time-varying metadata to §15.8. |
 
 ---
 
@@ -712,7 +864,8 @@ player (e.g. Petrosian) on the same filters.
 - Arbitrary SQL / raw table dumps from HTTP clients (keep **registered metrics + parameterized repository reads** only).
 - **Engine-based style metrics** (ACPL, sharpness/WDL, sound sacrifice classification) — deferred;
   see [STYLE_METRICS.md](./STYLE_METRICS.md) and PLAN §12.6 Phase 9.
+- **Player metadata v2** — historical ratings, reign periods, Wikidata bulk (PLAN §15.8).
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete. **Active backlog:** §12.7 corpus benchmarks, then §12.6 Phase 3; §12.5 player material comparison is complete.*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete. **Active backlog:** [§15](./PLAN.md) player metadata Stage 5 (slice 15.1 first); then §12.6 `EcoConcentration` when Stage 5 slices 1–3 are done or deprioritised.*
