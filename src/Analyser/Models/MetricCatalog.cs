@@ -109,7 +109,9 @@ internal static class MetricCatalog
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "Games where the player never castled are excluded from the average; see GamesWithCastling."
+                "Games where the player never castled are excluded from the average; see GamesWithCastling.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "AverageMaterialVolatility" =>
             [

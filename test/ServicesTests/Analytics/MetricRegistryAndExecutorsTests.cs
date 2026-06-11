@@ -36,6 +36,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<PlayerMaterialAverageRow>());
         repo.Setup(r => r.GetAverageCastlingPlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AverageCastlingPlyRow>());
+        repo.Setup(r => r.GetPerPlayerAverageCastlingPlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<AverageMaterialVolatilityRow>());
         repo.Setup(r => r.GetPerPlayerAverageMaterialVolatilityAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
@@ -63,7 +65,7 @@ public class MetricRegistryAndExecutorsTests
             new GameCountByPlayerExecutor(repo.Object),
             new PlayerResultSummaryExecutor(repo.Object),
             new AverageMaterialByPlayerAtMoveExecutor(repo.Object),
-            new AverageCastlingPlyExecutor(repo.Object),
+            new AverageCastlingPlyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
             new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
@@ -601,7 +603,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new AverageCastlingPlyExecutor(repo.Object);
+        var sut = new AverageCastlingPlyExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Petrosian",
@@ -616,10 +618,55 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
+    public async Task AverageCastlingPlyExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageCastlingPlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AverageCastlingPlyRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Petrosian",
+                    PlayerForenames = "Tigran",
+                    GamesWithCastling = 100,
+                    AverageCastlingPly = 12.0
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerAverageCastlingPlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 100, MetricValue = 12.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 80, MetricValue = 8.0 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 90, MetricValue = 10.0 }
+            });
+
+        var sut = new AverageCastlingPlyExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GamesWithCastling", "AverageCastlingPly",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(12.0, result.Rows[0][2]);
+        Assert.Equal(9.0, result.Rows[0][3]);
+        Assert.Equal(3.0, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
+    }
+
+    [Fact]
     public async Task AverageCastlingPlyExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new AverageCastlingPlyExecutor(repo.Object);
+        var sut = new AverageCastlingPlyExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
@@ -640,7 +687,7 @@ public class MetricRegistryAndExecutorsTests
             MaxGameYear = 1970,
             Eco = "B90"
         };
-        var sut = new AverageCastlingPlyExecutor(repo.Object);
+        var sut = new AverageCastlingPlyExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
