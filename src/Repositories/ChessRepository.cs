@@ -219,6 +219,13 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Mean per-game share of moves landing on central squares d4, d5, e4, e5.
+        /// </summary>
+        Task<IReadOnlyList<CentreMoveRateRow>> GetCentreMoveRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1160,6 +1167,32 @@ namespace Repositories
                         PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
                         Eco = NormalizeNonEmpty(query.Eco),
                         QueenTradeMaxPly = queenTradeMaxPly
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<CentreMoveRateRow>> GetCentreMoveRateAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<CentreMoveRateRow>(
+                new CommandDefinition(
+                    SqlStatements.GetCentreMoveRate,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = query.MinPlyIndex,
+                        MaxPlyIndex = query.MaxPlyIndex
                     },
                     cancellationToken: cancellationToken))).ToList();
 

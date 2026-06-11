@@ -58,6 +58,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<QueenTradeRateRow>());
         repo.Setup(r => r.GetPerPlayerQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
+        repo.Setup(r => r.GetCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CentreMoveRateRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -74,7 +76,8 @@ public class MetricRegistryAndExecutorsTests
             new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
             new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator)
+            new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new CentreMoveRateExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -91,7 +94,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("MinorPieceComposition", sut.MetricKeys);
         Assert.Contains("CaptureRate", sut.MetricKeys);
         Assert.Contains("QueenTradeRate", sut.MetricKeys);
-        Assert.Equal(14, sut.MetricKeys.Count);
+        Assert.Contains("CentreMoveRate", sut.MetricKeys);
+        Assert.Equal(15, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -1246,6 +1250,68 @@ public class MetricRegistryAndExecutorsTests
         repo.Verify(r => r.GetQueenTradeRateAsync(
             It.IsAny<AnalyticsQuery>(),
             30,
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task CentreMoveRateExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CentreMoveRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Kasparov",
+                    PlayerForenames = "Garry",
+                    GameCount = 10,
+                    AverageCentreMoveRate = 0.22
+                }
+            });
+
+        var sut = new CentreMoveRateExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry"
+        });
+
+        Assert.Equal(["Player", "GameCount", "AverageCentreMoveRate"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Kasparov, Garry", result.Rows[0][0]);
+        Assert.Equal(10, result.Rows[0][1]);
+        Assert.Equal(0.22, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task CentreMoveRateExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new CentreMoveRateExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CentreMoveRateExecutor_PassesPlyWindowToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<CentreMoveRateRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            MinPlyIndex = 5,
+            MaxPlyIndex = 40
+        };
+        var sut = new CentreMoveRateExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetCentreMoveRateAsync(
+            It.Is<AnalyticsQuery>(q => q.MinPlyIndex == 5 && q.MaxPlyIndex == 40),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }

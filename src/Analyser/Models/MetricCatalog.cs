@@ -40,6 +40,8 @@ internal static class MetricCatalog
                 "Mean per-game share of the filtered player's moves that are captures.",
             "QueenTradeRate" =>
                 "Share of games where queens are no longer both on the board on or before a ply threshold (default queenTradeMaxPly 40).",
+            "CentreMoveRate" =>
+                "Mean per-game share of the filtered player's moves landing on central squares d4, d5, e4, e5.",
             _ => null
         };
     }
@@ -158,6 +160,14 @@ internal static class MetricCatalog
                 "Optional: queenTradeMaxPly (defaults to 40 when omitted).",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
+            ],
+            "CentreMoveRate" =>
+            [
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
+                "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
+                "Centre squares are d4, d5, e4, e5 (ToSquare 27, 28, 35, 36)."
             ],
             _ => []
         };

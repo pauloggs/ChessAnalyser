@@ -497,7 +497,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 4 — spatial aggression
 
-7. [ ] **`CentreMoveRate`**
+7. [x] **`CentreMoveRate`**
    - **Question:** How often does a player play to central squares?
    - **Data:** `GameMove` — `ToSquare` in centre set **{d4, d5, e4, e5}** (square indices 27, 28,
      35, 36 with a1 = 0).
