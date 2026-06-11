@@ -6,7 +6,7 @@ namespace Interfaces.DTO;
 public interface IPlayerMetadataSyncService
 {
     /// <summary>
-    /// Recomputes <see cref="Player.WasWorldChampion"/> for every player from the in-app catalog.
+    /// Recomputes <see cref="Player.WasWorldChampion"/> for every player from <c>Ref.WorldChampion</c>.
     /// </summary>
     Task<PlayerMetadataSyncResult> SyncWorldChampionFlagsAsync(CancellationToken cancellationToken = default);
 }

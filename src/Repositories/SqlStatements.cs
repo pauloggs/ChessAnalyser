@@ -49,6 +49,13 @@ namespace Repositories
             WHERE Id = @Id;
             """;
 
+        public static string GetWorldChampions =>
+            """
+            SELECT Id, Surname, Forenames, ChampionOrder, ReignStartYear, ReignEndYear
+            FROM Ref.WorldChampion
+            ORDER BY ChampionOrder, Surname, Forenames;
+            """;
+
         public static string InsertGame =>
         """
         IF (NOT EXISTS (SELECT TOP 1 Id FROM dbo.Game WHERE GameId = @GameId))

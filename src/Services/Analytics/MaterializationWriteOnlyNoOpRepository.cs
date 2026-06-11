@@ -33,6 +33,9 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
     public Task UpdatePlayerFideMetadataAsync(int playerId, PlayerFideMetadata metadata, CancellationToken cancellationToken = default) =>
         Throw();
 
+    public Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<WorldChampionRef>>();
+
     public Task<int> InsertGame(Game game) => Throw<int>();
 
     public Task InsertBoardPositions(Game game, int gameId) => Throw();

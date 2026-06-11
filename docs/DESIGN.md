@@ -296,7 +296,7 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 
 **Context (2026):** Many PGN collections carry **game** headers (event, date, ECO, result) and **player names** only. `[WhiteElo]`, `[WhiteTitle]`, and similar tags are often absent. Player attributes for filtering and cohort analysis must therefore come from **external reference data**, not from the PGN alone.
 
-**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`, `WorldChampionCatalog`, `--sync-player-metadata`) is the **first curated flag**. §13 generalises enrichment (FIDE bulk sync) and defines **filter semantics** for analytics.
+**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`) is set from **`Ref.WorldChampion`** (migration `013`) via `IWorldChampionMatcher` on insert and `--sync-player-metadata` for backfill. §13 generalises enrichment (FIDE bulk sync) and defines **filter semantics** for analytics.
 
 ### 13.1 Goals
 
@@ -336,9 +336,9 @@ Add to **`dbo.Player`** (migration after `011`):
 
 ### 13.4 Enrichment sources (priority order)
 
-1. **Curated C# catalogs** (zero network, highest precision)  
-   - `WorldChampionCatalog` — classical world champions (existing).  
-   - Future: women's world champion, pre-FIDE notables — same pattern as `011`.
+1. **Curated reference tables** (zero network at runtime, highest precision)  
+   - `Ref.WorldChampion` — classical world champions (migration `013`, seeded from public WCC records).  
+   - Future: women's world champion, pre-FIDE notables — same `Ref` schema pattern.
 
 2. **FIDE official rating list (bulk, offline)**  
    - User supplies a monthly **TXT or XML** file from [ratings.fide.com/download_lists.phtml](https://ratings.fide.com/download_lists.phtml) (or a pinned copy under `data/fide/` documented in repo).  
@@ -413,7 +413,7 @@ Express as a small list of conditions (extensible):
 ```
 PGN ingest → Player (name) + Game (dims)
        ↓
---sync-player-metadata  → WasWorldChampion (catalog)
+--sync-player-metadata  → WasWorldChampion (Ref.WorldChampion via IWorldChampionMatcher)
 --sync-fide-metadata    → FideId, Federation, Sex, FideTitle, BirthYear (FIDE file)
        ↓
 AnalyticsQuery + PlayerMetadataFilter

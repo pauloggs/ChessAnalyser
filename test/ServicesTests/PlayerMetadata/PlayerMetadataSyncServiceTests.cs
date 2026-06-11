@@ -2,6 +2,7 @@ using Interfaces.DTO;
 using Moq;
 using Repositories;
 using Services;
+using Services.PlayerMetadata;
 
 namespace ServicesTests.PlayerMetadata;
 
@@ -18,7 +19,13 @@ public class PlayerMetadataSyncServiceTests
             new() { Id = 3, Surname = "Morphy", Forenames = "Paul", WasWorldChampion = false }
         });
 
-        var sut = new PlayerMetadataSyncService(repo.Object);
+        var matcher = new Mock<IWorldChampionMatcher>();
+        matcher.Setup(m => m.EnsureLoadedAsync(It.IsAny<CancellationToken>())).Returns(Task.CompletedTask);
+        matcher.Setup(m => m.IsWorldChampion("Kasparov", "Garry")).Returns(true);
+        matcher.Setup(m => m.IsWorldChampion("Tal", "Mikhail")).Returns(true);
+        matcher.Setup(m => m.IsWorldChampion("Morphy", "Paul")).Returns(false);
+
+        var sut = new PlayerMetadataSyncService(repo.Object, matcher.Object);
         var result = await sut.SyncWorldChampionFlagsAsync();
 
         Assert.Equal(3, result.PlayersChecked);

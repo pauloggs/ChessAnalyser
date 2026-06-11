@@ -32,4 +32,11 @@ public class SqlStatementsPlayerTests
         Assert.Contains("BirthYear = @BirthYear", sql, StringComparison.Ordinal);
         Assert.Contains("WHERE Id = @Id", sql, StringComparison.Ordinal);
     }
+
+    [Fact]
+    public void GetWorldChampions_SelectsFromRefSchema()
+    {
+        Assert.Contains("Ref.WorldChampion", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
+        Assert.Contains("ChampionOrder", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
+    }
 }

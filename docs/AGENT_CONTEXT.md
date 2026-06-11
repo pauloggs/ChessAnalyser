@@ -27,7 +27,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics HTTP API + local **`wwwroot`** UI).
 - **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
 - **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
-- **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `WorldChampionCatalog`, `--sync-player-metadata` (PR #70).
+- **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `Ref.WorldChampion` reference table, `--sync-player-metadata` (migrations `011`/`013`).
 - **Done (player metadata v1 schema):** FIDE columns on `dbo.Player` + `UpdatePlayerFideMetadataAsync` (PLAN §15.1, branch `feat/player-fide-columns`).
 - **Next (player metadata):** PLAN §15.2 FIDE list reader + matcher.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
