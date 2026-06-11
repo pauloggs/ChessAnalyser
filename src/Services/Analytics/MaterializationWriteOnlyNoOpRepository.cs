@@ -121,6 +121,10 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<CaptureRateRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerCaptureRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<QueenTradeRateRow>> GetQueenTradeRateAsync(
         AnalyticsQuery query,
         int queenTradeMaxPly,

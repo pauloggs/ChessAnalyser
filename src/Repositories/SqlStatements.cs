@@ -951,6 +951,75 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean capture rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerCaptureRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PlayerMoves AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       SUM(CASE WHEN m.CapturedPiece IS NOT NULL THEN 1 ELSE 0 END) AS CaptureCount,
+                       COUNT(*) AS MoveCount
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE m.MovingSide = a.PlayerSide
+                  AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+                HAVING COUNT(*) > 0
+            ),
+            PerGame AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       CAST(CaptureCount AS FLOAT) / MoveCount AS CaptureRate
+                FROM PlayerMoves
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(CaptureRate) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Proportion of games where queens are no longer both on the board on or before a ply threshold.
         /// </summary>
         public static string GetQueenTradeRate =>
