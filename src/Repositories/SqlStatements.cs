@@ -7,13 +7,22 @@ namespace Repositories
 		}
 
         public static string GetPlayers =>
-            "SELECT Id, Surname, Forenames, WasWorldChampion FROM dbo.Player;";
+            """
+            SELECT Id, Surname, Forenames, WasWorldChampion,
+                   FideId, Federation, Sex, FideTitle, BirthYear
+            FROM dbo.Player;
+            """;
 
         public static string GetPlayerIdBySurnameAndForenames =>
             "SELECT Id FROM dbo.Player WHERE Surname = @Surname AND Forenames = @Forenames;";
 
         public static string GetPlayersBySurname =>
-            "SELECT Id, Surname, Forenames, WasWorldChampion FROM dbo.Player WHERE LOWER(Surname) = LOWER(@Surname);";
+            """
+            SELECT Id, Surname, Forenames, WasWorldChampion,
+                   FideId, Federation, Sex, FideTitle, BirthYear
+            FROM dbo.Player
+            WHERE LOWER(Surname) = LOWER(@Surname);
+            """;
 
         public static string InsertPlayer =>
             """
@@ -26,6 +35,17 @@ namespace Repositories
             """
             UPDATE dbo.Player
             SET WasWorldChampion = @WasWorldChampion
+            WHERE Id = @Id;
+            """;
+
+        public static string UpdatePlayerFideMetadata =>
+            """
+            UPDATE dbo.Player
+            SET FideId = @FideId,
+                Federation = @Federation,
+                Sex = @Sex,
+                FideTitle = @FideTitle,
+                BirthYear = @BirthYear
             WHERE Id = @Id;
             """;
 

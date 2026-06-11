@@ -38,6 +38,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 | `009_CreateDeleteGameStoredProcedure.sql` | Creates `dbo.DeleteGameById` to delete a game and dependent rows in one explicit transaction (instead of FK cascades on analytics tables). |
 | `010_RemoveCascadeDeletesFromGameDependencies.sql` | Enforces strict no-cascade FKs from `BoardPosition`, `GameMove`, and `GamePositionSummary` to `Game` (drops/recreates FK if cascade is present). |
 | `011_AddPlayerWasWorldChampionColumn.sql` | Adds `WasWorldChampion` bit on `dbo.Player` (curated classical world-champion metadata). |
+| `012_AddPlayerFideMetadataColumns.sql` | Adds nullable FIDE metadata on `dbo.Player` (`FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear`) and unique filtered index on `FideId`. |
 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 

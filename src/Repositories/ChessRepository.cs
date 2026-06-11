@@ -39,6 +39,9 @@ namespace Repositories
         /// <summary>Updates the world-champion metadata flag for a player row.</summary>
         Task UpdatePlayerWasWorldChampionAsync(int playerId, bool wasWorldChampion, CancellationToken cancellationToken = default);
 
+        /// <summary>Updates FIDE-sourced metadata columns for a player row (DESIGN §13.3).</summary>
+        Task UpdatePlayerFideMetadataAsync(int playerId, PlayerFideMetadata metadata, CancellationToken cancellationToken = default);
+
         Task<int> InsertGame(Game game);
 
         /// <summary>
@@ -539,6 +542,29 @@ namespace Repositories
                 new CommandDefinition(
                     SqlStatements.UpdatePlayerWasWorldChampion,
                     new { Id = playerId, WasWorldChampion = wasWorldChampion },
+                    cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task UpdatePlayerFideMetadataAsync(
+            int playerId,
+            PlayerFideMetadata metadata,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(metadata);
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    SqlStatements.UpdatePlayerFideMetadata,
+                    new
+                    {
+                        Id = playerId,
+                        metadata.FideId,
+                        metadata.Federation,
+                        metadata.Sex,
+                        metadata.FideTitle,
+                        metadata.BirthYear
+                    },
                     cancellationToken: cancellationToken));
         }
 

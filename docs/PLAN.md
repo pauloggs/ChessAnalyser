@@ -711,17 +711,17 @@ player (e.g. Petrosian) on the same filters.
 
 **Branch:** `feat/player-fide-columns`
 
-1. [ ] Migration **`012_AddPlayerFideMetadataColumns.sql`** (idempotent `ALTER`):
+1. [x] Migration **`012_AddPlayerFideMetadataColumns.sql`** (idempotent `ALTER`):
    - `FideId INT NULL`
    - `Federation CHAR(3) NULL`
    - `Sex CHAR(1) NULL`
    - `FideTitle NVARCHAR(8) NULL`
    - `BirthYear SMALLINT NULL`
    - Unique filtered index: `UX_Player_FideId` ON `(FideId)` WHERE `FideId IS NOT NULL`
-2. [ ] Update **`Migrations/History/current/tables/dbo.Player.sql`** exporter snapshot.
-3. [ ] Extend **`Interfaces/DTO/Player.cs`**, **`SqlStatements`** (select/insert/update player).
-4. [ ] Repository methods: `UpdatePlayerFideMetadataAsync` (or single update DTO).
-5. [ ] Unit tests: DTO mapping / SQL parameter round-trip (mock repo or integration if pattern exists).
+2. [x] Update **`Migrations/History/current/tables/dbo.Player.sql`** exporter snapshot.
+3. [x] Extend **`Interfaces/DTO/Player.cs`**, **`SqlStatements`** (select/insert/update player).
+4. [x] Repository methods: `UpdatePlayerFideMetadataAsync` (or single update DTO).
+5. [x] Unit tests: DTO mapping / SQL parameter round-trip (mock repo or integration if pattern exists).
 
 **Acceptance:** `dotnet test` passes; existing ETL unchanged; new columns NULL for all players.
 
