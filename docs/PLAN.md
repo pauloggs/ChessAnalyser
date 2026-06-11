@@ -746,21 +746,26 @@ player (e.g. Petrosian) on the same filters.
 
 ---
 
-### 15.3 Sync CLI — `--sync-fide-metadata` (PR 3)
+### 15.3 Sync CLI — `--import-fide-catalog` (PR 3)
 
-**Branch:** `feat/sync-fide-metadata-cli`
+**Branch:** `feat/ref-fide-player-catalog`
 
-1. [x] Extend **`IPlayerMetadataSyncService`** (or add **`IFideMetadataSyncService`**) with `SyncFideMetadataAsync(fideListPath, …)`.
-2. [x] **`Program.cs`:** `--sync-fide-metadata <path>` (and optional `--dry-run`).
-3. [x] For each DB player: match → update FIDE columns; **do not** touch `WasWorldChampion`.
-4. [x] **`FideMetadataSyncResult`**: `PlayersChecked`, `PlayersUpdated`, `PlayersMatched`, `PlayersUnmatched`, `PlayersAmbiguous`.
-5. [x] Keep existing **`--sync-player-metadata`** for world-champion catalog only.
-6. [x] Update **`Migrations/README.md`**: run order after load — `--sync-fide-metadata` then `--sync-player-metadata` (order between the two is flexible; WC catalog does not depend on FIDE).
-7. [x] Service tests with mocked reader/matcher/repository.
+1. [x] Migration **`014_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table.
+2. [x] **`--import-fide-catalog <path>`** — load official FIDE TXT into `Ref.FidePlayer`, then backfill `dbo.Player`.
+3. [x] **`IPlayerFideMetadataEnricher`** — backfill all players + enrich on ETL insert (`PlayerResolver`).
+4. [x] **`--sync-player-metadata`** — world-champion flags + FIDE backfill from `Ref.FidePlayer` (no file path).
+5. [x] **`FideMetadataSyncResult`** includes `PlayersFideIdConflict` when duplicate corpus rows match the same FIDE ID.
+6. [x] Service tests with mocked reader/matcher/repository.
 
-**Acceptance:** running CLI against a test DB + small fixture file updates matched rows; idempotent second run.
+**Acceptance:** import populates Ref catalog and backfills players; new ETL players auto-enriched; idempotent re-run.
 
-**Manual note:** maintainer may run this after large PGN parse completes — no need to run during parse.
+**Note:** `--sync-fide-metadata` remains as alias for `--import-fide-catalog`.
+
+---
+
+### 15.3 (legacy) Direct file → Player sync
+
+Superseded by §15.3 above (`Ref.FidePlayer` catalog). Original slice merged the reader/matcher/backfill building blocks.
 
 ---
 

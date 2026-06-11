@@ -66,6 +66,8 @@ builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
 builder.Services.AddScoped<IWorldChampionMatcher, WorldChampionMatcher>();
 builder.Services.AddSingleton<IFideRatingListReader, FideRatingListReader>();
 builder.Services.AddScoped<IFidePlayerMatcher, FidePlayerMatcher>();
+builder.Services.AddScoped<IPlayerFideMetadataEnricher, PlayerFideMetadataEnricher>();
+builder.Services.AddScoped<IFideCatalogImportService, FideCatalogImportService>();
 builder.Services.AddScoped<IPlayerMetadataSyncService, PlayerMetadataSyncService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
@@ -158,15 +160,23 @@ if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison
 
 if (args.Any(a => string.Equals(a, "--sync-player-metadata", StringComparison.OrdinalIgnoreCase)))
 {
+    var dryRun = args.Any(a => string.Equals(a, "--dry-run", StringComparison.OrdinalIgnoreCase));
     await using var scope = app.Services.CreateAsyncScope();
     var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
-    var outcome = await sync.SyncWorldChampionFlagsAsync();
+    var wcOutcome = await sync.SyncWorldChampionFlagsAsync();
+    var fideOutcome = await sync.BackfillFideMetadataAsync(dryRun);
     Console.WriteLine(
-        $"Player metadata sync: checked={outcome.PlayersChecked}, updated={outcome.PlayersUpdated}.");
+        $"World champion sync: checked={wcOutcome.PlayersChecked}, updated={wcOutcome.PlayersUpdated}.");
+    Console.WriteLine(
+        $"FIDE metadata backfill{(fideOutcome.DryRun ? " (dry run)" : "")} from Ref.FidePlayer: " +
+        $"checked={fideOutcome.PlayersChecked}, matched={fideOutcome.PlayersMatched}, " +
+        $"updated={fideOutcome.PlayersUpdated}, unmatched={fideOutcome.PlayersUnmatched}, ambiguous={fideOutcome.PlayersAmbiguous}, " +
+        $"fideIdConflict={fideOutcome.PlayersFideIdConflict}.");
     return;
 }
 
-if (args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase)))
+if (args.Any(a => string.Equals(a, "--import-fide-catalog", StringComparison.OrdinalIgnoreCase))
+    || args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase)))
 {
     string? fidePath = null;
     var dryRun = false;
@@ -174,7 +184,8 @@ if (args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.Ordi
     {
         if (string.Equals(args[i], "--dry-run", StringComparison.OrdinalIgnoreCase))
             dryRun = true;
-        if (string.Equals(args[i], "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase)
+        if ((string.Equals(args[i], "--import-fide-catalog", StringComparison.OrdinalIgnoreCase)
+             || string.Equals(args[i], "--sync-fide-metadata", StringComparison.OrdinalIgnoreCase))
             && i + 1 < args.Length
             && !args[i + 1].StartsWith("--", StringComparison.Ordinal))
             fidePath = args[i + 1];
@@ -182,20 +193,23 @@ if (args.Any(a => string.Equals(a, "--sync-fide-metadata", StringComparison.Ordi
 
     if (string.IsNullOrWhiteSpace(fidePath))
     {
-        Console.Error.WriteLine("Usage: --sync-fide-metadata <path> [--dry-run]");
+        Console.Error.WriteLine("Usage: --import-fide-catalog <path> [--dry-run]");
         Environment.ExitCode = 1;
         return;
     }
 
     await using var scope = app.Services.CreateAsyncScope();
-    var sync = scope.ServiceProvider.GetRequiredService<IPlayerMetadataSyncService>();
+    var import = scope.ServiceProvider.GetRequiredService<IFideCatalogImportService>();
     var resolvedPath = CliFilePathResolver.Resolve(fidePath);
-    var outcome = await sync.SyncFideMetadataAsync(resolvedPath, dryRun);
+    var outcome = await import.ImportAndBackfillAsync(resolvedPath, dryRun);
+    var backfill = outcome.Backfill;
     Console.WriteLine(
-        $"FIDE metadata sync{(outcome.DryRun ? " (dry run)" : "")}: " +
-        $"checked={outcome.PlayersChecked}, matched={outcome.PlayersMatched}, " +
-        $"updated={outcome.PlayersUpdated}, unmatched={outcome.PlayersUnmatched}, ambiguous={outcome.PlayersAmbiguous}, " +
-        $"fideIdConflict={outcome.PlayersFideIdConflict}.");
+        $"FIDE catalog import{(outcome.DryRun ? " (dry run)" : "")}: catalogRows={outcome.CatalogRowsImported}.");
+    Console.WriteLine(
+        $"Player backfill{(backfill.DryRun ? " (dry run)" : "")}: " +
+        $"checked={backfill.PlayersChecked}, matched={backfill.PlayersMatched}, " +
+        $"updated={backfill.PlayersUpdated}, unmatched={backfill.PlayersUnmatched}, ambiguous={backfill.PlayersAmbiguous}, " +
+        $"fideIdConflict={backfill.PlayersFideIdConflict}.");
     return;
 }
 

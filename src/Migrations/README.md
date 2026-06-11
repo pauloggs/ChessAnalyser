@@ -40,6 +40,7 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 | `011_AddPlayerWasWorldChampionColumn.sql` | Adds `WasWorldChampion` bit on `dbo.Player` (curated classical world-champion metadata). |
 | `012_AddPlayerFideMetadataColumns.sql` | Adds nullable FIDE metadata on `dbo.Player` (`FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear`) and unique filtered index on `FideId`. |
 | `013_CreateRefWorldChampion.sql` | Creates schema `Ref`, table `Ref.WorldChampion` (classical champions), and seeds 18 champion name rows. |
+| `014_CreateRefFidePlayer.sql` | Creates `Ref.FidePlayer` (FIDE catalog: FideId, name, federation, sex, title, birth year). Populated by `--import-fide-catalog`. |
 
 `BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
 
@@ -51,10 +52,10 @@ Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. 
 
 - **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
 - **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
-- **Player metadata:** after migrations through `013`, run (order between the two sync commands is flexible):
-  - `dotnet run --project src/Analyser -- --sync-fide-metadata <path-to-fide-list.txt>` — optional `--dry-run` to preview matches without writing. Updates `FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear` from an official FIDE rating list TXT file (see `data/fide/README.md`).
-  - `dotnet run --project src/Analyser -- --sync-player-metadata` — backfills `WasWorldChampion` from `Ref.WorldChampion`.
-  New players pick up the world-champion flag on insert during ETL.
+- **Player metadata:** after migrations through `014`:
+  - **One-time / periodic:** `dotnet run --project src/Analyser -- --import-fide-catalog <path-to-fide-list.txt>` — loads `Ref.FidePlayer` from an official FIDE TXT file and backfills existing `dbo.Player` rows (see `data/fide/README.md`). Optional `--dry-run`.
+  - **After import or when catalog already loaded:** `dotnet run --project src/Analyser -- --sync-player-metadata` — refreshes `WasWorldChampion` from `Ref.WorldChampion` and FIDE columns from `Ref.FidePlayer`.
+  - **During ETL:** new players get world-champion flag and FIDE metadata automatically when `Ref.FidePlayer` is populated.
 
 ## Schema history snapshot
 

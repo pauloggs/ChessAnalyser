@@ -45,6 +45,15 @@ namespace Repositories
         /// <summary>Returns classical world-champion name rows from <c>Ref.WorldChampion</c>.</summary>
         Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default);
 
+        /// <summary>Returns all rows from <c>Ref.FidePlayer</c> for name matching.</summary>
+        Task<IReadOnlyList<FidePlayerRecord>> GetFidePlayers(CancellationToken cancellationToken = default);
+
+        /// <summary>Replaces the FIDE catalog with rows parsed from an official rating list.</summary>
+        Task ReplaceFideCatalogAsync(IReadOnlyList<FidePlayerRecord> records, CancellationToken cancellationToken = default);
+
+        /// <summary>Returns a corpus player Id that already owns the given FIDE ID, if any.</summary>
+        Task<int?> GetPlayerIdByFideIdAsync(int fideId, CancellationToken cancellationToken = default);
+
         /// <summary>First and last game year for a player in the corpus (nullable when no dated games).</summary>
         Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(int playerId, CancellationToken cancellationToken = default);
 
@@ -582,6 +591,60 @@ namespace Repositories
                 new CommandDefinition(SqlStatements.GetWorldChampions, cancellationToken: cancellationToken)))
                 .ToList();
             return list;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<FidePlayerRecord>> GetFidePlayers(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var list = (await connection.QueryAsync<FidePlayerRecord>(
+                new CommandDefinition(SqlStatements.GetFidePlayers, cancellationToken: cancellationToken)))
+                .ToList();
+            return list;
+        }
+
+        /// <inheritdoc />
+        public async Task ReplaceFideCatalogAsync(
+            IReadOnlyList<FidePlayerRecord> records,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(records);
+            using var connection = GetOpenConnection();
+            using var transaction = connection.BeginTransaction();
+            try
+            {
+                await connection.ExecuteAsync(
+                    new CommandDefinition(SqlStatements.DeleteFidePlayers, transaction: transaction, cancellationToken: cancellationToken))
+                    .ConfigureAwait(false);
+
+                const int batchSize = 500;
+                for (var i = 0; i < records.Count; i += batchSize)
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    var batch = records.Skip(i).Take(batchSize).ToList();
+                    await connection.ExecuteAsync(
+                        new CommandDefinition(SqlStatements.InsertFidePlayer, batch, transaction: transaction, cancellationToken: cancellationToken))
+                        .ConfigureAwait(false);
+                }
+
+                transaction.Commit();
+            }
+            catch
+            {
+                transaction.Rollback();
+                throw;
+            }
+        }
+
+        /// <inheritdoc />
+        public async Task<int?> GetPlayerIdByFideIdAsync(int fideId, CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.QuerySingleOrDefaultAsync<int?>(
+                new CommandDefinition(
+                    SqlStatements.GetPlayerIdByFideId,
+                    new { FideId = fideId },
+                    cancellationToken: cancellationToken));
         }
 
         /// <inheritdoc />

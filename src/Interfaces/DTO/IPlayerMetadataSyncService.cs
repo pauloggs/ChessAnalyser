@@ -1,7 +1,7 @@
 namespace Interfaces.DTO;
 
 /// <summary>
-/// Applies curated metadata (world champion, etc.) to persisted player rows.
+/// Applies curated metadata (world champion, FIDE catalog, etc.) to persisted player rows.
 /// </summary>
 public interface IPlayerMetadataSyncService
 {
@@ -11,11 +11,10 @@ public interface IPlayerMetadataSyncService
     Task<PlayerMetadataSyncResult> SyncWorldChampionFlagsAsync(CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Matches corpus players against a FIDE rating list file and updates FIDE metadata columns.
+    /// Matches corpus players against <c>Ref.FidePlayer</c> and updates FIDE metadata columns.
     /// Does not modify <see cref="Player.WasWorldChampion"/>.
     /// </summary>
-    Task<FideMetadataSyncResult> SyncFideMetadataAsync(
-        string fideListPath,
+    Task<FideMetadataSyncResult> BackfillFideMetadataAsync(
         bool dryRun = false,
         CancellationToken cancellationToken = default);
 }

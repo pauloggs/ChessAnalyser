@@ -9,9 +9,31 @@ ChessAnalyser does **not** commit official FIDE rating list downloads. Obtain a 
 3. Save the extracted `.txt` file here, for example:
    - `data/fide/players_list_foa.txt`
 
-The file is **not** in git (`data/fide/*` is gitignored). Until you download and save it, sync will fail with `FileNotFoundException`.
+The file is **not** in git (`data/fide/*` is gitignored). Until you download and save it, import will fail with `FileNotFoundException`.
 
 Paths like `data/fide/players_list_foa.txt` are resolved from the **repo root** when you run `dotnet run --project src/Analyser` from the repo root. Absolute paths also work.
+
+## Import into Ref.FidePlayer
+
+The rating list is loaded into **`Ref.FidePlayer`** (migration `014`), then corpus players are backfilled automatically:
+
+```powershell
+dotnet run --project src/Analyser -- --import-fide-catalog data/fide/players_list_foa.txt
+```
+
+Optional `--dry-run` previews matches without writing.
+
+Re-run when you download a newer monthly list — import replaces the catalog and backfills changed rows.
+
+## During PGN load
+
+After the catalog is imported once, **new players** created during ETL receive FIDE metadata automatically (when a confident name match exists in `Ref.FidePlayer`).
+
+To refresh all existing players without re-importing the file:
+
+```powershell
+dotnet run --project src/Analyser -- --sync-player-metadata
+```
 
 ## Format
 
@@ -25,14 +47,6 @@ FIDE publishes a **fixed-width** text file. The reader (`FideRatingListReader`) 
 | Sex | `M` or `F` |
 | Title | `GM`, `IM`, etc. in the title region |
 | Birth year | Last 4-digit year token on the line (before optional inactive flag) |
-
-## Usage (after PLAN §15.3 lands)
-
-```powershell
-dotnet run --project src/Analyser -- --sync-fide-metadata data/fide/players_list_foa.txt
-```
-
-Until the sync CLI exists, the reader and matcher are covered by unit tests only.
 
 ## Licence
 

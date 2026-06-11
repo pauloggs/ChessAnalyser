@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Repositories;
 using Services.Helpers;
 
 namespace Services.PlayerMetadata;
@@ -6,10 +7,48 @@ namespace Services.PlayerMetadata;
 /// <inheritdoc />
 public sealed class FidePlayerMatcher : IFidePlayerMatcher
 {
+    private readonly IChessRepository? _repository;
     private IReadOnlyList<FidePlayerRecord> _records = Array.Empty<FidePlayerRecord>();
     private Dictionary<string, List<FidePlayerRecord>> _bySurname = new(StringComparer.OrdinalIgnoreCase);
+    private bool _loaded;
+
+    public FidePlayerMatcher(IChessRepository repository)
+    {
+        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
+    }
+
+    /// <summary>Parameterless constructor for unit tests that call <see cref="SetRecords"/> directly.</summary>
+    public FidePlayerMatcher()
+    {
+    }
 
     /// <inheritdoc />
+    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    {
+        if (_loaded || _repository == null)
+            return;
+
+        var records = await _repository.GetFidePlayers(cancellationToken).ConfigureAwait(false);
+        SetRecords(records);
+        _loaded = true;
+    }
+
+    /// <inheritdoc />
+    public void InvalidateCache()
+    {
+        _loaded = false;
+        _records = Array.Empty<FidePlayerRecord>();
+        _bySurname = new Dictionary<string, List<FidePlayerRecord>>(StringComparer.OrdinalIgnoreCase);
+    }
+
+    /// <inheritdoc />
+    public void LoadCatalogSnapshot(IReadOnlyList<FidePlayerRecord> records)
+    {
+        SetRecords(records);
+        _loaded = true;
+    }
+
+    /// <summary>Indexes FIDE rows for matching. Used by tests and after loading from <c>Ref.FidePlayer</c>.</summary>
     public void SetRecords(IReadOnlyList<FidePlayerRecord> records)
     {
         _records = records ?? throw new ArgumentNullException(nameof(records));

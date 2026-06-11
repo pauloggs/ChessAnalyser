@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (PLAN §15.3 — `--sync-fide-metadata` CLI).
+**Last updated:** 2026-06-11 (PLAN §15.3 — `Ref.FidePlayer` catalog + auto-enrichment).
 
 ---
 
@@ -30,7 +30,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `Ref.WorldChampion` reference table, `--sync-player-metadata` (migrations `011`/`013`).
 - **Done (player metadata v1 schema):** FIDE columns on `dbo.Player` + `UpdatePlayerFideMetadataAsync` (PLAN §15.1).
 - **Done (player metadata §15.2):** `FideRatingListReader`, `FidePlayerMatcher`, `GetPlayerCorpusActivityAsync`.
-- **Done (player metadata §15.3):** `--sync-fide-metadata <path>` CLI (+ `--dry-run`), `FideMetadataSyncResult`, service tests.
+- **Done (player metadata §15.3):** `Ref.FidePlayer` catalog, `--import-fide-catalog`, auto FIDE enrich on ETL insert, `--sync-player-metadata` backfills WC + FIDE from Ref.
 - **Next (player metadata):** PLAN §15.4 API — expose metadata on player picker.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
