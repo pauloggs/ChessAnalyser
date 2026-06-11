@@ -66,6 +66,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<CastlingSidePreferenceRow>());
         repo.Setup(r => r.GetOppositeSideCastlingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<OppositeSideCastlingRateRow>());
+        repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<UncastledKingRateRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -86,7 +88,8 @@ public class MetricRegistryAndExecutorsTests
             new CentreMoveRateExecutor(repo.Object),
             new ForwardMoveRateExecutor(repo.Object),
             new CastlingSidePreferenceExecutor(repo.Object),
-            new OppositeSideCastlingRateExecutor(repo.Object)
+            new OppositeSideCastlingRateExecutor(repo.Object),
+            new UncastledKingRateExecutor(repo.Object)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -107,7 +110,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("ForwardMoveRate", sut.MetricKeys);
         Assert.Contains("CastlingSidePreference", sut.MetricKeys);
         Assert.Contains("OppositeSideCastlingRate", sut.MetricKeys);
-        Assert.Equal(18, sut.MetricKeys.Count);
+        Assert.Contains("UncastledKingRate", sut.MetricKeys);
+        Assert.Equal(19, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -1524,6 +1528,72 @@ public class MetricRegistryAndExecutorsTests
                 && q.PlayerColour == "White"
                 && q.MinGameYear == 1985
                 && q.MaxGameYear == 1995),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task UncastledKingRateExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<UncastledKingRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Fischer",
+                    PlayerForenames = "Robert James",
+                    GameCount = 100,
+                    UncastledKingRate = 0.05
+                }
+            });
+
+        var sut = new UncastledKingRateExecutor(repo.Object);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Robert James"
+        });
+
+        Assert.Equal(["Player", "GameCount", "UncastledKingRate"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Fischer, Robert James", result.Rows[0][0]);
+        Assert.Equal(100, result.Rows[0][1]);
+        Assert.Equal(0.05, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task UncastledKingRateExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new UncastledKingRateExecutor(repo.Object);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task UncastledKingRateExecutor_PassesFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<UncastledKingRateRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            Eco = "B90",
+            MinGameYear = 1960
+        };
+        var sut = new UncastledKingRateExecutor(repo.Object);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetUncastledKingRateAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerSurname == "Tal"
+                && q.PlayerForenames == "Mikhail"
+                && q.Eco == "B90"
+                && q.MinGameYear == 1960),
             It.IsAny<CancellationToken>()), Times.Once);
     }
 }
