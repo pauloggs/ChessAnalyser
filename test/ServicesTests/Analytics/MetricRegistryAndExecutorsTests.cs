@@ -82,6 +82,10 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<FirstQueenMovePlyRow>());
         repo.Setup(r => r.GetPerPlayerFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
+        repo.Setup(r => r.GetAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AverageGameLengthRow>());
+        repo.Setup(r => r.GetPerPlayerAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -104,7 +108,8 @@ public class MetricRegistryAndExecutorsTests
             new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator),
             new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator)
+            new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -127,7 +132,8 @@ public class MetricRegistryAndExecutorsTests
         Assert.Contains("OppositeSideCastlingRate", sut.MetricKeys);
         Assert.Contains("UncastledKingRate", sut.MetricKeys);
         Assert.Contains("FirstQueenMovePly", sut.MetricKeys);
-        Assert.Equal(20, sut.MetricKeys.Count);
+        Assert.Contains("AverageGameLength", sut.MetricKeys);
+        Assert.Equal(21, sut.MetricKeys.Count);
     }
 
     [Fact]
@@ -1942,6 +1948,118 @@ public class MetricRegistryAndExecutorsTests
         await sut.ExecuteAsync(query);
 
         repo.Verify(r => r.GetFirstQueenMovePlyAsync(
+            It.Is<AnalyticsQuery>(q =>
+                q.PlayerSurname == "Petrosian"
+                && q.PlayerForenames == "Tigran"
+                && q.PlayerColour == "Black"
+                && q.MaxGameYear == 1975),
+            It.IsAny<CancellationToken>()), Times.Once);
+    }
+
+    [Fact]
+    public async Task AverageGameLengthExecutor_MapsRow()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AverageGameLengthRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GameCount = 120,
+                    AverageGameLengthPly = 68.5
+                }
+            });
+
+        var sut = new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly"
+        });
+
+        Assert.Equal(["Player", "GameCount", "AverageGameLengthPly"], result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal("Karpov, Anatoly", result.Rows[0][0]);
+        Assert.Equal(120, result.Rows[0][1]);
+        Assert.Equal(68.5, result.Rows[0][2]);
+    }
+
+    [Fact]
+    public async Task AverageGameLengthExecutor_RequiresPlayerSurname()
+    {
+        var repo = new Mock<IChessRepository>();
+        var sut = new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator);
+
+        await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task AverageGameLengthExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<AverageGameLengthRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GameCount = 50,
+                    AverageGameLengthPly = 70.0
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 50, MetricValue = 70.0 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 55.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 70, MetricValue = 65.0 }
+            });
+
+        var sut = new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageGameLengthPly",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Single(result.Rows);
+        Assert.Equal(70.0, result.Rows[0][2]);
+        Assert.Equal(60.0, (double)result.Rows[0][3]!, precision: 10);
+        Assert.Equal(10.0, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
+    }
+
+    [Fact]
+    public async Task AverageGameLengthExecutor_PassesFiltersToRepository()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetAverageGameLengthAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<AverageGameLengthRow>());
+
+        var query = new AnalyticsQuery
+        {
+            PlayerSurname = "Petrosian",
+            PlayerForenames = "Tigran",
+            PlayerColour = "Black",
+            MaxGameYear = 1975
+        };
+        var sut = new AverageGameLengthExecutor(repo.Object, CorpusBenchmarkCalculator);
+
+        await sut.ExecuteAsync(query);
+
+        repo.Verify(r => r.GetAverageGameLengthAsync(
             It.Is<AnalyticsQuery>(q =>
                 q.PlayerSurname == "Petrosian"
                 && q.PlayerForenames == "Tigran"

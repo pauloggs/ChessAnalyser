@@ -303,6 +303,20 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Mean game length in plies for games involving the filtered player.
+        /// </summary>
+        Task<IReadOnlyList<AverageGameLengthRow>> GetAverageGameLengthAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Per-player mean game length aggregates for corpus benchmarks.
+        /// </summary>
+        Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageGameLengthAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -1522,6 +1536,52 @@ namespace Repositories
             var rows = (await connection.QueryAsync<PlayerStylePerPlayerMetricRow>(
                 new CommandDefinition(
                     SqlStatements.GetPerPlayerFirstQueenMovePly,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<AverageGameLengthRow>> GetAverageGameLengthAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<AverageGameLengthRow>(
+                new CommandDefinition(
+                    SqlStatements.GetAverageGameLength,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageGameLengthAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<PlayerStylePerPlayerMetricRow>(
+                new CommandDefinition(
+                    SqlStatements.GetPerPlayerAverageGameLength,
                     new
                     {
                         MinGameYear = query.MinGameYear,

@@ -52,6 +52,8 @@ internal static class MetricCatalog
                 "Proportion of the filtered player's games where they never castled.",
             "FirstQueenMovePly" =>
                 "Mean half-move ply of the filtered player's first queen move; games without a queen move are excluded.",
+            "AverageGameLength" =>
+                "How long are this player's games on average? Higher values mean longer games in half-moves; lower values mean shorter games.",
             _ => null
         };
     }
@@ -224,6 +226,15 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "GamesWithQueenMove counts games where the queen moved at least once; average is raw ply (not normalized by game length).",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
+            ],
+            "AverageGameLength" =>
+            [
+                "How it's computed: per game, MAX(PlyIndex) from GamePositionSummary; then averaged across filtered appearances.",
+                "Required: playerSurname (playerForenames optional but recommended).",
+                "Optional: playerColour = Any, White, or Black (defaults to Any).",
+                "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
                 "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],

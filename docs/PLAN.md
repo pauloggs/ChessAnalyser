@@ -554,7 +554,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 7 — game shape
 
-13. [ ] **`AverageGameLength`**
+13. [x] **`AverageGameLength`**
     - **Data:** `MAX(PlyIndex)` from `GamePositionSummary` or move count per game.
     - **Aggregate:** `AVG(max_ply)` for games involving the filtered player.
     - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageGameLengthPly`.

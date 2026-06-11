@@ -183,6 +183,14 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
+    public Task<IReadOnlyList<AverageGameLengthRow>> GetAverageGameLengthAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<AverageGameLengthRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageGameLengthAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();
 
