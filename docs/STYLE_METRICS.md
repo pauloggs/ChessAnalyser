@@ -2,7 +2,7 @@
 
 **Location:** `docs/` alongside [DESIGN.md](./DESIGN.md), [PLAN.md](./PLAN.md), and [EXAMPLE_ANALYSES.md](./EXAMPLE_ANALYSES.md).  
 **Purpose:** Capture how chess playing style is assessed in the literature and tools, what ChessAnalyser can measure **without an engine**, and how individual metrics combine into interpretable profiles.  
-**Implementation backlog:** [PLAN.md §12.6](./PLAN.md) (ordered PR sequence).
+**Implementation backlog:** [PLAN.md §12.7](./PLAN.md) (corpus benchmarks), then [PLAN.md §12.6](./PLAN.md) Phase 3+.
 
 ---
 
@@ -14,6 +14,7 @@ Playing style is not a single scalar. Analysts and researchers use **many behavi
 - Prefer **middlegame windows** (e.g. plies 15–40) when opening noise should be reduced.
 - Require **sufficient sample size** (dozens of games; literature often excludes short draws and out-of-prime years).
 - Be read as **choices**, not **quality** — without engine evaluation, high capture rate does not distinguish Tal from a blunderer.
+- Prefer **corpus-relative** readings (percentile vs your loaded database) over isolated scalars — see §8 and [DESIGN.md §12](./DESIGN.md).
 
 ---
 
@@ -168,4 +169,33 @@ When implementing a new style metric, sanity-check against players with well-kno
 
 ---
 
-*Update this file when literature review or metric definitions change. Tick implementation items in [PLAN.md §12.6](./PLAN.md).*
+## 8. Corpus benchmarks (interpretation)
+
+Raw values like `AverageMaterialVolatility = 1.34` are **not self-explanatory**. ChessAnalyser is
+adding **corpus-relative benchmarks** ([DESIGN.md §12](./DESIGN.md), [PLAN.md §12.7](./PLAN.md)):
+
+| Column | Meaning |
+|--------|---------|
+| `CorpusAverage` | Mean of the same metric across other eligible players in your DB (same filters) |
+| `DeltaFromCorpus` | Subject minus corpus average |
+| `CorpusPercentile` | Where the subject ranks 0–100 among eligible players (higher = higher metric value) |
+| `CorpusEligiblePlayerCount` | How many players met the minimum game threshold |
+
+**How to read a row**
+
+> Fischer: volatility 1.34, corpus avg 1.08, delta +0.26, 78th percentile  
+> → More material swing than most players **in this database** under the chosen filters.
+
+**Caveats**
+
+- Benchmarks are **corpus-local**, not universal chess truth.
+- Requires enough players and games (`benchmarkMinGames`, default 30).
+- Subject is **excluded** from the corpus mean so large game counts do not dominate the baseline.
+- Opt in with `includeCorpusBenchmark: true` on the metric query until defaults change.
+
+Phase 3+ style metrics should ship with benchmark support where possible so new scalars are not
+published without context.
+
+---
+
+*Update this file when literature review or metric definitions change. Tick implementation items in [PLAN.md §12.6](./PLAN.md) and [PLAN.md §12.7](./PLAN.md).*

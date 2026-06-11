@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (Phase 2 style metrics implemented: `BishopPairFrequency`, `MinorPieceComposition`.)
+**Last updated:** 2026-06-11 (corpus benchmark infrastructure + `AverageMaterialVolatility` benchmark implemented.)
 
 ---
 
@@ -12,8 +12,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 | File | Role |
 |------|------|
-| [DESIGN.md](./DESIGN.md) | Requirements and locked decisions (facts, dimensions, C# vs SQL, rollups, year rules). |
-| [PLAN.md](./PLAN.md) | Implementation plan; **§11** (closed) + **§12** (metrics HTTP API) + **§12.6** (playing-style metrics backlog). |
+| [DESIGN.md](./DESIGN.md) | Requirements and locked decisions; **§12** corpus benchmarks (F-11). |
+| [PLAN.md](./PLAN.md) | Implementation plan; **§12.7** (corpus benchmarks — next), **§12.6** (style metrics). |
 | [STYLE_METRICS.md](./STYLE_METRICS.md) | Style research, literature, metric catalogue, profile combinations, caveats. |
 | **AGENT_CONTEXT.md** (this file) | Current progress and **recommended next small step**. |
 
@@ -31,9 +31,12 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** Implement **Phase 3** of [PLAN.md §12.6](./PLAN.md): `CaptureRate`, then `QueenTradeRate`.
+**Do next:** Finish [PLAN.md §12.7](./PLAN.md) steps 3–5 — add corpus benchmarks to
+`BishopPairFrequency`, `MinorPieceComposition`, and `AverageCastlingPly`.
 
-**Then:** Phase 4 (`CentreMoveRate`, `ForwardMoveRate`) per §12.6.
+**Then:** §12.6 Phase 3 (`CaptureRate`, `QueenTradeRate`) with benchmark support from day one.
+
+**Branch:** `feat/style-metrics-phase-3`
 
 **Do not prioritize yet:** Dedicated HTTP **auth / rate limits** for `AnalyticsMetricsController` — **out of scope** until there is a **deployment or network exposure** plan (then treat as blocking; update PLAN §12.1 / §13). Optional hygiene: bind the dev host to **localhost** only.
 

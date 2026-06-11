@@ -1,7 +1,7 @@
 # ChessAnalyser — Board-position analytics (PLAN)
 
 **Location:** **`docs/`** — alongside [DESIGN.md](./DESIGN.md) and [AGENT_CONTEXT.md](./AGENT_CONTEXT.md).  
-**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.6 playing-style metrics (first: `AverageCastlingPly`, `MaterialVolatility`); HTTP auth **deferred** while the app stays local-only / undeployed.  
+**Document status:** Stage 2 (design guide) + **Stage 3 complete** (§11 checklist, 2026-05-10) + **Stage 4 §12 checklist complete** (metrics HTTP API + DESIGN F-9 / Q7 alignment). **Active implementation direction:** §12.7 corpus benchmarks for style metrics, then §12.6 Phase 3; HTTP auth **deferred** while the app stays local-only / undeployed.  
 **Authority:** Implements [DESIGN.md](./DESIGN.md). Update this plan when scope or decisions change.
 
 ---
@@ -17,6 +17,7 @@
 | §8.5 C# domain logic; SQL for access / trivial aggregates | §5.4, §8 |
 | F-9 / Q7 (programmatic access) | §12 (Stage 4 — HTTP surface for existing registry) |
 | Playing-style metrics (research) | [STYLE_METRICS.md](./STYLE_METRICS.md); implementation §12.6 |
+| Corpus benchmarks (F-11) | [DESIGN.md §12](./DESIGN.md); implementation §12.7 |
 
 ---
 
@@ -298,9 +299,11 @@ Items **1–13** are **complete** in source for the board-position analytics gro
    `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`,
    `PlayerResultSummary`).
 3. [x] **Improve discovery** — descriptions and parameter hints on `GET /api/analytics/metrics`.
-4. **Playing-style metrics** — follow **[§12.6](./PLAN.md)** in order: first `AverageCastlingPly`,
-   then `MaterialVolatility`, then Phases 2–8. Research background: [STYLE_METRICS.md](./STYLE_METRICS.md).
-5. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for
+4. [x] **Playing-style metrics Phases 1–2** — `AverageCastlingPly`, `AverageMaterialVolatility`,
+   `BishopPairFrequency`, `MinorPieceComposition` (see §12.6).
+5. **Corpus benchmarks** — **[§12.7](./PLAN.md)** before §12.6 Phase 3; design [DESIGN.md §12](./DESIGN.md).
+6. **Playing-style metrics Phase 3+** — `CaptureRate`, `QueenTradeRate`, … per §12.6 after benchmarks v1.
+7. **Tests** — per-metric executor tests with mocked **`IChessRepository`** (and API smoke tests for
    new keys), following §12.3.
 
 **Optional:** Record a fresh materialization throughput line in [ANALYTICS_MATERIALIZATION_PERF.md](./ANALYTICS_MATERIALIZATION_PERF.md) when you change hot paths in the deriver or summary factory.
@@ -595,6 +598,97 @@ sound sacrifice detection — see [STYLE_METRICS.md §4 Phase 9](./STYLE_METRICS
 Petrosian) on `AverageCastlingPly` and `MaterialVolatility` with the same filters; see
 [STYLE_METRICS.md §7](./STYLE_METRICS.md).
 
+**Benchmark dependency:** Phase 3+ metrics should use the shared benchmark enrichment from §12.7
+when `includeCorpusBenchmark` is supported, rather than adding more raw-only scalars.
+
+---
+
+### 12.7 Corpus benchmarks for style metrics (implement before §12.6 Phase 3)
+
+**Decision (2026):** Raw style scalars (e.g. Fischer `AverageMaterialVolatility ≈ 1.34`) are weakly
+informative without a **corpus-relative** reference. Implement optional benchmark columns per
+[DESIGN.md §12](./DESIGN.md) before adding Phase 3 style metrics.
+
+**Goals:**
+
+- Same metric definition and **non-identity** filters for subject and corpus.
+- Subject excluded from corpus mean and percentile (leave-one-out).
+- Opt-in via `includeCorpusBenchmark`; default **`false`** until callers migrate (document in
+  `MetricCatalog` when style metrics flip default to `true`).
+
+#### 12.7.1 Query extensions
+
+Add to **`AnalyticsQuery`** (`Interfaces/Analytics/AnalyticsQuery.cs`):
+
+| Field | Type | Default when null |
+|-------|------|-----------------|
+| `IncludeCorpusBenchmark` | `bool?` | `false` |
+| `BenchmarkMinGames` | `int?` | `30` |
+
+Expose in HTTP JSON as `includeCorpusBenchmark`, `benchmarkMinGames`. UI: optional checkbox on style
+metrics section (follow-up after API).
+
+#### 12.7.2 Shared components
+
+1. [ ] **`CorpusBenchmarkResult`** (or fields on existing row DTOs) — `CorpusAverage`,
+   `DeltaFromCorpus`, `CorpusPercentile`, `CorpusEligiblePlayerCount` (all nullable when benchmark
+   not requested or corpus too small).
+2. [ ] **`ICorpusBenchmarkCalculator`** (pure C#) — inputs: subject value, read-only list of
+   `(playerId or name, perPlayerValue, gameCount)` for eligible corpus players → outputs benchmark
+   fields. Unit-test percentile edge cases (ties, n=1, subject at min/max).
+3. [ ] **Repository pattern** — per metric, either:
+   - **(Preferred)** one SQL statement returning subject row + corpus distribution via CTEs
+     (`PerPlayerMetric` → `CorpusStats`), or
+   - two reads: subject aggregate + all per-player aggregates (acceptable for v1 if SQL complexity
+     is high).
+
+Document chosen approach in code remarks per metric.
+
+**Corpus eligibility rule:** player appears in ≥ `benchmarkMinGames` games in the filtered game set
+(same rule as DESIGN §12.3).
+
+**Percentile:** `PERCENT_RANK`-style over eligible per-player values (0–100 scale); document tie
+handling in tests.
+
+#### 12.7.3 Implementation sequence (PR-sized)
+
+1. [x] **Infrastructure PR** — `AnalyticsQuery` fields, `ICorpusBenchmarkCalculator` + tests, row
+   DTO optional benchmark fields.
+2. [x] **`AverageMaterialVolatility` + benchmark** — proof of concept; extend executor columns when
+   `includeCorpusBenchmark = true`; per-player repository SQL + calculator; update `MetricCatalog` and
+   [EXAMPLE_ANALYSES.md](./EXAMPLE_ANALYSES.md).
+3. [ ] **`BishopPairFrequency` + benchmark** — reuse shared calculator / SQL pattern.
+4. [ ] **`MinorPieceComposition` + benchmark**
+5. [ ] **`AverageCastlingPly` + benchmark**
+6. [ ] **Docs pass** — [STYLE_METRICS.md](./STYLE_METRICS.md) §8, `AGENT_CONTEXT.md`, example
+   showing Fischer row with corpus columns.
+
+**Result columns when benchmark enabled** (append to existing subject row):
+
+- `CorpusAverage`
+- `DeltaFromCorpus`
+- `CorpusPercentile`
+- `CorpusEligiblePlayerCount`
+
+#### 12.7.4 Testing
+
+| Layer | Tests |
+|-------|--------|
+| `CorpusBenchmarkCalculator` | Empty corpus; single player; ties; subject excluded from mean; percentile boundaries |
+| Executor | Mock repository returning subject + corpus rows; assert columns present only when flag set |
+| Integration (optional) | Small fixture DB: two players, known ordering, assert percentile |
+
+**Manual validation:** Run `AverageMaterialVolatility` for Fischer with `includeCorpusBenchmark:
+true` — confirm `CorpusPercentile` and `DeltaFromCorpus` move in sensible direction vs a second
+player (e.g. Petrosian) on the same filters.
+
+#### 12.7.5 Non-goals (v1)
+
+- Persisted benchmark cache tables
+- External reference-player presets (user compares by running two queries or future `playerB` filter)
+- Benchmarks on non-style metrics (`GameCountByEco`, etc.)
+- Default `includeCorpusBenchmark: true` until Phase 3 metrics exist (optional follow-up)
+
 ---
 
 ## 13. Risks and mitigations
@@ -605,6 +699,7 @@ Petrosian) on `AverageCastlingPly` and `MaterialVolatility` with the same filter
 | Large DB backfill time | Process game-by-game; optional parallelism with cap. |
 | Transaction size for huge games | Batch inserts inside per-game transaction or chunk by N plies (rare games > 500 plies). |
 | Unauthenticated metrics HTTP endpoint | **Accepted for local-only solo use** (see §12.1, §12.4). Before **deployment or network exposure**, add rate limits, auth, or strict network restriction and document the chosen approach. |
+| Misleading benchmark percentiles on tiny corpora | Require `benchmarkMinGames`; return `CorpusEligiblePlayerCount`; document corpus-local interpretation (DESIGN §12.8). |
 
 ---
 
@@ -618,4 +713,4 @@ Petrosian) on `AverageCastlingPly` and `MaterialVolatility` with the same filter
 
 ---
 
-*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete. **Active backlog:** §12.6 playing-style metrics (start with `AverageCastlingPly`, `MaterialVolatility`); §12.4 for general UI/tests; §12.5 player material comparison is complete.*
+*End of PLAN.md. Stage 3 (§11) is complete; Stage 4 **§12** is complete. **Active backlog:** §12.7 corpus benchmarks, then §12.6 Phase 3; §12.5 player material comparison is complete.*

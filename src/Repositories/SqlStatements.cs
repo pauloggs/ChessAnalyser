@@ -506,6 +506,78 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean per-game material volatility for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerAverageMaterialVolatility =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       g.WhitePlayerId,
+                       g.BlackPlayerId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PerPlyBalance AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       CASE a.PlayerSide
+                           WHEN 'W' THEN CAST(s.WhiteMaterial - s.BlackMaterial AS FLOAT)
+                           WHEN 'B' THEN CAST(s.BlackMaterial - s.WhiteMaterial AS FLOAT)
+                       END AS SignedBalance
+                FROM Appearances a
+                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
+            ),
+            PerGameVolatility AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       STDEV(SignedBalance) AS MaterialVolatility
+                FROM PerPlyBalance
+                GROUP BY PlayerSurname, PlayerForenames, GameId
+                HAVING COUNT(*) >= 2
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(MaterialVolatility) AS MetricValue
+            FROM PerGameVolatility
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Mean per-game share of plies in a window where the filtered player has both bishops.
         /// </summary>
         public static string GetBishopPairFrequency =>

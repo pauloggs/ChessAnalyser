@@ -51,4 +51,14 @@ public sealed class AnalyticsQuery
     /// Inclusive upper bound on <c>GamePositionSummary.PlyIndex</c> for position-based style metrics.
     /// </summary>
     public int? MaxPlyIndex { get; init; }
+
+    /// <summary>
+    /// When true, eligible style metrics append corpus benchmark columns (DESIGN §12).
+    /// </summary>
+    public bool? IncludeCorpusBenchmark { get; init; }
+
+    /// <summary>
+    /// Minimum games per player for corpus benchmark eligibility (default 30).
+    /// </summary>
+    public int? BenchmarkMinGames { get; init; }
 }

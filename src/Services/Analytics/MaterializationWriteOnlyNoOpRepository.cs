@@ -85,6 +85,10 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<AverageMaterialVolatilityRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerAverageMaterialVolatilityAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<BishopPairFrequencyRow>> GetBishopPairFrequencyAsync(
         AnalyticsQuery query,
         int? minPlyIndex,
