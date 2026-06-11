@@ -1198,6 +1198,65 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Mean per-game share of moves into the opponent's half (White: rank index ≥ 4; Black: rank index ≤ 3).
+        /// </summary>
+        public static string GetForwardMoveRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            PlayerMoves AS
+            (
+                SELECT fg.GameId,
+                       SUM(CASE
+                               WHEN m.MovingSide = 'W' AND (m.ToSquare / 8) >= 4 THEN 1
+                               WHEN m.MovingSide = 'B' AND (m.ToSquare / 8) <= 3 THEN 1
+                               ELSE 0
+                           END) AS ForwardCount,
+                       COUNT(*) AS MoveCount
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE fg.PlayerSide IS NOT NULL
+                  AND m.MovingSide = fg.PlayerSide
+                  AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
+                GROUP BY fg.GameId
+                HAVING COUNT(*) > 0
+            ),
+            PerGame AS
+            (
+                SELECT GameId,
+                       CAST(ForwardCount AS FLOAT) / MoveCount AS ForwardMoveRate
+                FROM PlayerMoves
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(ForwardMoveRate) AS AverageForwardMoveRate
+            FROM PerGame;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>

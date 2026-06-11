@@ -98,6 +98,7 @@ builder.Services.AddScoped<IMetricExecutor, MinorPieceCompositionExecutor>();
 builder.Services.AddScoped<IMetricExecutor, CaptureRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, QueenTradeRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, CentreMoveRateExecutor>();
+builder.Services.AddScoped<IMetricExecutor, ForwardMoveRateExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 
