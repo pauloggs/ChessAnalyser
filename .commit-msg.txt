@@ -1,3 +1,0 @@
-feat: add corpus benchmarks for CaptureRate
-
-Complete PLAN §12.7 docs pass (tick checkboxes, update AGENT_CONTEXT).
