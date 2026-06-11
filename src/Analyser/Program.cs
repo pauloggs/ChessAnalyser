@@ -100,6 +100,7 @@ builder.Services.AddScoped<IMetricExecutor, QueenTradeRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, CentreMoveRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, ForwardMoveRateExecutor>();
 builder.Services.AddScoped<IMetricExecutor, CastlingSidePreferenceExecutor>();
+builder.Services.AddScoped<IMetricExecutor, OppositeSideCastlingRateExecutor>();
 builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 

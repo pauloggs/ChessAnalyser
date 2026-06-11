@@ -525,7 +525,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GamesWithCastling`, `KingsideRate`,
      `QueensideRate`.
 
-10. [ ] **`OppositeSideCastlingRate`**
+10. [x] **`OppositeSideCastlingRate`**
     - **Data:** first castling ply and side per colour per game from `GameMove`.
     - **Per game:** `1` if White and Black castled to different wings (kingside = K-side file,
       queenside = Q-side), else `0` (exclude games where either side never castled, or report

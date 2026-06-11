@@ -1315,6 +1315,90 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Proportion of filtered games where White and Black each castled to opposite wings.
+        /// </summary>
+        public static string GetOppositeSideCastlingRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       CASE
+                           WHEN wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames) THEN CAST('W' AS CHAR(1))
+                           WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
+                           ELSE NULL
+                       END AS PlayerSide
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+                  AND (
+                      (@PlayerColour = 'Any' AND (
+                          (wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                          OR (bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                      ))
+                      OR (@PlayerColour = 'White' AND wp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR wp.Forenames = @PlayerForenames))
+                      OR (@PlayerColour = 'Black' AND bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames))
+                  )
+            ),
+            WhiteFirstCastlePly AS
+            (
+                SELECT fg.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE m.MovingSide = 'W'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY fg.GameId
+            ),
+            WhiteCastle AS
+            (
+                SELECT wcp.GameId,
+                       m.IsCastlingKingside
+                FROM WhiteFirstCastlePly wcp
+                INNER JOIN dbo.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
+                WHERE m.MovingSide = 'W'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            ),
+            BlackFirstCastlePly AS
+            (
+                SELECT fg.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE m.MovingSide = 'B'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY fg.GameId
+            ),
+            BlackCastle AS
+            (
+                SELECT bcp.GameId,
+                       m.IsCastlingKingside
+                FROM BlackFirstCastlePly bcp
+                INNER JOIN dbo.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
+                WHERE m.MovingSide = 'B'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            ),
+            EligibleGames AS
+            (
+                SELECT fg.GameId,
+                       CASE
+                           WHEN wc.IsCastlingKingside <> bc.IsCastlingKingside THEN 1.0
+                           ELSE 0.0
+                       END AS IsOppositeSide
+                FROM FilteredGames fg
+                INNER JOIN WhiteCastle wc ON wc.GameId = fg.GameId
+                INNER JOIN BlackCastle bc ON bc.GameId = fg.GameId
+            )
+            SELECT @PlayerSurname AS PlayerSurname,
+                   @PlayerForenames AS PlayerForenames,
+                   COUNT(*) AS EligibleGameCount,
+                   AVG(IsOppositeSide) AS OppositeSideCastlingRate
+            FROM EligibleGames;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>
