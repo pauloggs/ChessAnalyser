@@ -125,6 +125,38 @@ namespace Repositories
             CancellationToken cancellationToken = default);
 
         /// <summary>
+        /// Mean first-castling ply for a filtered player (games without castling excluded from the average).
+        /// </summary>
+        Task<IReadOnlyList<AverageCastlingPlyRow>> GetAverageCastlingPlyAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Mean per-game standard deviation of signed material balance for a filtered player.
+        /// </summary>
+        Task<IReadOnlyList<AverageMaterialVolatilityRow>> GetAverageMaterialVolatilityAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Mean per-game share of plies where the filtered player retains both bishops in a ply window.
+        /// </summary>
+        Task<IReadOnlyList<BishopPairFrequencyRow>> GetBishopPairFrequencyAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
+        /// Mean per-game average bishops-minus-knights for the filtered player in a ply window.
+        /// </summary>
+        Task<IReadOnlyList<MinorPieceCompositionRow>> GetMinorPieceCompositionAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default);
+
+        /// <summary>
         /// Game primary keys that have board rows but no <c>GameMove</c> rows (candidates for analytics backfill).
         /// </summary>
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
@@ -762,6 +794,112 @@ namespace Repositories
                         PlayerBSurname = NormalizeNonEmpty(query.PlayerBSurname),
                         PlayerBForenames = NormalizeNamePart(query.PlayerBForenames),
                         Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<AverageCastlingPlyRow>> GetAverageCastlingPlyAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<AverageCastlingPlyRow>(
+                new CommandDefinition(
+                    SqlStatements.GetAverageCastlingPly,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco)
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<AverageMaterialVolatilityRow>> GetAverageMaterialVolatilityAsync(
+            AnalyticsQuery query,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<AverageMaterialVolatilityRow>(
+                new CommandDefinition(
+                    SqlStatements.GetAverageMaterialVolatility,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = query.MinPlyIndex,
+                        MaxPlyIndex = query.MaxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<BishopPairFrequencyRow>> GetBishopPairFrequencyAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<BishopPairFrequencyRow>(
+                new CommandDefinition(
+                    SqlStatements.GetBishopPairFrequency,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = minPlyIndex,
+                        MaxPlyIndex = maxPlyIndex
+                    },
+                    cancellationToken: cancellationToken))).ToList();
+
+            return rows;
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<MinorPieceCompositionRow>> GetMinorPieceCompositionAsync(
+            AnalyticsQuery query,
+            int? minPlyIndex,
+            int? maxPlyIndex,
+            CancellationToken cancellationToken = default)
+        {
+            ArgumentNullException.ThrowIfNull(query);
+            using var connection = GetOpenConnection();
+            var rows = (await connection.QueryAsync<MinorPieceCompositionRow>(
+                new CommandDefinition(
+                    SqlStatements.GetMinorPieceComposition,
+                    new
+                    {
+                        MinGameYear = query.MinGameYear,
+                        MaxGameYear = query.MaxGameYear,
+                        PlayerSurname = NormalizeNonEmpty(query.PlayerSurname),
+                        PlayerForenames = NormalizeNamePart(query.PlayerForenames),
+                        PlayerColour = NormalizePlayerColourFilter(query.PlayerColour),
+                        Eco = NormalizeNonEmpty(query.Eco),
+                        MinPlyIndex = minPlyIndex,
+                        MaxPlyIndex = maxPlyIndex
                     },
                     cancellationToken: cancellationToken))).ToList();
 
