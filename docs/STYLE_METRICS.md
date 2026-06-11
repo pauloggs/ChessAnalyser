@@ -194,7 +194,9 @@ adding **corpus-relative benchmarks** ([DESIGN.md §12](./DESIGN.md), [PLAN.md �
 - Opt in with `includeCorpusBenchmark: true` on the metric query until defaults change.
 
 **Metrics with corpus benchmarks (v1):** `AverageMaterialVolatility`, `AverageCastlingPly`,
-`BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`. (`QueenTradeRate` — follow-up PR.)
+`BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`, `QueenTradeRate`, `CentreMoveRate`,
+`ForwardMoveRate`, `CastlingSidePreference` (benchmarks `KingsideRate`), `OppositeSideCastlingRate`,
+`UncastledKingRate`, `FirstQueenMovePly`.
 
 Phase 3+ style metrics should ship with benchmark support where possible so new scalars are not
 published without context.

@@ -139,25 +139,49 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<CentreMoveRateRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerCentreMoveRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<ForwardMoveRateRow>> GetForwardMoveRateAsync(
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<ForwardMoveRateRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerForwardMoveRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
     public Task<IReadOnlyList<CastlingSidePreferenceRow>> GetCastlingSidePreferenceAsync(
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<CastlingSidePreferenceRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerCastlingSidePreferenceAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<OppositeSideCastlingRateRow>> GetOppositeSideCastlingRateAsync(
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<OppositeSideCastlingRateRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerOppositeSideCastlingRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
     public Task<IReadOnlyList<UncastledKingRateRow>> GetUncastledKingRateAsync(
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<UncastledKingRateRow>>();
 
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerUncastledKingRateAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
+
     public Task<IReadOnlyList<FirstQueenMovePlyRow>> GetFirstQueenMovePlyAsync(
         AnalyticsQuery query,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<FirstQueenMovePlyRow>>();
+
+    public Task<IReadOnlyList<PlayerStylePerPlayerMetricRow>> GetPerPlayerFirstQueenMovePlyAsync(
+        AnalyticsQuery query,
+        CancellationToken cancellationToken = default) => Throw<IReadOnlyList<PlayerStylePerPlayerMetricRow>>();
 
     public Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default) =>
         Throw<IReadOnlyList<int>>();

@@ -45,7 +45,7 @@ internal static class MetricCatalog
             "ForwardMoveRate" =>
                 "Mean per-game share of the filtered player's moves landing in the opponent's half of the board.",
             "CastlingSidePreference" =>
-                "Kingside vs queenside preference on the filtered player's first castle; rates are among games where the player castled.",
+                "Kingside vs queenside preference on the filtered player's first castle; rates are among games where the player castled. Corpus benchmarks compare KingsideRate.",
             "OppositeSideCastlingRate" =>
                 "Share of the filtered player's games where both sides castled to opposite wings (kingside vs queenside).",
             "UncastledKingRate" =>
@@ -177,7 +177,9 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
-                "Centre squares are d4, d5, e4, e5 (ToSquare 27, 28, 35, 36)."
+                "Centre squares are d4, d5, e4, e5 (ToSquare 27, 28, 35, 36).",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "ForwardMoveRate" =>
             [
@@ -185,35 +187,45 @@ internal static class MetricCatalog
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
                 "Optional: minPlyIndex, maxPlyIndex to restrict which move plies count.",
-                "Forward for White means ToSquare rank index >= 4; for Black, rank index <= 3."
+                "Forward for White means ToSquare rank index >= 4; for Black, rank index <= 3.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "CastlingSidePreference" =>
             [
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "KingsideRate and QueensideRate sum to 1.0 among games with castling; games without castling are excluded."
+                "KingsideRate and QueensideRate sum to 1.0 among games with castling; games without castling are excluded.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount (benchmarks KingsideRate).",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "OppositeSideCastlingRate" =>
             [
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "EligibleGameCount counts games where both White and Black castled; others are excluded."
+                "EligibleGameCount counts games where both White and Black castled; others are excluded.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "UncastledKingRate" =>
             [
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "GameCount is all filtered appearances; UncastledKingRate is the share with no castling move."
+                "GameCount is all filtered appearances; UncastledKingRate is the share with no castling move.",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             "FirstQueenMovePly" =>
             [
                 "Required: playerSurname (playerForenames optional but recommended).",
                 "Optional: playerColour = Any, White, or Black (defaults to Any).",
                 "Optional: minGameYear, maxGameYear, eco.",
-                "GamesWithQueenMove counts games where the queen moved at least once; average is raw ply (not normalized by game length)."
+                "GamesWithQueenMove counts games where the queen moved at least once; average is raw ply (not normalized by game length).",
+                "Optional: includeCorpusBenchmark = true adds CorpusAverage, DeltaFromCorpus, CorpusPercentile, CorpusEligiblePlayerCount.",
+                "Optional: benchmarkMinGames (default 30) for corpus eligibility."
             ],
             _ => []
         };

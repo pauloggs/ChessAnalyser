@@ -662,6 +662,8 @@ handling in tests.
 5. [x] **`AverageCastlingPly` + benchmark**
 6. [x] **Docs pass** — [STYLE_METRICS.md](./STYLE_METRICS.md) §8, `AGENT_CONTEXT.md`, example
    showing Fischer row with corpus columns.
+7. [x] **Phase 4–6 style metrics + benchmark** — `CentreMoveRate`, `ForwardMoveRate`,
+   `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`.
 
 **Result columns when benchmark enabled** (append to existing subject row):
 
