@@ -193,6 +193,9 @@ adding **corpus-relative benchmarks** ([DESIGN.md §12](./DESIGN.md), [PLAN.md �
 - Subject is **excluded** from the corpus mean so large game counts do not dominate the baseline.
 - Opt in with `includeCorpusBenchmark: true` on the metric query until defaults change.
 
+**Metrics with corpus benchmarks (v1):** `AverageMaterialVolatility`, `AverageCastlingPly`,
+`BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`. (`QueenTradeRate` — follow-up PR.)
+
 Phase 3+ style metrics should ship with benchmark support where possible so new scalars are not
 published without context.
 

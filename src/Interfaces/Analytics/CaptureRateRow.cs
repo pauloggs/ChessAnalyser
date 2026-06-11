@@ -9,4 +9,12 @@ public sealed class CaptureRateRow
     public int GameCount { get; init; }
 
     public double? AverageCaptureRate { get; init; }
+
+    public double? CorpusAverage { get; init; }
+
+    public double? DeltaFromCorpus { get; init; }
+
+    public double? CorpusPercentile { get; init; }
+
+    public int? CorpusEligiblePlayerCount { get; init; }
 }

@@ -475,7 +475,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
 
 #### Phase 3 — exchange temperament
 
-5. [ ] **`CaptureRate`**
+5. [x] **`CaptureRate`**
    - **Question:** What fraction of the player's moves are captures?
    - **Data:** `GameMove` where `MovingSide` matches the player's colour in that game.
    - **Per game:** `COUNT(captures) / COUNT(moves)` where capture ⇔ `CapturedPiece IS NOT NULL`.
@@ -483,7 +483,7 @@ Document defaults in `MetricCatalog.GetParameterHints` when added.
    - **Result columns:** `PlayerSurname`, `PlayerForenames`, `GameCount`, `AverageCaptureRate`.
    - **Optional:** `minPlyIndex` / `maxPlyIndex` on move ply.
 
-6. [ ] **`QueenTradeRate`**
+6. [x] **`QueenTradeRate`**
    - **Question:** How often are queens exchanged early?
    - **Data:** `GamePositionSummary` or `GameMove` — detect first ply where both
      `WhiteQueenCount` and `BlackQueenCount` are not both 1 (or either queen count drops to 0).
@@ -630,13 +630,13 @@ metrics section (follow-up after API).
 
 #### 12.7.2 Shared components
 
-1. [ ] **`CorpusBenchmarkResult`** (or fields on existing row DTOs) — `CorpusAverage`,
+1. [x] **`CorpusBenchmarkResult`** (or fields on existing row DTOs) — `CorpusAverage`,
    `DeltaFromCorpus`, `CorpusPercentile`, `CorpusEligiblePlayerCount` (all nullable when benchmark
    not requested or corpus too small).
-2. [ ] **`ICorpusBenchmarkCalculator`** (pure C#) — inputs: subject value, read-only list of
+2. [x] **`ICorpusBenchmarkCalculator`** (pure C#) — inputs: subject value, read-only list of
    `(playerId or name, perPlayerValue, gameCount)` for eligible corpus players → outputs benchmark
    fields. Unit-test percentile edge cases (ties, n=1, subject at min/max).
-3. [ ] **Repository pattern** — per metric, either:
+3. [x] **Repository pattern** — per metric, either:
    - **(Preferred)** one SQL statement returning subject row + corpus distribution via CTEs
      (`PerPlayerMetric` → `CorpusStats`), or
    - two reads: subject aggregate + all per-player aggregates (acceptable for v1 if SQL complexity
@@ -657,10 +657,10 @@ handling in tests.
 2. [x] **`AverageMaterialVolatility` + benchmark** — proof of concept; extend executor columns when
    `includeCorpusBenchmark = true`; per-player repository SQL + calculator; update `MetricCatalog` and
    [EXAMPLE_ANALYSES.md](./EXAMPLE_ANALYSES.md).
-3. [ ] **`BishopPairFrequency` + benchmark** — reuse shared calculator / SQL pattern.
-4. [ ] **`MinorPieceComposition` + benchmark**
-5. [ ] **`AverageCastlingPly` + benchmark**
-6. [ ] **Docs pass** — [STYLE_METRICS.md](./STYLE_METRICS.md) §8, `AGENT_CONTEXT.md`, example
+3. [x] **`BishopPairFrequency` + benchmark** — reuse shared calculator / SQL pattern.
+4. [x] **`MinorPieceComposition` + benchmark**
+5. [x] **`AverageCastlingPly` + benchmark**
+6. [x] **Docs pass** — [STYLE_METRICS.md](./STYLE_METRICS.md) §8, `AGENT_CONTEXT.md`, example
    showing Fischer row with corpus columns.
 
 **Result columns when benchmark enabled** (append to existing subject row):

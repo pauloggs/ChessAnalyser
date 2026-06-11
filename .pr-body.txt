@@ -1,0 +1,9 @@
+## Summary
+- Add corpus-relative benchmark columns to `CaptureRate` when `includeCorpusBenchmark` is set, following the established per-player SQL + `ICorpusBenchmarkCalculator` pattern.
+- Enable the corpus benchmark UI checkbox for `CaptureRate`.
+- Complete PLAN §12.7 v1 docs pass: tick implementation checkboxes, update `AGENT_CONTEXT.md` and `STYLE_METRICS.md` §8.
+
+## Test plan
+- [x] `dotnet test` passes (including `CaptureRateExecutor_AppendsBenchmarkColumns_WhenRequested`)
+- [ ] Run `CaptureRate` with `includeCorpusBenchmark=true` against a populated DB
+- [ ] Confirm corpus checkbox appears when `CaptureRate` is selected in the metrics UI

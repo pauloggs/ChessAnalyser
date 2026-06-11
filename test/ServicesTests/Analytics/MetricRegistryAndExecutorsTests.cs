@@ -52,6 +52,8 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CaptureRateRow>());
+        repo.Setup(r => r.GetPerPlayerCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetQueenTradeRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<int>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<QueenTradeRateRow>());
 
@@ -69,7 +71,7 @@ public class MetricRegistryAndExecutorsTests
             new AverageMaterialVolatilityExecutor(repo.Object, CorpusBenchmarkCalculator),
             new BishopPairFrequencyExecutor(repo.Object, CorpusBenchmarkCalculator),
             new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new CaptureRateExecutor(repo.Object),
+            new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new QueenTradeRateExecutor(repo.Object)
         });
 
@@ -1027,7 +1029,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new CaptureRateExecutor(repo.Object);
+        var sut = new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -1042,10 +1044,55 @@ public class MetricRegistryAndExecutorsTests
     }
 
     [Fact]
+    public async Task CaptureRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CaptureRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Tal",
+                    PlayerForenames = "Mikhail",
+                    GameCount = 80,
+                    AverageCaptureRate = 0.40
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerCaptureRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 80, MetricValue = 0.40 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.25 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 70, MetricValue = 0.35 }
+            });
+
+        var sut = new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageCaptureRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.40, result.Rows[0][2]);
+        Assert.Equal(0.30, result.Rows[0][3]);
+        Assert.Equal(0.10, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
+    }
+
+    [Fact]
     public async Task CaptureRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new CaptureRateExecutor(repo.Object);
+        var sut = new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
     }
@@ -1064,7 +1111,7 @@ public class MetricRegistryAndExecutorsTests
             MinPlyIndex = 10,
             MaxPlyIndex = 50
         };
-        var sut = new CaptureRateExecutor(repo.Object);
+        var sut = new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 

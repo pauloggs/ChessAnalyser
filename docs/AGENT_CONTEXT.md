@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (corpus benchmark infrastructure + `AverageMaterialVolatility` benchmark implemented.)
+**Last updated:** 2026-06-11 (PLAN §12.7 v1 complete; `CaptureRate` corpus benchmark in progress on feature branch.)
 
 ---
 
@@ -13,7 +13,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 | File | Role |
 |------|------|
 | [DESIGN.md](./DESIGN.md) | Requirements and locked decisions; **§12** corpus benchmarks (F-11). |
-| [PLAN.md](./PLAN.md) | Implementation plan; **§12.7** (corpus benchmarks — next), **§12.6** (style metrics). |
+| [PLAN.md](./PLAN.md) | Implementation plan; **§12.6** (style metrics), **§12.7** (corpus benchmarks — v1 done). |
 | [STYLE_METRICS.md](./STYLE_METRICS.md) | Style research, literature, metric catalogue, profile combinations, caveats. |
 | **AGENT_CONTEXT.md** (this file) | Current progress and **recommended next small step**. |
 
@@ -25,18 +25,15 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **Done:** PGN parse → player resolution → bitboard positions per ply → persist **`Game`**, **`BoardPosition`**, **`Player`**, parse errors. GitHub Actions runs **`dotnet test`** on PRs.
 - **Housekeeping added:** schema-history scaffolding (`src/Migrations/History/` + `tools/export-db-history.ps1`) to snapshot current SQL object DDL after migrations.
-- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, metrics discovery descriptions plus parameter hints, and independent metric player filters (`playerSurname`/`playerForenames` + `playerColour`). **Done (metrics surface):** `GameCountByEco`, `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`, `PlayerResultSummary`, `AverageCastlingPly`, `AverageMaterialVolatility`, `BishopPairFrequency`, `MinorPieceComposition`. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
+- **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics JSON on `Analyser`: `GET /api/analytics/metrics`, `POST /api/analytics/metrics/execute`). **Done (local UI/discovery):** unified **`wwwroot`** web experience for ETL + metrics + game browse, player material comparison UI, metrics discovery descriptions plus parameter hints, independent metric player filters (`playerSurname`/`playerForenames` + `playerColour`), and corpus benchmark checkbox in the metrics form. **Done (metrics surface):** `GameCountByEco`, `AverageMaterialByPlayerAtMove`, `GameCountByYear`, `GameCountByResult`, `GameCountByPlayer`, `PlayerResultSummary`, `AverageCastlingPly`, `AverageMaterialVolatility`, `BishopPairFrequency`, `MinorPieceComposition`, `CaptureRate`, `QueenTradeRate`. **Corpus benchmarks (§12.7 v1):** `AverageMaterialVolatility`, `AverageCastlingPly`, `BishopPairFrequency`, `MinorPieceComposition`; **`CaptureRate`** on feature branch. **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (owner decision; see PLAN §12.1 / §12.4).
 
 ---
 
 ## 3. Recommended next step (small slice)
 
-**Do next:** Finish [PLAN.md §12.7](./PLAN.md) steps 3–5 — add corpus benchmarks to
-`BishopPairFrequency`, `MinorPieceComposition`, and `AverageCastlingPly`.
+**Do next:** Merge `feat/corpus-benchmark-capture-rate` (corpus benchmarks for `CaptureRate`), then add the same for **`QueenTradeRate`**.
 
-**Then:** §12.6 Phase 3 (`CaptureRate`, `QueenTradeRate`) with benchmark support from day one.
-
-**Branch:** `feat/style-metrics-phase-3`
+**Then:** §12.6 Phase 4 spatial metrics (`CentreMoveRate`, `ForwardMoveRate`).
 
 **Do not prioritize yet:** Dedicated HTTP **auth / rate limits** for `AnalyticsMetricsController` — **out of scope** until there is a **deployment or network exposure** plan (then treat as blocking; update PLAN §12.1 / §13). Optional hygiene: bind the dev host to **localhost** only.
 
