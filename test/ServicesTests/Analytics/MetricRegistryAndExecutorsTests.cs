@@ -60,16 +60,28 @@ public class MetricRegistryAndExecutorsTests
             .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CentreMoveRateRow>());
+        repo.Setup(r => r.GetPerPlayerCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetForwardMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<ForwardMoveRateRow>());
+        repo.Setup(r => r.GetPerPlayerForwardMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<CastlingSidePreferenceRow>());
+        repo.Setup(r => r.GetPerPlayerCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetOppositeSideCastlingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<OppositeSideCastlingRateRow>());
+        repo.Setup(r => r.GetPerPlayerOppositeSideCastlingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<UncastledKingRateRow>());
+        repo.Setup(r => r.GetPerPlayerUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
         repo.Setup(r => r.GetFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
             .ReturnsAsync(Array.Empty<FirstQueenMovePlyRow>());
+        repo.Setup(r => r.GetPerPlayerFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(Array.Empty<PlayerStylePerPlayerMetricRow>());
 
         var sut = new MetricRegistry(new IMetricExecutor[]
         {
@@ -87,12 +99,12 @@ public class MetricRegistryAndExecutorsTests
             new MinorPieceCompositionExecutor(repo.Object, CorpusBenchmarkCalculator),
             new CaptureRateExecutor(repo.Object, CorpusBenchmarkCalculator),
             new QueenTradeRateExecutor(repo.Object, CorpusBenchmarkCalculator),
-            new CentreMoveRateExecutor(repo.Object),
-            new ForwardMoveRateExecutor(repo.Object),
-            new CastlingSidePreferenceExecutor(repo.Object),
-            new OppositeSideCastlingRateExecutor(repo.Object),
-            new UncastledKingRateExecutor(repo.Object),
-            new FirstQueenMovePlyExecutor(repo.Object)
+            new CentreMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new ForwardMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator),
+            new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator)
         });
 
         Assert.Contains("AverageMaterialByYearAndColour", sut.MetricKeys);
@@ -1289,7 +1301,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new CentreMoveRateExecutor(repo.Object);
+        var sut = new CentreMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Kasparov",
@@ -1307,9 +1319,54 @@ public class MetricRegistryAndExecutorsTests
     public async Task CentreMoveRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new CentreMoveRateExecutor(repo.Object);
+        var sut = new CentreMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CentreMoveRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CentreMoveRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Kasparov",
+                    PlayerForenames = "Garry",
+                    GameCount = 80,
+                    AverageCentreMoveRate = 0.30
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerCentreMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", GameCount = 80, MetricValue = 0.30 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.20 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 70, MetricValue = 0.25 }
+            });
+
+        var sut = new CentreMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageCentreMoveRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.30, result.Rows[0][2]);
+        Assert.Equal(0.225, result.Rows[0][3]);
+        Assert.Equal(0.075, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -1326,7 +1383,7 @@ public class MetricRegistryAndExecutorsTests
             MinPlyIndex = 5,
             MaxPlyIndex = 40
         };
-        var sut = new CentreMoveRateExecutor(repo.Object);
+        var sut = new CentreMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
@@ -1351,7 +1408,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new ForwardMoveRateExecutor(repo.Object);
+        var sut = new ForwardMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -1369,9 +1426,54 @@ public class MetricRegistryAndExecutorsTests
     public async Task ForwardMoveRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new ForwardMoveRateExecutor(repo.Object);
+        var sut = new ForwardMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task ForwardMoveRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetForwardMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<ForwardMoveRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Tal",
+                    PlayerForenames = "Mikhail",
+                    GameCount = 80,
+                    AverageForwardMoveRate = 0.50
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerForwardMoveRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 80, MetricValue = 0.50 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.35 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 70, MetricValue = 0.42 }
+            });
+
+        var sut = new ForwardMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "AverageForwardMoveRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.50, result.Rows[0][2]);
+        Assert.Equal(0.385, result.Rows[0][3]);
+        Assert.Equal(0.115, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -1388,7 +1490,7 @@ public class MetricRegistryAndExecutorsTests
             MinPlyIndex = 8,
             MaxPlyIndex = 35
         };
-        var sut = new ForwardMoveRateExecutor(repo.Object);
+        var sut = new ForwardMoveRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
@@ -1414,7 +1516,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+        var sut = new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Karpov",
@@ -1433,9 +1535,55 @@ public class MetricRegistryAndExecutorsTests
     public async Task CastlingSidePreferenceExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+        var sut = new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task CastlingSidePreferenceExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<CastlingSidePreferenceRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Karpov",
+                    PlayerForenames = "Anatoly",
+                    GamesWithCastling = 80,
+                    KingsideRate = 0.80,
+                    QueensideRate = 0.20
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerCastlingSidePreferenceAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Karpov", PlayerForenames = "Anatoly", GameCount = 80, MetricValue = 0.80 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.60 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 70, MetricValue = 0.70 }
+            });
+
+        var sut = new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Karpov",
+            PlayerForenames = "Anatoly",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GamesWithCastling", "KingsideRate", "QueensideRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.80, result.Rows[0][2]);
+        Assert.Equal(0.65, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(0.15, (double)result.Rows[0][5]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][6]);
+        Assert.Equal(2, result.Rows[0][7]);
     }
 
     [Fact]
@@ -1453,7 +1601,7 @@ public class MetricRegistryAndExecutorsTests
             MaxGameYear = 1970,
             Eco = "A30"
         };
-        var sut = new CastlingSidePreferenceExecutor(repo.Object);
+        var sut = new CastlingSidePreferenceExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
@@ -1483,7 +1631,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new OppositeSideCastlingRateExecutor(repo.Object);
+        var sut = new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Tal",
@@ -1501,9 +1649,54 @@ public class MetricRegistryAndExecutorsTests
     public async Task OppositeSideCastlingRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new OppositeSideCastlingRateExecutor(repo.Object);
+        var sut = new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task OppositeSideCastlingRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetOppositeSideCastlingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<OppositeSideCastlingRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Tal",
+                    PlayerForenames = "Mikhail",
+                    EligibleGameCount = 50,
+                    OppositeSideCastlingRate = 0.50
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerOppositeSideCastlingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 50, MetricValue = 0.50 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.25 },
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 70, MetricValue = 0.35 }
+            });
+
+        var sut = new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Tal",
+            PlayerForenames = "Mikhail",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "EligibleGameCount", "OppositeSideCastlingRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.50, result.Rows[0][2]);
+        Assert.Equal(0.30, result.Rows[0][3]);
+        Assert.Equal(0.20, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -1521,7 +1714,7 @@ public class MetricRegistryAndExecutorsTests
             MinGameYear = 1985,
             MaxGameYear = 1995
         };
-        var sut = new OppositeSideCastlingRateExecutor(repo.Object);
+        var sut = new OppositeSideCastlingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
@@ -1551,7 +1744,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new UncastledKingRateExecutor(repo.Object);
+        var sut = new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Fischer",
@@ -1569,9 +1762,54 @@ public class MetricRegistryAndExecutorsTests
     public async Task UncastledKingRateExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new UncastledKingRateExecutor(repo.Object);
+        var sut = new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task UncastledKingRateExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<UncastledKingRateRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Fischer",
+                    PlayerForenames = "Robert James",
+                    GameCount = 100,
+                    UncastledKingRate = 0.10
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerUncastledKingRateAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Fischer", PlayerForenames = "Robert James", GameCount = 100, MetricValue = 0.10 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 0.05 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 70, MetricValue = 0.08 }
+            });
+
+        var sut = new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Fischer",
+            PlayerForenames = "Robert James",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GameCount", "UncastledKingRate",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(0.10, result.Rows[0][2]);
+        Assert.Equal(0.065, result.Rows[0][3]);
+        Assert.Equal(0.035, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(100.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -1588,7 +1826,7 @@ public class MetricRegistryAndExecutorsTests
             Eco = "B90",
             MinGameYear = 1960
         };
-        var sut = new UncastledKingRateExecutor(repo.Object);
+        var sut = new UncastledKingRateExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 
@@ -1617,7 +1855,7 @@ public class MetricRegistryAndExecutorsTests
                 }
             });
 
-        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+        var sut = new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator);
         var result = await sut.ExecuteAsync(new AnalyticsQuery
         {
             PlayerSurname = "Kasparov",
@@ -1635,9 +1873,54 @@ public class MetricRegistryAndExecutorsTests
     public async Task FirstQueenMovePlyExecutor_RequiresPlayerSurname()
     {
         var repo = new Mock<IChessRepository>();
-        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+        var sut = new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await Assert.ThrowsAsync<ArgumentException>(() => sut.ExecuteAsync(new AnalyticsQuery()));
+    }
+
+    [Fact]
+    public async Task FirstQueenMovePlyExecutor_AppendsBenchmarkColumns_WhenRequested()
+    {
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<FirstQueenMovePlyRow>
+            {
+                new()
+                {
+                    PlayerSurname = "Kasparov",
+                    PlayerForenames = "Garry",
+                    GamesWithQueenMove = 45,
+                    AverageFirstQueenMovePly = 8.0
+                }
+            });
+        repo.Setup(r => r.GetPerPlayerFirstQueenMovePlyAsync(It.IsAny<AnalyticsQuery>(), It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<PlayerStylePerPlayerMetricRow>
+            {
+                new() { PlayerSurname = "Kasparov", PlayerForenames = "Garry", GameCount = 45, MetricValue = 8.0 },
+                new() { PlayerSurname = "Petrosian", PlayerForenames = "Tigran", GameCount = 90, MetricValue = 12.0 },
+                new() { PlayerSurname = "Tal", PlayerForenames = "Mikhail", GameCount = 70, MetricValue = 6.0 }
+            });
+
+        var sut = new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator);
+        var result = await sut.ExecuteAsync(new AnalyticsQuery
+        {
+            PlayerSurname = "Kasparov",
+            PlayerForenames = "Garry",
+            IncludeCorpusBenchmark = true,
+            BenchmarkMinGames = 30
+        });
+
+        Assert.Equal(
+            [
+                "Player", "GamesWithQueenMove", "AverageFirstQueenMovePly",
+                "CorpusAverage", "DeltaFromCorpus", "CorpusPercentile", "CorpusEligiblePlayerCount"
+            ],
+            result.ColumnNames);
+        Assert.Equal(8.0, result.Rows[0][2]);
+        Assert.Equal(9.0, result.Rows[0][3]);
+        Assert.Equal(-1.0, (double)result.Rows[0][4]!, precision: 10);
+        Assert.Equal(50.0, result.Rows[0][5]);
+        Assert.Equal(2, result.Rows[0][6]);
     }
 
     [Fact]
@@ -1654,7 +1937,7 @@ public class MetricRegistryAndExecutorsTests
             PlayerColour = "Black",
             MaxGameYear = 1975
         };
-        var sut = new FirstQueenMovePlyExecutor(repo.Object);
+        var sut = new FirstQueenMovePlyExecutor(repo.Object, CorpusBenchmarkCalculator);
 
         await sut.ExecuteAsync(query);
 

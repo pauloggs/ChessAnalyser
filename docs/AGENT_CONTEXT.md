@@ -33,7 +33,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (Phase 5):** `CastlingSidePreference` (PR #60).
 - **Done (Phase 5):** `OppositeSideCastlingRate` (PR #61).
 - **Done (Phase 5):** `UncastledKingRate` (PR #62).
-- **In flight:** `FirstQueenMovePly` (Phase 6).
+- **Done (Phase 6):** `FirstQueenMovePly`.
+- **Done (corpus benchmarks):** `CentreMoveRate`, `ForwardMoveRate`, `CastlingSidePreference`, `OppositeSideCastlingRate`, `UncastledKingRate`, `FirstQueenMovePly`.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §12.4).
 
 ---
@@ -53,9 +54,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next (after FirstQueenMovePly PR merges):** [PLAN.md §12.6 Phase 7](./PLAN.md) — implement **`AverageGameLength`**.
+**Do next:** [PLAN.md §12.6 Phase 7](./PLAN.md) — implement **`AverageGameLength`**.
 
-**Then:** `ShortDrawRate` and Phase 7+ per PLAN; corpus benchmarks on Phase 4–5 metrics as follow-up PRs.
+**Then:** `ShortDrawRate` and Phase 7+ per PLAN.
 
 **Do not prioritize yet:** HTTP auth / rate limits for metrics (PLAN §12.4 / §13).
 

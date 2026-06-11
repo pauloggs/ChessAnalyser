@@ -1496,6 +1496,445 @@ namespace Repositories
             """;
 
         /// <summary>
+        /// Per-player mean centre-move rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerCentreMoveRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PlayerMoves AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       SUM(CASE WHEN m.ToSquare IN (27, 28, 35, 36) THEN 1 ELSE 0 END) AS CentreCount,
+                       COUNT(*) AS MoveCount
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE m.MovingSide = a.PlayerSide
+                  AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+                HAVING COUNT(*) > 0
+            ),
+            PerGame AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       CAST(CentreCount AS FLOAT) / MoveCount AS CentreMoveRate
+                FROM PlayerMoves
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(CentreMoveRate) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
+        /// Per-player mean forward-move rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerForwardMoveRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PlayerMoves AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       SUM(CASE
+                               WHEN m.MovingSide = 'W' AND (m.ToSquare / 8) >= 4 THEN 1
+                               WHEN m.MovingSide = 'B' AND (m.ToSquare / 8) <= 3 THEN 1
+                               ELSE 0
+                           END) AS ForwardCount,
+                       COUNT(*) AS MoveCount
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE m.MovingSide = a.PlayerSide
+                  AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
+                  AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+                HAVING COUNT(*) > 0
+            ),
+            PerGame AS
+            (
+                SELECT PlayerSurname,
+                       PlayerForenames,
+                       GameId,
+                       CAST(ForwardCount AS FLOAT) / MoveCount AS ForwardMoveRate
+                FROM PlayerMoves
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(ForwardMoveRate) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
+        /// Per-player kingside castling preference for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerCastlingSidePreference =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            FirstCastlePly AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE m.MovingSide = a.PlayerSide
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+            ),
+            PerGame AS
+            (
+                SELECT fcp.PlayerSurname,
+                       fcp.PlayerForenames,
+                       fcp.GameId,
+                       CASE WHEN m.IsCastlingKingside = 1 THEN 1.0 ELSE 0.0 END AS IsKingside
+                FROM FirstCastlePly fcp
+                INNER JOIN Appearances a ON a.GameId = fcp.GameId
+                    AND a.PlayerSurname = fcp.PlayerSurname
+                    AND ((a.PlayerForenames IS NULL AND fcp.PlayerForenames IS NULL) OR a.PlayerForenames = fcp.PlayerForenames)
+                INNER JOIN dbo.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
+                WHERE m.MovingSide = a.PlayerSide
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(IsKingside) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
+        /// Per-player opposite-side castling rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerOppositeSideCastlingRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            WhiteFirstCastlePly AS
+            (
+                SELECT fg.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE m.MovingSide = 'W'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY fg.GameId
+            ),
+            WhiteCastle AS
+            (
+                SELECT wcp.GameId,
+                       m.IsCastlingKingside
+                FROM WhiteFirstCastlePly wcp
+                INNER JOIN dbo.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
+                WHERE m.MovingSide = 'W'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            ),
+            BlackFirstCastlePly AS
+            (
+                SELECT fg.GameId,
+                       MIN(m.PlyIndex) AS CastlingPly
+                FROM FilteredGames fg
+                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                WHERE m.MovingSide = 'B'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                GROUP BY fg.GameId
+            ),
+            BlackCastle AS
+            (
+                SELECT bcp.GameId,
+                       m.IsCastlingKingside
+                FROM BlackFirstCastlePly bcp
+                INNER JOIN dbo.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
+                WHERE m.MovingSide = 'B'
+                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+            ),
+            EligibleGames AS
+            (
+                SELECT fg.GameId,
+                       CASE
+                           WHEN wc.IsCastlingKingside <> bc.IsCastlingKingside THEN 1.0
+                           ELSE 0.0
+                       END AS IsOppositeSide
+                FROM FilteredGames fg
+                INNER JOIN WhiteCastle wc ON wc.GameId = fg.GameId
+                INNER JOIN BlackCastle bc ON bc.GameId = fg.GameId
+            ),
+            PerGame AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       eg.IsOppositeSide
+                FROM Appearances a
+                INNER JOIN EligibleGames eg ON eg.GameId = a.GameId
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(IsOppositeSide) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
+        /// Per-player uncastled-king rate for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerUncastledKingRate =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            PerGame AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       CASE
+                           WHEN EXISTS (
+                               SELECT 1
+                               FROM dbo.GameMove m
+                               WHERE m.GameId = a.GameId
+                                 AND m.MovingSide = a.PlayerSide
+                                 AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
+                           ) THEN 0.0
+                           ELSE 1.0
+                       END AS IsUncastled
+                FROM Appearances a
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(IsUncastled) AS MetricValue
+            FROM PerGame
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
+        /// Per-player mean first queen move ply for corpus benchmarks (PLAN §12.7).
+        /// </summary>
+        public static string GetPerPlayerFirstQueenMovePly =>
+            """
+            WITH FilteredGames AS
+            (
+                SELECT g.Id AS GameId,
+                       wp.Surname AS WhiteSurname,
+                       wp.Forenames AS WhiteForenames,
+                       bp.Surname AS BlackSurname,
+                       bp.Forenames AS BlackForenames
+                FROM dbo.Game g
+                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
+                  AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
+                  AND (@Eco IS NULL OR g.Eco = @Eco)
+            ),
+            Appearances AS
+            (
+                SELECT fg.GameId,
+                       fg.WhiteSurname AS PlayerSurname,
+                       fg.WhiteForenames AS PlayerForenames,
+                       CAST('W' AS CHAR(1)) AS PlayerSide
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'White'
+
+                UNION ALL
+
+                SELECT fg.GameId,
+                       fg.BlackSurname,
+                       fg.BlackForenames,
+                       CAST('B' AS CHAR(1))
+                FROM FilteredGames fg
+                WHERE @PlayerColour = 'Any' OR @PlayerColour = 'Black'
+            ),
+            FirstQueenMove AS
+            (
+                SELECT a.PlayerSurname,
+                       a.PlayerForenames,
+                       a.GameId,
+                       MIN(m.PlyIndex) AS FirstQueenPly
+                FROM Appearances a
+                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                WHERE m.MovingSide = a.PlayerSide
+                  AND m.MovedPiece = 'Q'
+                GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
+            )
+            SELECT PlayerSurname,
+                   PlayerForenames,
+                   COUNT(*) AS GameCount,
+                   AVG(CAST(FirstQueenPly AS FLOAT)) AS MetricValue
+            FROM FirstQueenMove
+            GROUP BY PlayerSurname, PlayerForenames
+            ORDER BY MetricValue DESC, PlayerSurname, PlayerForenames;
+            """;
+
+        /// <summary>
         /// Games that have at least one board snapshot but no derived move rows yet (PLAN §5.3.5).
         /// </summary>
         public static string GetGameIdsNeedingAnalyticsBackfill =>
