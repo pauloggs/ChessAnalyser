@@ -8,6 +8,7 @@ CREATE TABLE [dbo].[Player](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Surname] [nvarchar](200) NOT NULL,
 	[Forenames] [nvarchar](400) NOT NULL,
+	[WorldChampionId] [int] NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -21,6 +22,20 @@ CREATE TABLE [dbo].[Player](
 GO
 
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
+GO
+
+ALTER TABLE [dbo].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_FidePlayer] FOREIGN KEY([WorldChampionId])
+REFERENCES [Ref].[WorldChampion] ([Id])
+GO
+
+ALTER TABLE [dbo].[Player] CHECK CONSTRAINT [FK_Player_FidePlayer]
+GO
+
+ALTER TABLE [dbo].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
+REFERENCES [Ref].[WorldChampion] ([Id])
+GO
+
+ALTER TABLE [dbo].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
 GO
 
 
