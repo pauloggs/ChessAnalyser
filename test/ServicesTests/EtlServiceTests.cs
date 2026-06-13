@@ -1,6 +1,7 @@
 using Interfaces.DTO;
 using Moq;
 using Services;
+using Services.PlayerMetadata;
 
 namespace ServicesTests
 {
@@ -20,6 +21,10 @@ namespace ServicesTests
             playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>()))
                 .Callback<Game>(g => { g.WhitePlayerId = 1; g.BlackPlayerId = 2; })
                 .Returns(Task.CompletedTask);
+            var metadataLinkingMock = new Mock<IPlayerMetadataLinkingService>();
+            metadataLinkingMock
+                .Setup(m => m.TryLinkPlayerAsync(It.IsAny<int>(), It.IsAny<short?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(PlayerMetadataLinkResult.Empty);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
             var game = new Game { Name = "G", Plies = new Dictionary<int, Ply>(), GameId = "x" };
@@ -36,7 +41,8 @@ namespace ServicesTests
                 persistenceMock.Object,
                 boardPositionServiceMock.Object,
                 progressStoreMock.Object,
-                playerResolverMock.Object);
+                playerResolverMock.Object,
+                metadataLinkingMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 
@@ -61,6 +67,10 @@ namespace ServicesTests
             playerResolverMock.Setup(pr => pr.ResolveGamePlayersAsync(It.IsAny<Game>()))
                 .Callback<Game>(g => { g.WhitePlayerId = 1; g.BlackPlayerId = 2; })
                 .Returns(Task.CompletedTask);
+            var metadataLinkingMock = new Mock<IPlayerMetadataLinkingService>();
+            metadataLinkingMock
+                .Setup(m => m.TryLinkPlayerAsync(It.IsAny<int>(), It.IsAny<short?>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(PlayerMetadataLinkResult.Empty);
 
             var pgnFiles = new List<PgnFile> { new PgnFile { Name = "a.pgn", Contents = "[Event \"E\"]\n1. e4" } };
             var game = new Game { Name = "G", GameId = "x", Plies = new Dictionary<int, Ply>() };
@@ -76,7 +86,8 @@ namespace ServicesTests
                 persistenceMock.Object,
                 boardPositionServiceMock.Object,
                 progressStoreMock.Object,
-                playerResolverMock.Object);
+                playerResolverMock.Object,
+                metadataLinkingMock.Object);
 
             await sut.LoadGamesToDatabase("C:\\PGN");
 

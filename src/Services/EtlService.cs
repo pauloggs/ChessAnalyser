@@ -1,4 +1,5 @@
 using Interfaces.DTO;
+using Services.PlayerMetadata;
 
 namespace Services
 {
@@ -18,7 +19,8 @@ namespace Services
         IPersistenceService persistenceService,
         IBoardPositionService boardPositionService,
         IEtlProgressStore progressStore,
-        IPlayerResolver playerResolver) : IEtlService
+        IPlayerResolver playerResolver,
+        IPlayerMetadataLinkingService playerMetadataLinkingService) : IEtlService
     {
         private readonly IFileHandler _fileHandler = fileHandler;
         private readonly IPgnParser _pgnParser = pgnParser;
@@ -26,6 +28,7 @@ namespace Services
         private readonly IBoardPositionService _boardPositionService = boardPositionService;
         private readonly IEtlProgressStore _progressStore = progressStore;
         private readonly IPlayerResolver _playerResolver = playerResolver;
+        private readonly IPlayerMetadataLinkingService _playerMetadataLinkingService = playerMetadataLinkingService;
 
         public async Task LoadGamesToDatabase(string filePath, IProgress<EtlProgress>? progress = null)
         {
@@ -150,6 +153,11 @@ namespace Services
                             continue;
 
                         await _playerResolver.ResolveGamePlayersAsync(game);
+                        if (game.WhitePlayerId is int whiteId)
+                            await _playerMetadataLinkingService.TryLinkPlayerAsync(whiteId, game.GameYear);
+                        if (game.BlackPlayerId is int blackId)
+                            await _playerMetadataLinkingService.TryLinkPlayerAsync(blackId, game.GameYear);
+
                         var parseErrors = new List<GameParseError>();
                         if (game.WhitePlayerId is null || game.BlackPlayerId is null)
                         {

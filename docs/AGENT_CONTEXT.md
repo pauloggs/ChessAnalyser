@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (migration `013`: `App` schema for operational tables; `Ref` + `App` layout).
+**Last updated:** 2026-06-11 (player metadata C# linking: matchers + ETL + `--link-player-metadata` backfill).
 
 ---
 
@@ -30,7 +30,8 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (player metadata schema):** Migrations `011`/`012` — `Ref.WorldChampion` (seeded), `Ref.FidePlayer` (retained catalog), `App.Player.WorldChampionId` / `FidePlayerId` FKs. DTOs: `Interfaces.DTO.Ref.WorldChampion`, `FidePlayer`. No denormalised FIDE/WC columns on `App.Player`.
 - **Done (schema layout):** Migration `013` — operational tables in **`App.*`**; `Ref.*` + `dbo.SchemaVersions` unchanged; C# SQL uses `App.` prefixes.
 - **Done (DTO layout):** `Interfaces.DTO.Ref` (`WorldChampion`, `FidePlayer`); `Interfaces.DTO.App` (`Player`, `Game`, `BoardPosition`, `GameMoveFact`, `GamePositionSummary`, `GameParseError`); parsing/API DTOs remain in `Interfaces.DTO`.
-- **Pending (player metadata C#):** matchers + FK linking on ETL/backfill; API/filters (PLAN §15.4+). All name matching in C# (no SQL alias table).
+- **Pending (player metadata C#):** API/filters (PLAN §15.4+). All name matching in C# (no SQL alias table).
+- **Done (player metadata linking):** `IWorldChampionMatcher` / `IFidePlayerMatcher` / `IPlayerMetadataLinkingService` — sets `App.Player.WorldChampionId` / `FidePlayerId` on ETL and via `--link-player-metadata` CLI backfill.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
@@ -50,7 +51,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** Player metadata **C# linking** — `IWorldChampionMatcher` / `IFidePlayerMatcher` → set `App.Player.WorldChampionId` / `FidePlayerId` (ETL + optional backfill). Then PLAN §15.4 API.
+**Do next:** PLAN §15.4 API — expose metadata on player picker (`fideId`, `federation`, `wasWorldChampion`, etc.).
 
 **Then (in order):** §15.5–15.7 filters.
 
@@ -73,7 +74,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **`App.GameMove`** + **`App.GamePositionSummary`** — derived on ETL/backfill; required for style metrics.
 - **Corpus benchmarks:** opt-in `includeCorpusBenchmark` + `benchmarkMinGames` (default 30); shared `ICorpusBenchmarkCalculator`.
-- **Player metadata today:** `App.Player` = identity + nullable `WorldChampionId` / `FidePlayerId` FKs; attributes on `Ref.WorldChampion` / `Ref.FidePlayer`. C# `App.Player` DTO is identity-only; `Ref.WorldChampion` / `Ref.FidePlayer` map ref tables. Linking and filters not wired yet.
+- **Player metadata today:** `App.Player` = identity + nullable `WorldChampionId` / `FidePlayerId` FKs; attributes on `Ref.WorldChampion` / `Ref.FidePlayer`. C# matchers link FKs on ETL and `--link-player-metadata` backfill. API/filters not wired yet.
 - **Conventions:** [PLAN.md §7](./PLAN.md), [DESIGN.md §8](./DESIGN.md).
 
 ---

@@ -8,7 +8,7 @@ namespace Repositories
 
         public static string GetPlayers =>
             """
-            SELECT Id, Surname, Forenames
+            SELECT Id, Surname, Forenames, WorldChampionId, FidePlayerId
             FROM App.Player;
             """;
 
@@ -17,7 +17,7 @@ namespace Repositories
 
         public static string GetPlayersBySurname =>
             """
-            SELECT Id, Surname, Forenames
+            SELECT Id, Surname, Forenames, WorldChampionId, FidePlayerId
             FROM App.Player
             WHERE LOWER(Surname) = LOWER(@Surname);
             """;
@@ -31,9 +31,45 @@ namespace Repositories
 
         public static string GetPlayerById =>
             """
-            SELECT Id, Surname, Forenames
+            SELECT Id, Surname, Forenames, WorldChampionId, FidePlayerId
             FROM App.Player
             WHERE Id = @Id;
+            """;
+
+        public static string GetWorldChampions =>
+            """
+            SELECT Id, Surname, Forenames, ChampionOrder, ReignStartYear, ReignEndYear
+            FROM Ref.WorldChampion;
+            """;
+
+        public static string GetFidePlayersBySurname =>
+            """
+            SELECT Id, Surname, Forenames, Federation, Sex, FideTitle, BirthYear
+            FROM Ref.FidePlayer
+            WHERE LOWER(Surname) = LOWER(@Surname);
+            """;
+
+        public static string GetFidePlayerById =>
+            """
+            SELECT Id, Surname, Forenames, Federation, Sex, FideTitle, BirthYear
+            FROM Ref.FidePlayer
+            WHERE Id = @Id;
+            """;
+
+        public static string UpdatePlayerMetadataLinks =>
+            """
+            UPDATE App.Player
+            SET WorldChampionId = @WorldChampionId,
+                FidePlayerId = @FidePlayerId
+            WHERE Id = @Id;
+            """;
+
+        public static string GetMinGameYearForPlayer =>
+            """
+            SELECT MIN(g.GameYear)
+            FROM App.Game g
+            WHERE g.GameYear IS NOT NULL
+              AND (g.WhitePlayerId = @PlayerId OR g.BlackPlayerId = @PlayerId);
             """;
 
         public static string InsertGame =>

@@ -5,11 +5,19 @@ namespace RepositoriesTests;
 public class SqlStatementsPlayerTests
 {
     [Fact]
-    public void GetPlayers_SelectsIdentityColumnsOnly()
+    public void GetPlayers_IncludesMetadataForeignKeys()
     {
-        Assert.Contains("Id", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("Surname", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("Forenames", SqlStatements.GetPlayers, StringComparison.Ordinal);
+        Assert.Contains("WorldChampionId", SqlStatements.GetPlayers, StringComparison.Ordinal);
+        Assert.Contains("FidePlayerId", SqlStatements.GetPlayers, StringComparison.Ordinal);
+    }
+
+    [Fact]
+    public void UpdatePlayerMetadataLinks_UpdatesForeignKeys()
+    {
+        var sql = SqlStatements.UpdatePlayerMetadataLinks;
+        Assert.Contains("UPDATE App.Player", sql, StringComparison.Ordinal);
+        Assert.Contains("WorldChampionId", sql, StringComparison.Ordinal);
+        Assert.Contains("FidePlayerId", sql, StringComparison.Ordinal);
     }
 
     [Fact]

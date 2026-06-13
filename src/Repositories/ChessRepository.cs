@@ -360,6 +360,16 @@ namespace Repositories
         Task<IReadOnlyList<(int PlyIndex, BoardPosition Position)>> GetBoardPositionsForGameOrderedAsync(
             int gameId,
             CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<WorldChampion>> GetWorldChampionsAsync(CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<FidePlayer>> GetFidePlayersBySurnameAsync(string surname, CancellationToken cancellationToken = default);
+
+        Task<FidePlayer?> GetFidePlayerByIdAsync(int fidePlayerId, CancellationToken cancellationToken = default);
+
+        Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default);
+
+        Task UpdatePlayerMetadataLinksAsync(int playerId, int? worldChampionId, int? fidePlayerId, CancellationToken cancellationToken = default);
     }
 
     public class ChessRepository : IChessRepository
@@ -1761,6 +1771,66 @@ namespace Repositories
                     cancellationToken: cancellationToken))).ToList();
 
             return rows.Select(r => (r.PlyIndex, MapBoardPosition(r))).ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<WorldChampion>> GetWorldChampionsAsync(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var list = await connection.QueryAsync<WorldChampion>(
+                new CommandDefinition(SqlStatements.GetWorldChampions, cancellationToken: cancellationToken));
+            return list.ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<FidePlayer>> GetFidePlayersBySurnameAsync(
+            string surname,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var list = await connection.QueryAsync<FidePlayer>(
+                new CommandDefinition(
+                    SqlStatements.GetFidePlayersBySurname,
+                    new { Surname = surname },
+                    cancellationToken: cancellationToken));
+            return list.ToList();
+        }
+
+        /// <inheritdoc />
+        public async Task<FidePlayer?> GetFidePlayerByIdAsync(int fidePlayerId, CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.QuerySingleOrDefaultAsync<FidePlayer>(
+                new CommandDefinition(
+                    SqlStatements.GetFidePlayerById,
+                    new { Id = fidePlayerId },
+                    cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.ExecuteScalarAsync<short?>(
+                new CommandDefinition(
+                    SqlStatements.GetMinGameYearForPlayer,
+                    new { PlayerId = playerId },
+                    cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task UpdatePlayerMetadataLinksAsync(
+            int playerId,
+            int? worldChampionId,
+            int? fidePlayerId,
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    SqlStatements.UpdatePlayerMetadataLinks,
+                    new { Id = playerId, WorldChampionId = worldChampionId, FidePlayerId = fidePlayerId },
+                    cancellationToken: cancellationToken));
         }
 
         private static BoardPosition MapBoardPosition(BoardPositionDbRow r)

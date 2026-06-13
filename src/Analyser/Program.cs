@@ -6,6 +6,7 @@ using Repositories;
 using Services;
 using Services.Analytics;
 using Services.Helpers;
+using Services.PlayerMetadata;
 using System.Reflection;
 using System.Linq;
 
@@ -62,6 +63,9 @@ builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
+builder.Services.AddScoped<IWorldChampionMatcher, WorldChampionMatcher>();
+builder.Services.AddScoped<IFidePlayerMatcher, FidePlayerMatcher>();
+builder.Services.AddScoped<IPlayerMetadataLinkingService, PlayerMetadataLinkingService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
@@ -111,6 +115,17 @@ builder.Services.AddScoped<IMetricRegistry, MetricRegistry>();
 builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>();
 
 var app = builder.Build();
+
+if (args.Any(a => string.Equals(a, "--link-player-metadata", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var linking = scope.ServiceProvider.GetRequiredService<IPlayerMetadataLinkingService>();
+    var outcome = await linking.LinkAllPlayersAsync();
+    Console.WriteLine(
+        $"Player metadata link: processed={outcome.PlayersProcessed}, worldChampion={outcome.WorldChampionLinked}, " +
+        $"fideLinked={outcome.FideLinked}, fideCleared={outcome.FideCleared}, unchanged={outcome.Unchanged}.");
+    return;
+}
 
 if (args.Any(a => string.Equals(a, "--backfill-analytics", StringComparison.OrdinalIgnoreCase)))
 {

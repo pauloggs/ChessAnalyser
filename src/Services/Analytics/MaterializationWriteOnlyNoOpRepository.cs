@@ -219,6 +219,24 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
         int gameId,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<(int PlyIndex, BoardPosition Position)>>();
 
+    public Task<IReadOnlyList<WorldChampion>> GetWorldChampionsAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<WorldChampion>>();
+
+    public Task<IReadOnlyList<FidePlayer>> GetFidePlayersBySurnameAsync(string surname, CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<FidePlayer>>();
+
+    public Task<FidePlayer?> GetFidePlayerByIdAsync(int fidePlayerId, CancellationToken cancellationToken = default) =>
+        Throw<FidePlayer?>();
+
+    public Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default) =>
+        Throw<short?>();
+
+    public Task UpdatePlayerMetadataLinksAsync(
+        int playerId,
+        int? worldChampionId,
+        int? fidePlayerId,
+        CancellationToken cancellationToken = default) => Throw();
+
     private static Task<T> Throw<T>() =>
         Task.FromException<T>(new InvalidOperationException("Not supported on write-only no-op repository."));
 

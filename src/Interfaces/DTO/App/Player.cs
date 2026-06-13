@@ -12,4 +12,10 @@ public class Player
 
     /// <summary>Forenames (given names). No leading or trailing spaces. May be empty.</summary>
     public string Forenames { get; set; } = string.Empty;
+
+    /// <summary>FK to <c>Ref.WorldChampion</c> when matched; null otherwise.</summary>
+    public int? WorldChampionId { get; set; }
+
+    /// <summary>FK to <c>Ref.FidePlayer</c> when matched; null otherwise.</summary>
+    public int? FidePlayerId { get; set; }
 }
