@@ -1,6 +1,6 @@
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
-CREATE TABLE [dbo].[GamePositionSummary](
+CREATE TABLE [App].[GamePositionSummary](
 	[GameId] [int] NOT NULL,
 	[PlyIndex] [int] NOT NULL,
 	[WhiteMaterial] [smallint] NOT NULL,
@@ -24,11 +24,11 @@ CREATE TABLE [dbo].[GamePositionSummary](
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 
-CREATE NONCLUSTERED INDEX [IX_GamePositionSummary_PlyIndex] ON [dbo].[GamePositionSummary]
+CREATE NONCLUSTERED INDEX [IX_GamePositionSummary_PlyIndex] ON [App].[GamePositionSummary]
 (
 	[PlyIndex] ASC
 )
 INCLUDE([WhiteMaterial],[BlackMaterial],[GameId]) WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-ALTER TABLE [dbo].[GamePositionSummary]  WITH CHECK ADD  CONSTRAINT [FK_GamePositionSummary_Game] FOREIGN KEY([GameId])
-REFERENCES [dbo].[Game] ([Id])
-ALTER TABLE [dbo].[GamePositionSummary] CHECK CONSTRAINT [FK_GamePositionSummary_Game]
+ALTER TABLE [App].[GamePositionSummary]  WITH CHECK ADD  CONSTRAINT [FK_GamePositionSummary_Game] FOREIGN KEY([GameId])
+REFERENCES [App].[Game] ([Id])
+ALTER TABLE [App].[GamePositionSummary] CHECK CONSTRAINT [FK_GamePositionSummary_Game]

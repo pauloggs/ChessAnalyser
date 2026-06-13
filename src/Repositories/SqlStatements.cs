@@ -9,22 +9,22 @@ namespace Repositories
         public static string GetPlayers =>
             """
             SELECT Id, Surname, Forenames
-            FROM dbo.Player;
+            FROM App.Player;
             """;
 
         public static string GetPlayerIdBySurnameAndForenames =>
-            "SELECT Id FROM dbo.Player WHERE Surname = @Surname AND Forenames = @Forenames;";
+            "SELECT Id FROM App.Player WHERE Surname = @Surname AND Forenames = @Forenames;";
 
         public static string GetPlayersBySurname =>
             """
             SELECT Id, Surname, Forenames
-            FROM dbo.Player
+            FROM App.Player
             WHERE LOWER(Surname) = LOWER(@Surname);
             """;
 
         public static string InsertPlayer =>
             """
-            INSERT INTO dbo.Player (Surname, Forenames)
+            INSERT INTO App.Player (Surname, Forenames)
             VALUES (@Surname, @Forenames);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
             """;
@@ -32,26 +32,26 @@ namespace Repositories
         public static string GetPlayerById =>
             """
             SELECT Id, Surname, Forenames
-            FROM dbo.Player
+            FROM App.Player
             WHERE Id = @Id;
             """;
 
         public static string InsertGame =>
         """
-        IF (NOT EXISTS (SELECT TOP 1 Id FROM dbo.Game WHERE GameId = @GameId))
+        IF (NOT EXISTS (SELECT TOP 1 Id FROM App.Game WHERE GameId = @GameId))
         BEGIN
-            INSERT INTO dbo.Game (Name, GameId, Winner, WhitePlayerId, BlackPlayerId, Event, Site, DateTag, GameYear, Eco)
+            INSERT INTO App.Game (Name, GameId, Winner, WhitePlayerId, BlackPlayerId, Event, Site, DateTag, GameYear, Eco)
             VALUES (@Name, @GameId, @Winner, @WhitePlayerId, @BlackPlayerId, @Event, @Site, @DateTag, @GameYear, @Eco);
         END;
-        SELECT Id FROM dbo.Game WHERE GameId = @GameId;
+        SELECT Id FROM App.Game WHERE GameId = @GameId;
         """;
 
         public static string DeleteBoardPositionsForGame =>
-            "DELETE FROM dbo.BoardPosition WHERE GameId = @GameId;";
+            "DELETE FROM App.BoardPosition WHERE GameId = @GameId;";
 
         public static string InsertBoardPosition =>
         """
-        INSERT INTO dbo.BoardPosition
+        INSERT INTO App.BoardPosition
         (GameId, PlyIndex, WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK, EnPassantTargetFile)
         VALUES
         (@GameId, @PlyIndex, @WP, @WN, @WB, @WR, @WQ, @WK, @BP, @BN, @BB, @BR, @BQ, @BK, @EnPassantTargetFile);
@@ -62,21 +62,21 @@ namespace Repositories
             SELECT 
         	    [GameId]
             FROM
-        	    [Chess].[dbo].[Game];
+        	    App.Game;
         """;
 
         public static string InsertGameParseError =>
             """
-            INSERT INTO dbo.GameParseError (SourcePgnFileName, GameIndexInFile, GameName, ErrorMessage)
+            INSERT INTO App.GameParseError (SourcePgnFileName, GameIndexInFile, GameName, ErrorMessage)
             VALUES (@SourcePgnFileName, @GameIndexInFile, @GameName, @ErrorMessage);
             """;
 
         public static string DeleteGameMovesForGame =>
-            "DELETE FROM dbo.GameMove WHERE GameId = @GameId;";
+            "DELETE FROM App.GameMove WHERE GameId = @GameId;";
 
         public static string InsertGameMove =>
             """
-            INSERT INTO dbo.GameMove
+            INSERT INTO App.GameMove
             (GameId, PlyIndex, MovingSide, FromSquare, ToSquare, MovedPiece, CapturedPiece, PromotionPiece, IsCastlingKingside, IsCastlingQueenside)
             VALUES (@GameId, @PlyIndex, @MovingSide, @FromSquare, @ToSquare, @MovedPiece, @CapturedPiece, @PromotionPiece, @IsCastlingKingside, @IsCastlingQueenside);
             """;
@@ -84,17 +84,17 @@ namespace Repositories
         public static string GetGameMovesForGame =>
             """
             SELECT GameId, PlyIndex, MovingSide, FromSquare, ToSquare, MovedPiece, CapturedPiece, PromotionPiece, IsCastlingKingside, IsCastlingQueenside
-            FROM dbo.GameMove
+            FROM App.GameMove
             WHERE GameId = @GameId
             ORDER BY PlyIndex;
             """;
 
         public static string DeleteGamePositionSummariesForGame =>
-            "DELETE FROM dbo.GamePositionSummary WHERE GameId = @GameId;";
+            "DELETE FROM App.GamePositionSummary WHERE GameId = @GameId;";
 
         public static string InsertGamePositionSummary =>
             """
-            INSERT INTO dbo.GamePositionSummary
+            INSERT INTO App.GamePositionSummary
             (GameId, PlyIndex, WhiteMaterial, BlackMaterial,
              WhitePawnCount, WhiteKnightCount, WhiteBishopCount, WhiteRookCount, WhiteQueenCount, WhiteKingCount,
              BlackPawnCount, BlackKnightCount, BlackBishopCount, BlackRookCount, BlackQueenCount, BlackKingCount)
@@ -108,7 +108,7 @@ namespace Repositories
             SELECT GameId, PlyIndex, WhiteMaterial, BlackMaterial,
              WhitePawnCount, WhiteKnightCount, WhiteBishopCount, WhiteRookCount, WhiteQueenCount, WhiteKingCount,
              BlackPawnCount, BlackKnightCount, BlackBishopCount, BlackRookCount, BlackQueenCount, BlackKingCount
-            FROM dbo.GamePositionSummary
+            FROM App.GamePositionSummary
             WHERE GameId = @GameId
             ORDER BY PlyIndex;
             """;
@@ -122,10 +122,10 @@ namespace Repositories
                    AVG(CAST(s.WhiteMaterial AS FLOAT)) AS AvgWhiteMaterial,
                    AVG(CAST(s.BlackMaterial AS FLOAT)) AS AvgBlackMaterial,
                    COUNT(*) AS GameCount
-            FROM dbo.Game g
-            INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
-            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            FROM App.Game g
+            INNER JOIN App.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+            LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
             WHERE g.GameYear IS NOT NULL
               AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
               AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
@@ -145,10 +145,10 @@ namespace Repositories
         public static string GetKnightDestinationCounts =>
             """
             SELECT m.ToSquare AS ToSquare, COUNT(*) AS MoveCount
-            FROM dbo.GameMove m
-            INNER JOIN dbo.Game g ON g.Id = m.GameId
-            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            FROM App.GameMove m
+            INNER JOIN App.Game g ON g.Id = m.GameId
+            LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
             WHERE m.MovedPiece = 'N'
               AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
@@ -168,9 +168,9 @@ namespace Repositories
         public static string GetGameCountsByEco =>
             """
             SELECT g.Eco AS Eco, COUNT(*) AS GameCount
-            FROM dbo.Game g
-            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            FROM App.Game g
+            LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
             WHERE g.Eco IS NOT NULL
               AND LTRIM(RTRIM(g.Eco)) <> ''
               AND (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
@@ -191,9 +191,9 @@ namespace Repositories
         public static string GetGameCountsByYear =>
             """
             SELECT g.GameYear AS GameYear, COUNT(*) AS GameCount
-            FROM dbo.Game g
-            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            FROM App.Game g
+            LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
             WHERE g.GameYear IS NOT NULL
               AND (@MinGameYear IS NULL OR g.GameYear >= @MinGameYear)
               AND (@MaxGameYear IS NULL OR g.GameYear <= @MaxGameYear)
@@ -219,9 +219,9 @@ namespace Repositories
                        ELSE 'Unknown'
                    END AS Result,
                    COUNT(*) AS GameCount
-            FROM dbo.Game g
-            LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-            LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+            FROM App.Game g
+            LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+            LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
             WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
               AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
               AND (
@@ -249,9 +249,9 @@ namespace Repositories
                 SELECT g.Id,
                        g.WhitePlayerId,
                        g.BlackPlayerId
-                FROM dbo.Game g
-                LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (
@@ -283,7 +283,7 @@ namespace Repositories
                    SUM(a.BlackGameCount) AS BlackGameCount,
                    COUNT(*) AS TotalGameCount
             FROM Appearance a
-            INNER JOIN dbo.Player p ON p.Id = a.PlayerId
+            INNER JOIN App.Player p ON p.Id = a.PlayerId
             GROUP BY p.Surname, p.Forenames
             ORDER BY TotalGameCount DESC, p.Surname, p.Forenames;
             """;
@@ -298,9 +298,9 @@ namespace Repositories
                 SELECT g.Winner,
                        g.WhitePlayerId,
                        g.BlackPlayerId
-                FROM dbo.Game g
-                LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (
@@ -345,7 +345,7 @@ namespace Repositories
                             * 100.0
                    END AS ScorePercentage
             FROM Appearance a
-            INNER JOIN dbo.Player p ON p.Id = a.PlayerId
+            INNER JOIN App.Player p ON p.Id = a.PlayerId
             GROUP BY p.Surname, p.Forenames
             ORDER BY Score DESC, TotalGameCount DESC, p.Surname, p.Forenames;
             """;
@@ -362,9 +362,9 @@ namespace Repositories
                        p.Forenames,
                        CAST('White' AS NVARCHAR(8)) AS Colour,
                        s.WhiteMaterial AS Material
-                FROM dbo.Game g
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
-                INNER JOIN dbo.Player p ON p.Id = g.WhitePlayerId
+                FROM App.Game g
+                INNER JOIN App.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+                INNER JOIN App.Player p ON p.Id = g.WhitePlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -375,9 +375,9 @@ namespace Repositories
                        p.Forenames,
                        CAST('Black' AS NVARCHAR(8)) AS Colour,
                        s.BlackMaterial AS Material
-                FROM dbo.Game g
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
-                INNER JOIN dbo.Player p ON p.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.GamePositionSummary s ON s.GameId = g.Id AND s.PlyIndex = @PlyIndex
+                INNER JOIN App.Player p ON p.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -439,9 +439,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -458,7 +458,7 @@ namespace Repositories
             (
                 SELECT fg.GameId, MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                   AND m.MovingSide = fg.PlayerSide
@@ -483,9 +483,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -515,7 +515,7 @@ namespace Repositories
                        a.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                   AND m.MovingSide = a.PlayerSide
                 GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
@@ -542,9 +542,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -565,7 +565,7 @@ namespace Repositories
                            WHEN 'B' THEN CAST(s.BlackMaterial - s.WhiteMaterial AS FLOAT)
                        END AS SignedBalance
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
@@ -598,9 +598,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -633,7 +633,7 @@ namespace Repositories
                            WHEN 'B' THEN CAST(s.BlackMaterial - s.WhiteMaterial AS FLOAT)
                        END AS SignedBalance
                 FROM Appearances a
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = a.GameId
                 WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
             ),
@@ -669,9 +669,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -693,7 +693,7 @@ namespace Repositories
                            ELSE 0.0
                        END AS HasBishopPair
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
@@ -728,9 +728,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -764,7 +764,7 @@ namespace Repositories
                            ELSE 0.0
                        END AS HasBishopPair
                 FROM Appearances a
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = a.GameId
                 WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
             ),
@@ -800,9 +800,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -823,7 +823,7 @@ namespace Repositories
                            WHEN 'B' THEN CAST(s.BlackBishopCount - s.BlackKnightCount AS FLOAT)
                        END AS MinorPieceDelta
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
@@ -858,9 +858,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -893,7 +893,7 @@ namespace Repositories
                            WHEN 'B' THEN CAST(s.BlackBishopCount - s.BlackKnightCount AS FLOAT)
                        END AS MinorPieceDelta
                 FROM Appearances a
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = a.GameId
                 WHERE (@MinPlyIndex IS NULL OR s.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR s.PlyIndex <= @MaxPlyIndex)
             ),
@@ -929,9 +929,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -950,7 +950,7 @@ namespace Repositories
                        SUM(CASE WHEN m.CapturedPiece IS NOT NULL THEN 1 ELSE 0 END) AS CaptureCount,
                        COUNT(*) AS MoveCount
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND m.MovingSide = fg.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
@@ -983,9 +983,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1016,7 +1016,7 @@ namespace Repositories
                        SUM(CASE WHEN m.CapturedPiece IS NOT NULL THEN 1 ELSE 0 END) AS CaptureCount,
                        COUNT(*) AS MoveCount
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE m.MovingSide = a.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
@@ -1053,9 +1053,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1072,7 +1072,7 @@ namespace Repositories
             (
                 SELECT fg.GameId, MIN(s.PlyIndex) AS QueenTradePly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND (s.WhiteQueenCount <> 1 OR s.BlackQueenCount <> 1)
                 GROUP BY fg.GameId
@@ -1108,9 +1108,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1138,7 +1138,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(s.PlyIndex) AS QueenTradePly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE s.WhiteQueenCount <> 1 OR s.BlackQueenCount <> 1
                 GROUP BY fg.GameId
             ),
@@ -1176,9 +1176,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1197,7 +1197,7 @@ namespace Repositories
                        SUM(CASE WHEN m.ToSquare IN (27, 28, 35, 36) THEN 1 ELSE 0 END) AS CentreCount,
                        COUNT(*) AS MoveCount
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND m.MovingSide = fg.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
@@ -1231,9 +1231,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1256,7 +1256,7 @@ namespace Repositories
                            END) AS ForwardCount,
                        COUNT(*) AS MoveCount
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND m.MovingSide = fg.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
@@ -1290,9 +1290,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1310,7 +1310,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND m.MovingSide = fg.PlayerSide
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
@@ -1323,7 +1323,7 @@ namespace Repositories
                        CASE WHEN m.IsCastlingQueenside = 1 THEN 1.0 ELSE 0.0 END AS IsQueenside
                 FROM FirstCastlePly fcp
                 INNER JOIN FilteredGames fg ON fg.GameId = fcp.GameId
-                INNER JOIN dbo.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
                 WHERE m.MovingSide = fg.PlayerSide
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             )
@@ -1348,9 +1348,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1368,7 +1368,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE m.MovingSide = 'W'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                 GROUP BY fg.GameId
@@ -1378,7 +1378,7 @@ namespace Repositories
                 SELECT wcp.GameId,
                        m.IsCastlingKingside
                 FROM WhiteFirstCastlePly wcp
-                INNER JOIN dbo.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
                 WHERE m.MovingSide = 'W'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             ),
@@ -1387,7 +1387,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE m.MovingSide = 'B'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                 GROUP BY fg.GameId
@@ -1397,7 +1397,7 @@ namespace Repositories
                 SELECT bcp.GameId,
                        m.IsCastlingKingside
                 FROM BlackFirstCastlePly bcp
-                INNER JOIN dbo.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
                 WHERE m.MovingSide = 'B'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             ),
@@ -1432,9 +1432,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1453,7 +1453,7 @@ namespace Repositories
                        CASE
                            WHEN EXISTS (
                                SELECT 1
-                               FROM dbo.GameMove m
+                               FROM App.GameMove m
                                WHERE m.GameId = fg.GameId
                                  AND m.MovingSide = fg.PlayerSide
                                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
@@ -1483,9 +1483,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1503,7 +1503,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS FirstQueenPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND m.MovingSide = fg.PlayerSide
                   AND m.MovedPiece = 'Q'
@@ -1528,9 +1528,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1561,7 +1561,7 @@ namespace Repositories
                        SUM(CASE WHEN m.ToSquare IN (27, 28, 35, 36) THEN 1 ELSE 0 END) AS CentreCount,
                        COUNT(*) AS MoveCount
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE m.MovingSide = a.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
@@ -1597,9 +1597,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1634,7 +1634,7 @@ namespace Repositories
                            END) AS ForwardCount,
                        COUNT(*) AS MoveCount
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE m.MovingSide = a.PlayerSide
                   AND (@MinPlyIndex IS NULL OR m.PlyIndex >= @MinPlyIndex)
                   AND (@MaxPlyIndex IS NULL OR m.PlyIndex <= @MaxPlyIndex)
@@ -1670,9 +1670,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1702,7 +1702,7 @@ namespace Repositories
                        a.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE m.MovingSide = a.PlayerSide
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                 GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
@@ -1717,7 +1717,7 @@ namespace Repositories
                 INNER JOIN Appearances a ON a.GameId = fcp.GameId
                     AND a.PlayerSurname = fcp.PlayerSurname
                     AND ((a.PlayerForenames IS NULL AND fcp.PlayerForenames IS NULL) OR a.PlayerForenames = fcp.PlayerForenames)
-                INNER JOIN dbo.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = fcp.GameId AND m.PlyIndex = fcp.CastlingPly
                 WHERE m.MovingSide = a.PlayerSide
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             )
@@ -1742,9 +1742,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1772,7 +1772,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE m.MovingSide = 'W'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                 GROUP BY fg.GameId
@@ -1782,7 +1782,7 @@ namespace Repositories
                 SELECT wcp.GameId,
                        m.IsCastlingKingside
                 FROM WhiteFirstCastlePly wcp
-                INNER JOIN dbo.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = wcp.GameId AND m.PlyIndex = wcp.CastlingPly
                 WHERE m.MovingSide = 'W'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             ),
@@ -1791,7 +1791,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MIN(m.PlyIndex) AS CastlingPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GameMove m ON m.GameId = fg.GameId
+                INNER JOIN App.GameMove m ON m.GameId = fg.GameId
                 WHERE m.MovingSide = 'B'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
                 GROUP BY fg.GameId
@@ -1801,7 +1801,7 @@ namespace Repositories
                 SELECT bcp.GameId,
                        m.IsCastlingKingside
                 FROM BlackFirstCastlePly bcp
-                INNER JOIN dbo.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
+                INNER JOIN App.GameMove m ON m.GameId = bcp.GameId AND m.PlyIndex = bcp.CastlingPly
                 WHERE m.MovingSide = 'B'
                   AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
             ),
@@ -1846,9 +1846,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1879,7 +1879,7 @@ namespace Repositories
                        CASE
                            WHEN EXISTS (
                                SELECT 1
-                               FROM dbo.GameMove m
+                               FROM App.GameMove m
                                WHERE m.GameId = a.GameId
                                  AND m.MovingSide = a.PlayerSide
                                  AND (m.IsCastlingKingside = 1 OR m.IsCastlingQueenside = 1)
@@ -1909,9 +1909,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1941,7 +1941,7 @@ namespace Repositories
                        a.GameId,
                        MIN(m.PlyIndex) AS FirstQueenPly
                 FROM Appearances a
-                INNER JOIN dbo.GameMove m ON m.GameId = a.GameId
+                INNER JOIN App.GameMove m ON m.GameId = a.GameId
                 WHERE m.MovingSide = a.PlayerSide
                   AND m.MovedPiece = 'Q'
                 GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
@@ -1968,9 +1968,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -1988,7 +1988,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MAX(s.PlyIndex) AS MaxPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                 GROUP BY fg.GameId
             )
@@ -2011,9 +2011,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -2041,7 +2041,7 @@ namespace Repositories
                        a.GameId,
                        MAX(s.PlyIndex) AS MaxPly
                 FROM Appearances a
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = a.GameId
                 GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
             )
             SELECT PlayerSurname,
@@ -2067,9 +2067,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -2087,7 +2087,7 @@ namespace Repositories
                 SELECT fg.GameId,
                        MAX(s.PlyIndex) AS MaxPly
                 FROM FilteredGames fg
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = fg.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = fg.GameId
                 WHERE fg.PlayerSide IS NOT NULL
                   AND fg.Winner = 'D'
                 GROUP BY fg.GameId
@@ -2121,9 +2121,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -2151,8 +2151,8 @@ namespace Repositories
                        a.GameId,
                        MAX(s.PlyIndex) AS MaxPly
                 FROM Appearances a
-                INNER JOIN dbo.Game g ON g.Id = a.GameId
-                INNER JOIN dbo.GamePositionSummary s ON s.GameId = a.GameId
+                INNER JOIN App.Game g ON g.Id = a.GameId
+                INNER JOIN App.GamePositionSummary s ON s.GameId = a.GameId
                 WHERE g.Winner = 'D'
                 GROUP BY a.PlayerSurname, a.PlayerForenames, a.GameId
             )
@@ -2182,9 +2182,9 @@ namespace Repositories
                            WHEN bp.Surname = @PlayerSurname AND (@PlayerForenames IS NULL OR bp.Forenames = @PlayerForenames) THEN CAST('B' AS CHAR(1))
                            ELSE NULL
                        END AS PlayerSide
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -2225,9 +2225,9 @@ namespace Repositories
                        wp.Forenames AS WhiteForenames,
                        bp.Surname AS BlackSurname,
                        bp.Forenames AS BlackForenames
-                FROM dbo.Game g
-                INNER JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                INNER JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                FROM App.Game g
+                INNER JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                INNER JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear >= @MinGameYear))
                   AND (@MaxGameYear IS NULL OR (g.GameYear IS NOT NULL AND g.GameYear <= @MaxGameYear))
                   AND (@Eco IS NULL OR g.Eco = @Eco)
@@ -2266,16 +2266,16 @@ namespace Repositories
         public static string GetGameIdsNeedingAnalyticsBackfill =>
             """
             SELECT g.Id
-            FROM dbo.Game g
-            WHERE EXISTS (SELECT 1 FROM dbo.BoardPosition bp WHERE bp.GameId = g.Id)
-              AND NOT EXISTS (SELECT 1 FROM dbo.GameMove gm WHERE gm.GameId = g.Id)
+            FROM App.Game g
+            WHERE EXISTS (SELECT 1 FROM App.BoardPosition bp WHERE bp.GameId = g.Id)
+              AND NOT EXISTS (SELECT 1 FROM App.GameMove gm WHERE gm.GameId = g.Id)
             ORDER BY g.Id;
             """;
 
         public static string GetBoardPositionsForGameOrdered =>
             """
             SELECT PlyIndex, WP, WN, WB, WR, WQ, WK, BP, BN, BB, BR, BQ, BK, EnPassantTargetFile
-            FROM dbo.BoardPosition
+            FROM App.BoardPosition
             WHERE GameId = @GameId
             ORDER BY PlyIndex;
             """;

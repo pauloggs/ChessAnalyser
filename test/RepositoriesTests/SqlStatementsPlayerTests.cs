@@ -23,7 +23,7 @@ public class SqlStatementsPlayerTests
     public void InsertPlayer_InsertsSurnameAndForenames()
     {
         var sql = SqlStatements.InsertPlayer;
-        Assert.Contains("INSERT INTO dbo.Player (Surname, Forenames)", sql, StringComparison.Ordinal);
+        Assert.Contains("INSERT INTO App.Player (Surname, Forenames)", sql, StringComparison.Ordinal);
         Assert.Contains("@Surname", sql, StringComparison.Ordinal);
         Assert.Contains("@Forenames", sql, StringComparison.Ordinal);
     }

@@ -1,7 +1,7 @@
-namespace Interfaces.DTO;
+namespace Interfaces.DTO.App;
 
 /// <summary>
-/// Secondary fact row for <c>dbo.GameMove</c> (one half-move / ply transition).
+/// Secondary fact row for <c>App.GameMove</c> (one half-move / ply transition).
 /// </summary>
 public sealed class GameMoveFact
 {

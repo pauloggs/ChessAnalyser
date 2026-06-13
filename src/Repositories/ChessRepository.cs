@@ -14,7 +14,7 @@ namespace Repositories
         IConfiguration Configuration { get; }
 
         /// <summary>
-        /// One page of rows from <c>dbo.Game</c> ordered by <c>Id</c>, plus total row count.
+        /// One page of rows from <c>App.Game</c> ordered by <c>Id</c>, plus total row count.
         /// Optional <paramref name="filters"/> apply with AND semantics (see <see cref="GamePageFilters"/>).
         /// Honors <paramref name="cancellationToken"/> and uses a bounded command timeout.
         /// </summary>
@@ -42,7 +42,7 @@ namespace Repositories
         Task<int> InsertGame(Game game);
 
         /// <summary>
-        /// Persists all board positions for a game (initial position and per-ply positions) to dbo.BoardPosition.
+        /// Persists all board positions for a game (initial position and per-ply positions) to App.BoardPosition.
         /// Replaces any existing rows for this game.
         /// </summary>
         Task InsertBoardPositions(Game game, int gameId);
@@ -53,12 +53,12 @@ namespace Repositories
         Task InsertGameParseError(GameParseError error);
 
         /// <summary>
-        /// Replaces all <c>dbo.GameMove</c> rows for a game (delete then insert). Pass an empty list to clear only.
+        /// Replaces all <c>App.GameMove</c> rows for a game (delete then insert). Pass an empty list to clear only.
         /// </summary>
         Task ReplaceGameMovesForGame(int gameId, IReadOnlyList<GameMoveFact> rows);
 
         /// <summary>
-        /// Replaces all <c>dbo.GamePositionSummary</c> rows for a game (delete then insert).
+        /// Replaces all <c>App.GamePositionSummary</c> rows for a game (delete then insert).
         /// </summary>
         Task ReplaceGamePositionSummariesForGame(int gameId, IReadOnlyList<GamePositionSummary> rows);
 
@@ -355,7 +355,7 @@ namespace Repositories
         Task<IReadOnlyList<int>> GetGameIdsNeedingAnalyticsBackfillAsync(CancellationToken cancellationToken = default);
 
         /// <summary>
-        /// Loads all <c>dbo.BoardPosition</c> rows for a game ordered by <c>PlyIndex</c>.
+        /// Loads all <c>App.BoardPosition</c> rows for a game ordered by <c>PlyIndex</c>.
         /// </summary>
         Task<IReadOnlyList<(int PlyIndex, BoardPosition Position)>> GetBoardPositionsForGameOrderedAsync(
             int gameId,
@@ -403,8 +403,8 @@ namespace Repositories
 
             const string whereClause =
                 """
-                LEFT JOIN dbo.Player wp ON wp.Id = g.WhitePlayerId
-                LEFT JOIN dbo.Player bp ON bp.Id = g.BlackPlayerId
+                LEFT JOIN App.Player wp ON wp.Id = g.WhitePlayerId
+                LEFT JOIN App.Player bp ON bp.Id = g.BlackPlayerId
                 WHERE (@MinGameYear IS NULL OR g.[GameYear] >= @MinGameYear)
                   AND (@MaxGameYear IS NULL OR g.[GameYear] <= @MaxGameYear)
                   AND (@WhitePlayerSurname IS NULL OR (wp.Surname = @WhitePlayerSurname AND (@WhitePlayerForenames IS NULL OR wp.Forenames = @WhitePlayerForenames)))
@@ -412,7 +412,7 @@ namespace Repositories
                   AND (@Eco IS NULL OR g.[Eco] = @Eco)
                 """;
 
-            var countSql = "SELECT COUNT(1) FROM dbo.[Game] g " + whereClause;
+            var countSql = "SELECT COUNT(1) FROM App.[Game] g " + whereClause;
             var countCmd = new CommandDefinition(
                 countSql,
                 filterParams,
@@ -422,7 +422,7 @@ namespace Repositories
 
             var pageSql =
                 """
-                SELECT g.* FROM dbo.[Game] g
+                SELECT g.* FROM App.[Game] g
                 """ + whereClause + """
                 ORDER BY g.[Id]
                 OFFSET @Offset ROWS FETCH NEXT @PageSize ROWS ONLY
@@ -610,7 +610,7 @@ namespace Repositories
         }
 
         /// <summary>
-        /// Persists all board positions for a game to dbo.BoardPosition. Replaces any existing rows for this game.
+        /// Persists all board positions for a game to App.BoardPosition. Replaces any existing rows for this game.
         /// </summary>
         public async Task InsertBoardPositions(Game game, int gameId)
         {
@@ -677,7 +677,7 @@ namespace Repositories
         }
 
         /// <summary>
-        /// Inserts a single parse error into dbo.GameParseError.
+        /// Inserts a single parse error into App.GameParseError.
         /// </summary>
         public async Task InsertGameParseError(GameParseError error)
         {

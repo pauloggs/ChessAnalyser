@@ -15,7 +15,7 @@ public sealed class AnalyticsQuery
     /// <summary>Exact match on a player's forenames when set. Empty string matches players with no forenames.</summary>
     public string? PlayerForenames { get; init; }
 
-    /// <summary>Exact match on <c>dbo.Game.Eco</c> when set.</summary>
+    /// <summary>Exact match on <c>App.Game.Eco</c> when set.</summary>
     public string? Eco { get; init; }
 
     /// <summary>Primary player for player-comparison metrics.</summary>

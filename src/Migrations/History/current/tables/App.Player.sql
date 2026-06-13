@@ -4,11 +4,12 @@ GO
 SET QUOTED_IDENTIFIER ON
 GO
 
-CREATE TABLE [dbo].[Player](
+CREATE TABLE [App].[Player](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
 	[Surname] [nvarchar](200) NOT NULL,
 	[Forenames] [nvarchar](400) NOT NULL,
 	[WorldChampionId] [int] NULL,
+	[FidePlayerId] [int] NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -21,21 +22,19 @@ CREATE TABLE [dbo].[Player](
 ) ON [PRIMARY]
 GO
 
-ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
+ALTER TABLE [App].[Player] ADD  DEFAULT (N'') FOR [Forenames]
 GO
 
-ALTER TABLE [dbo].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_FidePlayer] FOREIGN KEY([WorldChampionId])
+ALTER TABLE [App].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
 REFERENCES [Ref].[WorldChampion] ([Id])
 GO
 
-ALTER TABLE [dbo].[Player] CHECK CONSTRAINT [FK_Player_FidePlayer]
+ALTER TABLE [App].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
 GO
 
-ALTER TABLE [dbo].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
-REFERENCES [Ref].[WorldChampion] ([Id])
+ALTER TABLE [App].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_FidePlayer] FOREIGN KEY([FidePlayerId])
+REFERENCES [Ref].[FidePlayer] ([Id])
 GO
 
-ALTER TABLE [dbo].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
+ALTER TABLE [App].[Player] CHECK CONSTRAINT [FK_Player_FidePlayer]
 GO
-
-

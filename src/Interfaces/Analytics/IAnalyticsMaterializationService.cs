@@ -15,7 +15,7 @@ public interface IAnalyticsMaterializationService
     Task MaterializeAfterGamePersistedAsync(Game game, int databaseGameId, CancellationToken cancellationToken = default);
 
     /// <summary>
-    /// Materializes from an explicit ply-ordered list (for example rows rehydrated from <c>dbo.BoardPosition</c>).
+    /// Materializes from an explicit ply-ordered list (for example rows rehydrated from <c>App.BoardPosition</c>).
     /// Same validation and persistence rules as <see cref="MaterializeAfterGamePersistedAsync"/>.
     /// </summary>
     Task<AnalyticsMaterializationOutcome> MaterializeFromOrderedPliesAsync(

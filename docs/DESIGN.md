@@ -296,7 +296,7 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 
 **Context (2026):** Many PGN collections carry **game** headers (event, date, ECO, result) and **player names** only. `[WhiteElo]`, `[WhiteTitle]`, and similar tags are often absent. Player attributes for filtering and cohort analysis must therefore come from **external reference data**, not from the PGN alone.
 
-**Relationship to existing work:** `WasWorldChampion` on `dbo.Player` (migration `011`) is set from **`Ref.WorldChampion`** (migration `013`) via `IWorldChampionMatcher` on player insert; **`IPlayerFideMetadataEnricher`** re-applies world-champion and FIDE metadata idempotently (Migrations host after seed, end of ETL, and per game with **GameYear**). §13 defines **filter semantics** for analytics (filters not yet wired — PLAN §15.5+).
+**Relationship to existing work:** Migrations **`011`** / **`012`** define `Ref.WorldChampion`, `Ref.FidePlayer`, and nullable FKs on `App.Player`. C# DTOs: `Interfaces.DTO.Ref.WorldChampion`, `FidePlayer`. **Matching and FK assignment** (including PGN name variants) live in **C# services** — not SQL alias tables. Filter semantics below (§13.6) are planned; not wired yet.
 
 ### 13.1 Goals
 
@@ -312,37 +312,36 @@ See also [STYLE_METRICS.md §8](./STYLE_METRICS.md).
 | Out of scope | Reason |
 |--------------|--------|
 | Rating **at game time** | Needs historical monthly rating series or `WhiteElo`/`BlackElo` on `Game`; not a static `Player` column. |
-| “World champion **when this game was played**” | Needs **reign periods**, not `WasWorldChampion` alone. |
+| “World champion **when this game was played**” | Needs **reign periods** on `Ref.WorldChampion`, not FK presence alone. |
 | Wikidata bulk import | Optional follow-up; FIDE + curated catalogs cover most filter needs first. |
 | Network calls during ETL / migrations | Bulk FIDE file is local-only; optional Lichess fallback deferred. Parse and migrations succeed when catalog is empty (FIDE columns stay NULL). |
 | EAV / JSON metadata blob as primary store | v1 uses **indexed nullable columns** on `Player`; revisit if many new attribute types appear. |
 
-### 13.3 Player schema (v1 enrichment columns)
+### 13.3 Player schema (3NF)
 
-Add to **`dbo.Player`** (migration after `011`):
+**`dbo.Player`** (migration `004`, FKs in `011`/`012`):
 
-| Column | Type | Source | Notes |
-|--------|------|--------|--------|
-| `FideId` | `INT NULL` | FIDE list | Unique when not null; stable join key for re-sync. |
-| `Federation` | `CHAR(3) NULL` | FIDE `FED` | ISO-style federation code (e.g. NOR, IND, URS). |
-| `Sex` | `CHAR(1) NULL` | FIDE `SEX` | `M` or `F` only when known. |
-| `FideTitle` | `NVARCHAR(8) NULL` | FIDE `TIT` | Normalised: `GM`, `IM`, `WGM`, `FM`, `WFM`, `CM`, `WCM`, or NULL (untitled). |
-| `BirthYear` | `SMALLINT NULL` | FIDE `B-day` | Year only; used for disambiguation and age cohorts. |
-| `WasWorldChampion` | `BIT NOT NULL` | **Curated catalog** | Already present; **not** overwritten by FIDE sync. |
+| Column | Type | Notes |
+|--------|------|--------|
+| `Id` | `INT` | Surrogate PK |
+| `Surname`, `Forenames` | `NVARCHAR` | From PGN |
+| `WorldChampionId` | `INT NULL` | FK → `Ref.WorldChampion(Id)` |
+| `FidePlayerId` | `INT NULL` | FK → `Ref.FidePlayer(Id)` |
 
-**Derived (query-time, not stored v1):** `IsTitled` ⇔ `FideTitle IS NOT NULL`.
+**`Ref.WorldChampion`** — canonical classical champions (`011`, seeded).  
+**`Ref.FidePlayer`** — FIDE catalog (`012`; `Id` = official FIDE player id). Attributes (`Federation`, `Sex`, `FideTitle`, `BirthYear`) are read via join, not duplicated on `dbo.Player`.
 
-**Indexes:** unique filtered index on `FideId` WHERE `FideId IS NOT NULL`; nonclustered index on `(Federation)`, `(FideTitle)` WHERE NOT NULL — add if query plans show scans.
+**Derived (query-time):** `IsTitled` ⇔ `Ref.FidePlayer.FideTitle IS NOT NULL` when joined.
 
 ### 13.4 Enrichment sources (priority order)
 
-1. **Curated reference tables** (zero network at runtime, highest precision)  
-   - `Ref.WorldChampion` — classical world champions (migration `013`, seeded from public WCC records).  
-   - Future: women's world champion, pre-FIDE notables — same `Ref` schema pattern.
+1. **Curated reference tables**  
+   - `Ref.WorldChampion` — migration `011`, seeded in SQL.  
+   - Matching PGN name variants (e.g. William vs Wilhelm) in **C#** only.
 
 2. **FIDE official rating list (bulk, offline)**  
-   - Place **`data/fide/players_list_foa.txt`** locally (gitignored). Migration **`015`** loads it into **`Ref.FidePlayer`** automatically when the catalog is empty.  
-   - Matching at ETL and backfill reads from **`Ref.FidePlayer`** (same pattern as `Ref.WorldChampion`).
+   - `Ref.FidePlayer` populated separately (existing catalog retained on reset).  
+   - C# matcher links `dbo.Player` → `Ref.FidePlayer` via `FidePlayerId`.
 
 3. **Lichess FIDE API (optional fallback, network)**  
    - `GET /api/fide/player?term=…` for players **unmatched** after bulk pass.  
@@ -358,10 +357,10 @@ Add to **`dbo.Player`** (migration after `011`):
 PGN names are parsed to `(Surname, Forenames)` via `PlayerNameParser`. FIDE lists use **`Surname, Forenames`** (comma form). Matching rules:
 
 1. **Normalise** trim and case for comparison; reuse **`PlayerForenamesMatcher`** for forename abbreviations (`A` vs `Alexander`).
-2. **Exact match** on normalised surname + forenames → assign `FideId` and fields.
-3. **Ambiguous** (multiple FIDE rows same surname, matcher ties) → score candidates with **birth year** (if set on either side) and **corpus activity** (`MIN`/`MAX` `GameYear` for that `PlayerId`); **reject** candidates whose birth year is **after any known corpus game year** (homonym guard); pick highest confidence only if above threshold; else leave `FideId` NULL and log/count as unmatched.
-4. **No auto-merge** of distinct `Player` rows — homonyms stay separate unless manually corrected later.
-5. **Re-sync idempotent:** running sync again updates FIDE-sourced columns; never clears `WasWorldChampion` from catalog logic.
+2. **Exact match** on normalised surname + forenames → set `WorldChampionId` or `FidePlayerId`.
+3. **Fuzzy / variant names** (abbreviations, anglicised forenames) → C# rules + `PlayerForenamesMatcher`; **no** `Ref.WorldChampionAlias` table.
+4. **Ambiguous** FIDE rows → score with birth year + corpus `GameYear` window; leave FK NULL when confidence is low.
+5. **Re-sync idempotent:** repeated passes update FKs when match outcome changes.
 
 Store match outcome optionally in sync result (`PlayersMatched`, `PlayersAmbiguous`, `PlayersUnmatched`) — no separate audit table in v1.
 
@@ -387,7 +386,7 @@ Express as a small list of conditions (extensible):
 
 | Predicate key | Operators | Example |
 |---------------|-----------|---------|
-| `wasWorldChampion` | `eq` bool | `true` |
+| `worldChampion` | `eq` bool | join `Ref.WorldChampion` via `WorldChampionId` |
 | `fideTitle` | `eq`, `in` | `GM` or `["GM","IM"]` |
 | `isTitled` | `eq` bool | titled vs untitled |
 | `federation` | `eq`, `in` | `NOR` |
@@ -410,30 +409,20 @@ Express as a small list of conditions (extensible):
 ### 13.7 Architecture sketch
 
 ```
-data/fide/players_list_foa.txt  (local, gitignored)
+Ref.WorldChampion / Ref.FidePlayer  (migrations 011–012)
        ↓
-Migration 015 host  →  seed Ref.FidePlayer when empty  →  EnrichAllAsync (backfill dbo.Player)
+PGN ingest (ETL)  →  dbo.Player insert (identity)
+                  →  C# matchers  →  UPDATE WorldChampionId / FidePlayerId
        ↓
-PGN ingest (ETL)  →  Player insert (WasWorldChampion on insert)
-                  →  per game: TryEnrichPlayerAsync(white/black, GameYear)
-                  →  end of load: EnrichAllAsync (idempotent)
-       ↓
-AnalyticsQuery + PlayerMetadataFilter  (PLAN §15.5+)
-       ↓
-PlayerMetadataSql.Apply(filter, wp, bp, subjectContext)  →  AND … on FilteredGames
-       ↓
-ICorpusBenchmarkCalculator (optional CorpusPool predicate)
+AnalyticsQuery + PlayerMetadataFilter  (PLAN §15.5+, joins Ref.*)
 ```
-
-- **Services:** `IFideRatingListReader`, `IFidePlayerMatcher`, `IPlayerFideMetadataEnricher`, `FidePlayerMatchContextBuilder`; `IPlayerMetadataSyncService` retained for legacy call sites.
-- **No network in default path** — configure `FideCatalog:ListPath` in `src/Migrations/appsettings.json`; see `data/fide/README.md`.
 - **UI:** one “Player metadata” subsection under metrics and games (checkboxes / dropdowns mapping to predicates + role) — PLAN §15.4+.
 
 ### 13.8 Interpretation
 
 - Federation and title reflect **FIDE list snapshot date**, not necessarily the value at every game year in the corpus.
 - Filters mean “player **is recorded as** X in enriched metadata”, not “would have been X at game time” unless documented otherwise.
-- Sparse enrichment (many NULL `FideId`) is expected for historical amateurs — corpus-derived filters (min games in DB) remain separate.
+- Sparse enrichment (many NULL `FidePlayerId`) is expected for historical amateurs — corpus-derived filters (min games in DB) remain separate.
 
 ---
 

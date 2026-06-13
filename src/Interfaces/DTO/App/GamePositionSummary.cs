@@ -1,7 +1,7 @@
-namespace Interfaces.DTO;
+namespace Interfaces.DTO.App;
 
 /// <summary>
-/// Rollup row for <c>dbo.GamePositionSummary</c> (material + per-type counts at a ply).
+/// Rollup row for <c>App.GamePositionSummary</c> (material + per-type counts at a ply).
 /// </summary>
 public sealed class GamePositionSummary
 {

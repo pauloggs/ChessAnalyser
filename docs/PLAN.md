@@ -697,7 +697,11 @@ player (e.g. Petrosian) on the same filters.
 
 **Goal:** Enrich `dbo.Player` from **external reference data** (primarily FIDE bulk files) and support **optional metadata filters** on analytics and game browsing per [DESIGN.md §13](./DESIGN.md).
 
-**Decision (2026):** PGN files being loaded are **metadata-thin** (game headers + names). Player title, federation, sex, and birth year will **not** come from PGN tags in v1. Enrichment is **automatic and offline**: migrations seed `Ref.FidePlayer` and backfill existing players; ETL enriches each game's white/black using that game's **GameYear**, then runs a full idempotent pass — no separate Analyser CLI.
+## Stage 5 — Player metadata enrichment and filtering
+
+> **Reset (2026-06):** Migrations rolled back to `010`, then re-applied through **`012`** with 3NF FKs (`WorldChampionId`, `FidePlayerId`). Prior §15.1–15.3 implementation (denormalised columns, enricher, migration `015` seed) was removed. **Re-implement** matchers and linking in C# against `Interfaces.DTO.Ref.WorldChampion` / `FidePlayer`. Checklists in §15.1–15.3 below are **historical** (pre-reset).
+
+**Decision (2026):** PGN files are metadata-thin. Reference data lives in `Ref.*`; `dbo.Player` holds FKs only. Matching logic is **C# only** (no SQL alias tables).
 
 **Non-goals for Stage 5 v1:** historical rating at game time, reign-period champion filters, Wikidata bulk import, Lichess fallback (optional later slice).
 

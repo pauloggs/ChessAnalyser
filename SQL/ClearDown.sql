@@ -1,14 +1,14 @@
 use Chess;
 
 
-TRUNCATE TABLE [dbo].[BoardPosition];
+TRUNCATE TABLE [App].[BoardPosition];
 
-DELETE [dbo].[Game];
+DELETE [App].[Game];
 
-TRUNCATE TABLE [dbo].[GameParseError];
-delete [dbo].[Player];
+TRUNCATE TABLE [App].[GameParseError];
+delete [App].[Player];
 
 SELECT count(*)
-  FROM [Chess].[dbo].[Game]
+  FROM App.Game
 
-select max(len(Gameid)) from dbo.Game;
+select max(len(Gameid)) from App.Game;
