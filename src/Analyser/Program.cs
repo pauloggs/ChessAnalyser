@@ -6,7 +6,6 @@ using Repositories;
 using Services;
 using Services.Analytics;
 using Services.Helpers;
-using Services.PlayerMetadata;
 using System.Reflection;
 using System.Linq;
 
@@ -63,10 +62,6 @@ builder.Services.AddScoped<IDisplayService, DisplayService>();
 builder.Services.AddScoped<IBoardPositionsHelper, BoardPositionsHelper>();
 builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
-builder.Services.AddScoped<IWorldChampionMatcher, WorldChampionMatcher>();
-builder.Services.AddScoped<IFidePlayerMatcher, FidePlayerMatcher>();
-builder.Services.AddScoped<IPlayerFideMetadataEnricher, PlayerFideMetadataEnricher>();
-builder.Services.AddScoped<IPlayerMetadataSyncService, PlayerMetadataSyncService>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();

@@ -30,27 +30,6 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
 
     public Task<int> InsertPlayer(Player player) => Throw<int>();
 
-    public Task UpdatePlayerWasWorldChampionAsync(int playerId, bool wasWorldChampion, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task UpdatePlayerFideMetadataAsync(int playerId, PlayerFideMetadata metadata, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default) =>
-        Throw<IReadOnlyList<WorldChampionRef>>();
-
-    public Task<IReadOnlyList<FidePlayerRecord>> GetFidePlayers(CancellationToken cancellationToken = default) =>
-        Throw<IReadOnlyList<FidePlayerRecord>>();
-
-    public Task ReplaceFideCatalogAsync(IReadOnlyList<FidePlayerRecord> records, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task<int?> GetPlayerIdByFideIdAsync(int fideId, CancellationToken cancellationToken = default) =>
-        Throw<int?>();
-
-    public Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(int playerId, CancellationToken cancellationToken = default) =>
-        Throw<PlayerCorpusActivity?>();
-
     public Task<int> InsertGame(Game game) => Throw<int>();
 
     public Task InsertBoardPositions(Game game, int gameId) => Throw();

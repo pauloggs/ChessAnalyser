@@ -8,8 +8,7 @@ namespace Repositories
 
         public static string GetPlayers =>
             """
-            SELECT Id, Surname, Forenames, WasWorldChampion,
-                   FideId, Federation, Sex, FideTitle, BirthYear
+            SELECT Id, Surname, Forenames
             FROM dbo.Player;
             """;
 
@@ -18,76 +17,23 @@ namespace Repositories
 
         public static string GetPlayersBySurname =>
             """
-            SELECT Id, Surname, Forenames, WasWorldChampion,
-                   FideId, Federation, Sex, FideTitle, BirthYear
+            SELECT Id, Surname, Forenames
             FROM dbo.Player
             WHERE LOWER(Surname) = LOWER(@Surname);
             """;
 
         public static string InsertPlayer =>
             """
-            INSERT INTO dbo.Player (Surname, Forenames, WasWorldChampion)
-            VALUES (@Surname, @Forenames, @WasWorldChampion);
+            INSERT INTO dbo.Player (Surname, Forenames)
+            VALUES (@Surname, @Forenames);
             SELECT CAST(SCOPE_IDENTITY() AS INT);
-            """;
-
-        public static string UpdatePlayerWasWorldChampion =>
-            """
-            UPDATE dbo.Player
-            SET WasWorldChampion = @WasWorldChampion
-            WHERE Id = @Id;
-            """;
-
-        public static string UpdatePlayerFideMetadata =>
-            """
-            UPDATE dbo.Player
-            SET FideId = @FideId,
-                Federation = @Federation,
-                Sex = @Sex,
-                FideTitle = @FideTitle,
-                BirthYear = @BirthYear
-            WHERE Id = @Id;
             """;
 
         public static string GetPlayerById =>
             """
-            SELECT Id, Surname, Forenames, WasWorldChampion,
-                   FideId, Federation, Sex, FideTitle, BirthYear
+            SELECT Id, Surname, Forenames
             FROM dbo.Player
             WHERE Id = @Id;
-            """;
-
-        public static string GetWorldChampions =>
-            """
-            SELECT Id, Surname, Forenames, ChampionOrder, ReignStartYear, ReignEndYear
-            FROM Ref.WorldChampion
-            ORDER BY ChampionOrder, Surname, Forenames;
-            """;
-
-        public static string GetFidePlayers =>
-            """
-            SELECT FideId, Surname, Forenames, Federation, Sex, FideTitle AS Title, BirthYear
-            FROM Ref.FidePlayer;
-            """;
-
-        public static string DeleteFidePlayers => "DELETE FROM Ref.FidePlayer;";
-
-        public static string InsertFidePlayer =>
-            """
-            INSERT INTO Ref.FidePlayer (FideId, Surname, Forenames, Federation, Sex, FideTitle, BirthYear)
-            VALUES (@FideId, @Surname, @Forenames, @Federation, @Sex, @Title, @BirthYear);
-            """;
-
-        public static string GetPlayerIdByFideId =>
-            "SELECT Id FROM dbo.Player WHERE FideId = @FideId;";
-
-        public static string GetPlayerCorpusActivity =>
-            """
-            SELECT MIN(g.GameYear) AS FirstGameYear,
-                   MAX(g.GameYear) AS LastGameYear
-            FROM dbo.Game g
-            WHERE g.GameYear IS NOT NULL
-              AND (g.WhitePlayerId = @PlayerId OR g.BlackPlayerId = @PlayerId);
             """;
 
         public static string InsertGame =>

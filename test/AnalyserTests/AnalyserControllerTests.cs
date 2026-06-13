@@ -14,18 +14,7 @@ namespace ControllerTests
         [Fact]
         public void GetDefaultPgnPath_ReturnsConfiguredDefaultFromOptions()
         {
-            var chessRepoMock = new Mock<IChessRepository>();
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
-
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController();
             var result = controller.GetDefaultPgnPath();
 
             var ok = Assert.IsType<OkObjectResult>(result);
@@ -38,24 +27,16 @@ namespace ControllerTests
         [Fact]
         public void LoadGames_Returns202AcceptedAndStartsEtlInBackground()
         {
-            var chessRepoMock = new Mock<IChessRepository>();
             var etlServiceMock = new Mock<IEtlService>();
             etlServiceMock.Setup(e => e.LoadGamesToDatabase(It.IsAny<string>(), It.IsAny<IProgress<EtlProgress>>())).Returns(Task.CompletedTask);
-            var progressStoreMock = new Mock<IEtlProgressStore>();
             var scopeMock = new Mock<IServiceScope>();
             var providerMock = new Mock<IServiceProvider>();
             providerMock.Setup(p => p.GetService(typeof(IEtlService))).Returns(etlServiceMock.Object);
             scopeMock.Setup(s => s.ServiceProvider).Returns(providerMock.Object);
             var scopeFactoryMock = new Mock<IServiceScopeFactory>();
             scopeFactoryMock.Setup(f => f.CreateScope()).Returns(scopeMock.Object);
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(etlService: etlServiceMock.Object, scopeFactory: scopeFactoryMock.Object);
             var loadGamesDto = new LoadGamesDto { FilePath = "C:\\Library\\PGN\\" };
             var result = controller.LoadGames(loadGamesDto);
 
@@ -66,20 +47,11 @@ namespace ControllerTests
         [Fact]
         public void GetLoadGamesProgress_ReturnsProgressFromStore()
         {
-            var chessRepoMock = new Mock<IChessRepository>();
-            var etlServiceMock = new Mock<IEtlService>();
             var progressStoreMock = new Mock<IEtlProgressStore>();
             var progress = new EtlProgress { CurrentFileIndex = 0, TotalFiles = 5, Status = "Running" };
             progressStoreMock.Setup(s => s.Get()).Returns(progress);
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(progressStore: progressStoreMock.Object);
             var result = controller.GetLoadGamesProgress();
 
             var ok = Assert.IsType<OkObjectResult>(result);
@@ -93,37 +65,22 @@ namespace ControllerTests
         {
             var players = new List<Player>
             {
-                new() { Id = 2, Surname = "Tal", Forenames = "Mikhail", WasWorldChampion = true },
-                new() { Id = 1, Surname = "Botvinnik", Forenames = "Mikhail", WasWorldChampion = true },
-                new() { Id = 3, Surname = "Capablanca", Forenames = "", WasWorldChampion = false }
+                new() { Id = 2, Surname = "Tal", Forenames = "Mikhail" },
+                new() { Id = 1, Surname = "Botvinnik", Forenames = "Mikhail" },
+                new() { Id = 3, Surname = "Capablanca", Forenames = "" }
             };
             var chessRepoMock = new Mock<IChessRepository>();
             chessRepoMock.Setup(r => r.GetPlayers()).ReturnsAsync(players);
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
-
+            var controller = CreateController(chessRepository: chessRepoMock.Object);
             var result = await controller.GetPlayers();
 
             var ok = Assert.IsType<OkObjectResult>(result);
             var options = Assert.IsType<List<PlayerOptionResponse>>(ok.Value);
             Assert.Equal([1, 3, 2], options.Select(o => o.Id).ToArray());
-            Assert.Equal("Botvinnik", options[0].Surname);
-            Assert.Equal("Mikhail", options[0].Forenames);
-            Assert.Equal("Botvinnik, Mikhail (WC)", options[0].DisplayName);
-            Assert.True(options[0].WasWorldChampion);
+            Assert.Equal("Botvinnik, Mikhail", options[0].DisplayName);
             Assert.Equal("Capablanca", options[1].DisplayName);
-            Assert.False(options[1].WasWorldChampion);
-            Assert.Equal("Tal, Mikhail (WC)", options[2].DisplayName);
-            Assert.True(options[2].WasWorldChampion);
+            Assert.Equal("Tal, Mikhail", options[2].DisplayName);
         }
 
         [Fact]
@@ -141,17 +98,8 @@ namespace ControllerTests
             chessRepoMock
                 .Setup(r => r.GetGamesPage(1, 50, null, It.IsAny<CancellationToken>()))
                 .ReturnsAsync(page);
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(chessRepository: chessRepoMock.Object);
             var result = await controller.GetGames();
 
             chessRepoMock.Verify(r => r.GetGamesPage(1, 50, null, It.IsAny<CancellationToken>()), Times.Once);
@@ -182,17 +130,8 @@ namespace ControllerTests
                         && f.Eco == "B90"),
                     It.IsAny<CancellationToken>()))
                 .ReturnsAsync(page);
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
 
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(chessRepository: chessRepoMock.Object);
 
             await controller.GetGames(
                 1,
@@ -226,17 +165,7 @@ namespace ControllerTests
         public async Task GetGames_WhenMinYearGreaterThanMaxYear_ReturnsBadRequest()
         {
             var chessRepoMock = new Mock<IChessRepository>();
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
-
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(chessRepository: chessRepoMock.Object);
 
             var result = await controller.GetGames(1, 50, 2010, 2000);
 
@@ -250,17 +179,7 @@ namespace ControllerTests
         public async Task GetGames_WhenEcoTooLong_ReturnsBadRequest()
         {
             var chessRepoMock = new Mock<IChessRepository>();
-            var etlServiceMock = new Mock<IEtlService>();
-            var progressStoreMock = new Mock<IEtlProgressStore>();
-            var scopeFactoryMock = new Mock<IServiceScopeFactory>();
-            var pgnOptions = Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" });
-
-            var controller = new Analyser.Controllers.AnalyserController(
-                chessRepoMock.Object,
-                etlServiceMock.Object,
-                progressStoreMock.Object,
-                scopeFactoryMock.Object,
-                pgnOptions);
+            var controller = CreateController(chessRepository: chessRepoMock.Object);
 
             var result = await controller.GetGames(1, 50, eco: new string('A', 17));
 
@@ -269,5 +188,18 @@ namespace ControllerTests
                 r => r.GetGamesPage(It.IsAny<int>(), It.IsAny<int>(), It.IsAny<GamePageFilters?>(), It.IsAny<CancellationToken>()),
                 Times.Never);
         }
+
+        private static Analyser.Controllers.AnalyserController CreateController(
+            IChessRepository? chessRepository = null,
+            IEtlService? etlService = null,
+            IEtlProgressStore? progressStore = null,
+            IServiceScopeFactory? scopeFactory = null,
+            IOptions<Analyser.PgnOptions>? pgnOptions = null) =>
+            new(
+                chessRepository ?? Mock.Of<IChessRepository>(),
+                etlService ?? Mock.Of<IEtlService>(),
+                progressStore ?? Mock.Of<IEtlProgressStore>(),
+                scopeFactory ?? Mock.Of<IServiceScopeFactory>(),
+                pgnOptions ?? Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" }));
     }
 }

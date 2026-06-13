@@ -1,5 +1,0 @@
-ID Number      Name                                                         Fed Sex Tit  WTit OTit           FOA SRtng SGm SK RRtng RGm Rk BRtng BGm BK B-day Flag
-1503014        Carlsen, Magnus                                              NOR M   GM                           2841  7   10 2832  0   10 2869  0   10 1990      
-1487710        Carlsen, Alexander Joe Stucke                                DEN M                                1470  3   40 1995      
-2016192        Nakamura, Hikaru                                             USA M   GM                           2750  0   10 2837  0   10 2850  0   10 1987      
-25121731       A C J John                                                   IND M                                1438  0   40 1987  i   

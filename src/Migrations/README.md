@@ -1,6 +1,8 @@
 # ChessAnalyser Database Migrations (DbUp)
 
-This console app runs SQL migration scripts against the Chess database. It uses [DbUp](https://dbup.readthedocs.io/): each script runs once and is recorded in `dbo.schemaversions`.
+This console app runs SQL migration scripts against the Chess database. It uses [DbUp](https://dbup.readthedocs.io/): each script runs **once** and is recorded in `dbo.schemaversions`.
+
+**Important:** DbUp does not re-apply a script when the `.sql` file changes. If a migration was wrong, editing the file does not fix databases that already ran it. Use [tools/RebuildWorldChampionRef.sql](../../tools/RebuildWorldChampionRef.sql) for world-champion recovery.
 
 ## Running migrations
 
@@ -10,63 +12,53 @@ From the repo root:
 dotnet run --project src/Migrations/Migrations.csproj
 ```
 
-Or from the Migrations project directory:
-
-```bash
-dotnet run
-```
-
 ## Connection string
 
-- **Default:** Read from `appsettings.json` → `ConnectionStrings:ChessConnection`.
-- **Override:** Set the same key via environment variable (e.g. `ConnectionStrings__ChessConnection`) or change `appsettings.json` for local use.
+- **Default:** `appsettings.json` → `ConnectionStrings:ChessConnection` (copied to build output).
+- **Override:** `ConnectionStrings__ChessConnection` environment variable.
 
-Ensure the **database** (e.g. `Chess`) already exists; DbUp does not create it. The scripts create tables idempotently (`IF OBJECT_ID ... IS NULL`).
+| In migrations | In application |
+|---------------|----------------|
+| Schema + `Ref.*` seed | `IPlayerFideMetadataEnricher` links `dbo.Player` |
 
-## Scripts (run in filename order)
+**Never** put `UPDATE dbo.Player` backfill in SQL migrations.
 
-| Script | Purpose |
-|--------|---------|
-| `001_CreateGameTable.sql` | Creates `dbo.Game` (Id, Name, GameId, Winner) if missing. |
-| `002_CreateBoardPositionTable.sql` | Creates `dbo.BoardPosition` (GameId, PlyIndex, 12 bitboard columns, EnPassantTargetFile) if missing. |
-| `003_CreateGameParseErrorTable.sql` | Creates `dbo.GameParseError` for parse error logging. |
-| `004_CreatePlayerTable.sql` | Creates `dbo.Player` (Surname, Forenames). |
-| `005_AddPlayerRefsToGame.sql` | Adds `WhitePlayerId`, `BlackPlayerId` FKs to `dbo.Game`. |
-| `006_AddGameAnalyticsColumns.sql` | Adds nullable analytics columns on `dbo.Game`: `Event`, `Site`, `DateTag`, `GameYear`, `Eco`; filtered indexes on `GameYear` and `Eco`. |
-| `007_CreateGameMoveTable.sql` | Creates `dbo.GameMove` secondary fact table (one row per ply) with side/from/to/piece flags and an index for destination-piece frequency queries. |
-| `008_CreateGamePositionSummaryTable.sql` | Creates `dbo.GamePositionSummary` rollup table (material + piece-count scalars per ply) for analytics reads without bitboard decoding. |
-| `009_CreateDeleteGameStoredProcedure.sql` | Creates `dbo.DeleteGameById` to delete a game and dependent rows in one explicit transaction (instead of FK cascades on analytics tables). |
-| `010_RemoveCascadeDeletesFromGameDependencies.sql` | Enforces strict no-cascade FKs from `BoardPosition`, `GameMove`, and `GamePositionSummary` to `Game` (drops/recreates FK if cascade is present). |
-| `011_AddPlayerWasWorldChampionColumn.sql` | Adds `WasWorldChampion` bit on `dbo.Player` (curated classical world-champion metadata). |
-| `012_AddPlayerFideMetadataColumns.sql` | Adds nullable FIDE metadata on `dbo.Player` (`FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear`) and unique filtered index on `FideId`. |
-| `013_CreateRefWorldChampion.sql` | Creates schema `Ref`, table `Ref.WorldChampion` (classical champions), and seeds 18 champion name rows. |
-| `014_CreateRefFidePlayer.sql` | Creates `Ref.FidePlayer` (FIDE catalog columns). |
-| `015_SeedRefFidePlayer.sql` | Validates catalog table; Migrations host loads `data/fide/players_list_foa.txt` when empty and backfills players. |
+## World-champion recovery (broken Ref.WorldChampion)
 
-`BoardPosition` uses `PlyIndex`: **-1** = initial position, **0, 1, 2, ...** = position after each ply. Columns `WP`, `WN`, … `BK` store 64-bit bitboards as `BIGINT`.
+If constraints are missing or data is wrong:
 
-`Game` analytics columns are populated by application code before insert (`PgnGameHeaderMapper` in `Services`); older rows may still have NULL values unless backfilled.
+```cmd
+sqlcmd -S 127.0.0.1 -U SA -P "<pw>" -C -i tools\RebuildWorldChampionRef.sql
+dotnet run --project src/Migrations/Migrations.csproj
+```
 
-`GameMove` and `GamePositionSummary` are populated after `BoardPosition` by **`IAnalyticsMaterializationService`** on ETL insert and by **`IAnalyticsBackfillService`** for legacy rows (see `docs/PLAN.md` §11 and `docs/AGENT_CONTEXT.md`).
+`RebuildWorldChampionRef.sql` will:
 
-### Application tooling (same scripts, no new migrations)
+1. Keep all `dbo.Player` rows; clear metadata columns only  
+2. Keep `Ref.FidePlayer` untouched  
+3. **Drop and recreate** WC tables with **all four constraints**  
+4. Seed 18 champions (`Id` = `ChampionOrder`) 
+5. Recreate `WorldChampionId` on `dbo.Player`  
+6. **Verify** constraints (fails if any missing)  
+7. Mark `013`–`017` as applied in `schemaversions`  
 
-- **Perf smoke (CPU-only, NFR-3):** [docs/ANALYTICS_MATERIALIZATION_PERF.md](../../docs/ANALYTICS_MATERIALIZATION_PERF.md) — `dotnet run --project src/Analyser -- --profile-materialization` (optional `--iterations N`).
-- **Backfill gaps:** `dotnet run --project src/Analyser -- --backfill-analytics` (optional `--max-games N`) for games that have `BoardPosition` rows but no `GameMove` rows yet.
-- **Player metadata:** migrations through `015` seed `Ref.FidePlayer` and run idempotent player metadata enrichment automatically. PGN load (ETL) enriches players per game and runs a full enrichment pass at the end — no separate manual commands.
+Then `dotnet run` only runs enrichment.
 
-## Schema history snapshot
+Verify:
 
-`src/Migrations/History/current/` contains a generated snapshot of current SQL object definitions (tables, views, procedures, functions, and user-defined table types).
+```sql
+SELECT name, type_desc FROM sys.objects
+WHERE parent_object_id = OBJECT_ID(N'Ref.WorldChampion') AND type IN ('C','UQ','PK');
+-- CK_Ref_WorldChampion_Id_ChampionOrder
+-- PK_Ref_WorldChampion
+-- UQ_Ref_WorldChampion_ChampionOrder
+-- UQ_Ref_WorldChampion_Surname_Forenames
+```
 
-**CI:** the “Schema history” GitHub workflow uses `SchemaHistoryExporter`; when you refresh `History/current` for a PR, regenerate with that project too so output matches CI.
+## Schema history
 
-Generate/update it from repo root:
+Regenerate `src/Migrations/History/current/` after schema changes:
 
 ```powershell
 powershell -ExecutionPolicy Bypass -File .\tools\export-db-history.ps1
 ```
-
-The script reads `ConnectionStrings:ChessConnection` from `src/Migrations/appsettings.json` by default, or accepts an explicit `-ConnectionString`.
-
-Whenever migrations change, regenerate `History/current` and commit those files in the same PR so migration intent and resulting schema stay aligned.
