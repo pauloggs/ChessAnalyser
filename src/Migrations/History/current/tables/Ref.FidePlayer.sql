@@ -1,0 +1,20 @@
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [Ref].[FidePlayer](
+	[FideId] [int] NOT NULL,
+	[Surname] [nvarchar](200) NOT NULL,
+	[Forenames] [nvarchar](400) NOT NULL,
+	[Federation] [char](3) NULL,
+	[Sex] [char](1) NULL,
+	[FideTitle] [nvarchar](8) NULL,
+	[BirthYear] [smallint] NULL,
+ CONSTRAINT [PK_Ref_FidePlayer] PRIMARY KEY CLUSTERED 
+(
+	[FideId] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
+) ON [PRIMARY]
+GO
