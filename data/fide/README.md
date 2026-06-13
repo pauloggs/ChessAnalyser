@@ -34,8 +34,8 @@ Seeding runs only when `Ref.FidePlayer` is empty unless `--force` is passed. `--
 
 Open the app home page (`https://localhost:5001/`), section **Player metadata**:
 
-1. **Seed FIDE catalog** — `POST /Analyser/SeedFideCatalog` (poll `GET /Analyser/MaintenanceProgress`)
-2. **Link player metadata** — `POST /Analyser/LinkPlayerMetadata` (same progress endpoint)
+1. **Seed FIDE catalog** — `POST /Analyser/SeedFideCatalog` (poll `GET /Analyser/MaintenanceProgress`; cancel via `POST /Analyser/CancelMaintenance`)
+2. **Link player metadata** — `POST /Analyser/LinkPlayerMetadata` (same progress/cancel endpoints)
 
 Status: `GET /Analyser/FideCatalogStatus` (row count + whether the configured file exists).
 
@@ -45,7 +45,13 @@ Status: `GET /Analyser/FideCatalogStatus` (row count + whether the configured fi
 dotnet run --project src/Analyser -- --link-player-metadata
 ```
 
-Sets `App.Player.WorldChampionId` and `FidePlayerId` from `Ref.*` via C# matchers.
+Sets `App.Player.WorldChampionId` and `FidePlayerId` from `Ref.*` via C# matchers. For ~5,000 players this completes in a few seconds (bulk preload of game years + FIDE catalog subset, in-memory matching, batched `MERGE` updates).
+
+### Cancel a running job
+
+UI: **Cancel** button in the Player metadata section (visible while seed or link is running).
+
+API: `POST /Analyser/CancelMaintenance`
 
 ## Configuration
 

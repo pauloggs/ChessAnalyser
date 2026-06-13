@@ -15,7 +15,7 @@ dotnet run --project src/Migrations/Migrations.csproj
 - `appsettings.json` → `ConnectionStrings:ChessConnection`
 - Override: `ConnectionStrings__ChessConnection` environment variable
 
-## Scripts (001–013)
+## Scripts (001–014)
 
 | Script | Purpose |
 |--------|---------|

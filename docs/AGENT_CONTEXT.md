@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (player metadata C# linking: matchers + ETL + `--link-player-metadata` backfill).
+**Last updated:** 2026-06-13 (FIDE catalog seed CLI/UI, bulk metadata linking, cancel support).
 
 ---
 
@@ -28,11 +28,11 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
 - **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
 - **Done (player metadata schema):** Migrations `011`/`012` — `Ref.WorldChampion` (seeded), `Ref.FidePlayer` (retained catalog), `App.Player.WorldChampionId` / `FidePlayerId` FKs. DTOs: `Interfaces.DTO.Ref.WorldChampion`, `FidePlayer`. No denormalised FIDE/WC columns on `App.Player`.
-- **Done (player metadata ops):** FIDE catalog seed via `dotnet run --project src/Analyser -- --seed-fide-catalog` (`--force`, `--path`) or UI **Player metadata** section; link via `--link-player-metadata` or same UI. API: `GET /Analyser/FideCatalogStatus`, `POST /Analyser/SeedFideCatalog`, `POST /Analyser/LinkPlayerMetadata`, `GET /Analyser/MaintenanceProgress`. See `data/fide/README.md`.
-- **Done (schema layout):** Migration `013` — operational tables in **`App.*`**; `Ref.*` + `dbo.SchemaVersions` unchanged; C# SQL uses `App.` prefixes.
+- **Done (player metadata ops):** FIDE catalog seed via `dotnet run --project src/Analyser -- --seed-fide-catalog` (`--force`, `--path`) or UI **Player metadata** section; link via `--link-player-metadata` or same UI (~5k players in a few seconds — bulk preload + batch `MERGE`). API: `GET /Analyser/FideCatalogStatus`, `POST /Analyser/SeedFideCatalog`, `POST /Analyser/LinkPlayerMetadata`, `POST /Analyser/CancelMaintenance`, `GET /Analyser/MaintenanceProgress`. `ListPath` resolves from repo root (`RepoRootLocator`). See `data/fide/README.md`.
+- **Done (schema layout):** Migration `013` — operational tables in **`App.*`**; `Ref.*` + `dbo.SchemaVersions` unchanged; C# SQL uses `App.` prefixes. Migration `014` — `IX_Game_*PlayerId_GameYear` for metadata link perf.
 - **Done (DTO layout):** `Interfaces.DTO.Ref` (`WorldChampion`, `FidePlayer`); `Interfaces.DTO.App` (`Player`, `Game`, `BoardPosition`, `GameMoveFact`, `GamePositionSummary`, `GameParseError`); parsing/API DTOs remain in `Interfaces.DTO`.
-- **Pending (player metadata C#):** API/filters (PLAN §15.4+). All name matching in C# (no SQL alias table).
-- **Done (player metadata linking):** `IWorldChampionMatcher` / `IFidePlayerMatcher` / `IPlayerMetadataLinkingService` — sets `App.Player.WorldChampionId` / `FidePlayerId` on ETL and via `--link-player-metadata` CLI backfill.
+- **Pending (player metadata API/filters):** PLAN §15.4+ — expose enriched fields on player picker; analytics/game filters.
+- **Done (player metadata linking):** `IWorldChampionMatcher` / `IFidePlayerMatcher` / `IPlayerMetadataLinkingService` — sets `App.Player.WorldChampionId` / `FidePlayerId` on ETL and via bulk `--link-player-metadata` / UI backfill. Shared `PlayerForenameVariantHelper` (Gary→Garry, etc.); title-based FIDE disambiguation.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
@@ -75,7 +75,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 - **`App.GameMove`** + **`App.GamePositionSummary`** — derived on ETL/backfill; required for style metrics.
 - **Corpus benchmarks:** opt-in `includeCorpusBenchmark` + `benchmarkMinGames` (default 30); shared `ICorpusBenchmarkCalculator`.
-- **Player metadata today:** `App.Player` = identity + nullable `WorldChampionId` / `FidePlayerId` FKs; attributes on `Ref.WorldChampion` / `Ref.FidePlayer`. C# matchers link FKs on ETL and `--link-player-metadata` backfill. API/filters not wired yet.
+- **Player metadata today:** `App.Player` = identity + nullable `WorldChampionId` / `FidePlayerId` FKs; attributes on `Ref.WorldChampion` / `Ref.FidePlayer`. C# matchers link FKs on ETL and bulk link backfill (CLI/UI). FIDE catalog loaded separately via Analyser seed (not Migrations host). API/filters not wired yet.
 - **Conventions:** [PLAN.md §7](./PLAN.md), [DESIGN.md §8](./DESIGN.md).
 
 ---

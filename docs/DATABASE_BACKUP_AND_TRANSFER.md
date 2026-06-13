@@ -296,7 +296,7 @@ You do **not** need to re-parse PGNs solely to use the app on the new machine if
 | Restore fails on file path (native) | Different default data directory | SSMS **Files** tab or `RESTORE … WITH MOVE` |
 | App cannot connect | Wrong server, password, or firewall | Match `ChessConnection`; ensure SQL Server accepts TCP on `127.0.0.1` |
 | Migrations re-run old scripts | Unlikely if `schemaversions` restored | Verify `SELECT * FROM dbo.schemaversions` is populated |
-| Missing player FIDE metadata | Catalog empty in backup | Add FIDE file and run migrations host once |
+| Missing player FIDE metadata | Catalog empty in backup | Place FIDE TXT under `data/fide/` and run `dotnet run --project src/Analyser -- --seed-fide-catalog --force`, then `--link-player-metadata` (or use the UI **Player metadata** section) |
 
 ---
 
