@@ -1,9 +1,13 @@
 SET ANSI_NULLS ON
+GO
+
 SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE TABLE [Ref].[WorldChampion](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Surname] [nvarchar](200) NOT NULL,
+	[Forenames] [nvarchar](400) NOT NULL,
 	[ChampionOrder] [smallint] NOT NULL,
 	[ReignStartYear] [smallint] NULL,
 	[ReignEndYear] [smallint] NULL,
@@ -21,5 +25,12 @@ CREATE TABLE [Ref].[WorldChampion](
 	[Forenames] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+GO
+
 ALTER TABLE [Ref].[WorldChampion]  WITH CHECK ADD  CONSTRAINT [CK_Ref_WorldChampion_Id_ChampionOrder] CHECK  (([Id]=[ChampionOrder]))
+GO
+
 ALTER TABLE [Ref].[WorldChampion] CHECK CONSTRAINT [CK_Ref_WorldChampion_Id_ChampionOrder]
+GO
+
+

@@ -1,16 +1,13 @@
 SET ANSI_NULLS ON
+GO
+
 SET QUOTED_IDENTIFIER ON
+GO
+
 CREATE TABLE [dbo].[Player](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
-	[WasWorldChampion] [bit] NOT NULL,
-	[FideId] [int] NULL,
-	[Federation] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[Sex] [char](1) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[FideTitle] [nvarchar](8) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
-	[BirthYear] [smallint] NULL,
-	[WorldChampionId] [int] NULL,
+	[Surname] [nvarchar](200) NOT NULL,
+	[Forenames] [nvarchar](400) NOT NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
 (
 	[Id] ASC
@@ -21,21 +18,9 @@ CREATE TABLE [dbo].[Player](
 	[Forenames] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
+GO
 
-CREATE NONCLUSTERED INDEX [IX_Player_WorldChampionId] ON [dbo].[Player]
-(
-	[WorldChampionId] ASC
-)
-WHERE ([WorldChampionId] IS NOT NULL)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
-CREATE UNIQUE NONCLUSTERED INDEX [UX_Player_FideId] ON [dbo].[Player]
-(
-	[FideId] ASC
-)
-WHERE ([FideId] IS NOT NULL)
-WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, IGNORE_DUP_KEY = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ALTER TABLE [dbo].[Player] ADD  DEFAULT (N'') FOR [Forenames]
-ALTER TABLE [dbo].[Player] ADD  CONSTRAINT [DF_Player_WasWorldChampion]  DEFAULT ((0)) FOR [WasWorldChampion]
-ALTER TABLE [dbo].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
-REFERENCES [Ref].[WorldChampion] ([Id])
-ALTER TABLE [dbo].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
+GO
+
+
