@@ -28,6 +28,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
 - **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
 - **Done (player metadata schema):** Migrations `011`/`012` — `Ref.WorldChampion` (seeded), `Ref.FidePlayer` (retained catalog), `App.Player.WorldChampionId` / `FidePlayerId` FKs. DTOs: `Interfaces.DTO.Ref.WorldChampion`, `FidePlayer`. No denormalised FIDE/WC columns on `App.Player`.
+- **Done (player metadata ops):** FIDE catalog seed via `dotnet run --project src/Analyser -- --seed-fide-catalog` (`--force`, `--path`) or UI **Player metadata** section; link via `--link-player-metadata` or same UI. API: `GET /Analyser/FideCatalogStatus`, `POST /Analyser/SeedFideCatalog`, `POST /Analyser/LinkPlayerMetadata`, `GET /Analyser/MaintenanceProgress`. See `data/fide/README.md`.
 - **Done (schema layout):** Migration `013` — operational tables in **`App.*`**; `Ref.*` + `dbo.SchemaVersions` unchanged; C# SQL uses `App.` prefixes.
 - **Done (DTO layout):** `Interfaces.DTO.Ref` (`WorldChampion`, `FidePlayer`); `Interfaces.DTO.App` (`Player`, `Game`, `BoardPosition`, `GameMoveFact`, `GamePositionSummary`, `GameParseError`); parsing/API DTOs remain in `Interfaces.DTO`.
 - **Pending (player metadata C#):** API/filters (PLAN §15.4+). All name matching in C# (no SQL alias table).

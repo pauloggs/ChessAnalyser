@@ -77,4 +77,44 @@ public class PlayerMetadataLinkingServiceTests
             r => r.UpdatePlayerMetadataLinksAsync(2, null, null, It.IsAny<CancellationToken>()),
             Times.Once);
     }
+
+    [Fact]
+    public async Task LinkAllPlayersAsync_UsesBulkQueriesAndBatchUpdate()
+    {
+        var players = new List<Player>
+        {
+            new() { Id = 1, Surname = "Kasparov", Forenames = "Garry" },
+            new() { Id = 2, Surname = "Carlsen", Forenames = "Magnus", FidePlayerId = 99 },
+        };
+
+        var repo = new Mock<IChessRepository>();
+        repo.Setup(r => r.GetWorldChampionsAsync(It.IsAny<CancellationToken>())).ReturnsAsync(Champions);
+        repo.Setup(r => r.GetPlayers()).ReturnsAsync(players);
+        repo.Setup(r => r.GetAllPlayerMinGameYearsAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new Dictionary<int, short> { [1] = 1995, [2] = 2001 });
+        repo.Setup(r => r.GetFidePlayersForDistinctPlayerSurnamesAsync(It.IsAny<CancellationToken>()))
+            .ReturnsAsync(new List<FidePlayer>
+            {
+                new() { Id = 4100018, Surname = "Kasparov", Forenames = "Garry", BirthYear = 1963 },
+                new() { Id = 1503014, Surname = "Carlsen", Forenames = "Magnus", BirthYear = 1990, FideTitle = "GM" },
+            });
+
+        var wcMatcher = new WorldChampionMatcher();
+        var fideMatcher = new FidePlayerMatcher();
+        var sut = new PlayerMetadataLinkingService(repo.Object, wcMatcher, fideMatcher);
+
+        var outcome = await sut.LinkAllPlayersAsync();
+
+        Assert.Equal(2, outcome.PlayersProcessed);
+        Assert.Equal(1, outcome.WorldChampionLinked);
+        Assert.Equal(2, outcome.FideLinked);
+        repo.Verify(r => r.GetPlayerByIdAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.GetMinGameYearForPlayerAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(r => r.GetFidePlayersBySurnameAsync(It.IsAny<string>(), It.IsAny<CancellationToken>()), Times.Never);
+        repo.Verify(
+            r => r.BulkUpdatePlayerMetadataLinksAsync(
+                It.Is<IReadOnlyList<PlayerMetadataLinkUpdate>>(u => u.Count == 2),
+                It.IsAny<CancellationToken>()),
+            Times.Once);
+    }
 }

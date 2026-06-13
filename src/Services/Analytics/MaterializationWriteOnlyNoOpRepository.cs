@@ -1,5 +1,6 @@
 using Interfaces.Analytics;
 using Interfaces.DTO;
+using Interfaces.DTO.Ref;
 using Microsoft.Extensions.Configuration;
 using Repositories;
 
@@ -231,11 +232,28 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
     public Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default) =>
         Throw<short?>();
 
+    public Task<IReadOnlyDictionary<int, short>> GetAllPlayerMinGameYearsAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyDictionary<int, short>>();
+
+    public Task<IReadOnlyList<FidePlayer>> GetFidePlayersForDistinctPlayerSurnamesAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<FidePlayer>>();
+
     public Task UpdatePlayerMetadataLinksAsync(
         int playerId,
         int? worldChampionId,
         int? fidePlayerId,
         CancellationToken cancellationToken = default) => Throw();
+
+    public Task BulkUpdatePlayerMetadataLinksAsync(IReadOnlyList<PlayerMetadataLinkUpdate> updates, CancellationToken cancellationToken = default) =>
+        Throw();
+
+    public Task<int> GetFideCatalogCountAsync(CancellationToken cancellationToken = default) => Throw<int>();
+
+    public Task ClearAllFidePlayerLinksAsync(CancellationToken cancellationToken = default) => Throw();
+
+    public Task TruncateFideCatalogAsync(CancellationToken cancellationToken = default) => Throw();
+
+    public Task BulkInsertFidePlayersAsync(IReadOnlyList<FidePlayer> rows, CancellationToken cancellationToken = default) => Throw();
 
     private static Task<T> Throw<T>() =>
         Task.FromException<T>(new InvalidOperationException("Not supported on write-only no-op repository."));

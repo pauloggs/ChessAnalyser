@@ -1,6 +1,7 @@
 using Dapper;
 using Interfaces.Analytics;
 using Interfaces.DTO;
+using Interfaces.DTO.Ref;
 using Microsoft.Data.SqlClient;
 using Microsoft.Extensions.Configuration;
 using System;
@@ -369,7 +370,21 @@ namespace Repositories
 
         Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default);
 
+        Task<IReadOnlyDictionary<int, short>> GetAllPlayerMinGameYearsAsync(CancellationToken cancellationToken = default);
+
+        Task<IReadOnlyList<FidePlayer>> GetFidePlayersForDistinctPlayerSurnamesAsync(CancellationToken cancellationToken = default);
+
         Task UpdatePlayerMetadataLinksAsync(int playerId, int? worldChampionId, int? fidePlayerId, CancellationToken cancellationToken = default);
+
+        Task BulkUpdatePlayerMetadataLinksAsync(IReadOnlyList<PlayerMetadataLinkUpdate> updates, CancellationToken cancellationToken = default);
+
+        Task<int> GetFideCatalogCountAsync(CancellationToken cancellationToken = default);
+
+        Task ClearAllFidePlayerLinksAsync(CancellationToken cancellationToken = default);
+
+        Task TruncateFideCatalogAsync(CancellationToken cancellationToken = default);
+
+        Task BulkInsertFidePlayersAsync(IReadOnlyList<FidePlayer> rows, CancellationToken cancellationToken = default);
     }
 
     public class ChessRepository : IChessRepository
@@ -1819,6 +1834,28 @@ namespace Repositories
         }
 
         /// <inheritdoc />
+        public async Task<IReadOnlyDictionary<int, short>> GetAllPlayerMinGameYearsAsync(
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var rows = await connection.QueryAsync<(int PlayerId, short MinGameYear)>(
+                new CommandDefinition(SqlStatements.GetAllPlayerMinGameYears, cancellationToken: cancellationToken));
+            return rows.ToDictionary(r => r.PlayerId, r => r.MinGameYear);
+        }
+
+        /// <inheritdoc />
+        public async Task<IReadOnlyList<FidePlayer>> GetFidePlayersForDistinctPlayerSurnamesAsync(
+            CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            var list = await connection.QueryAsync<FidePlayer>(
+                new CommandDefinition(
+                    SqlStatements.GetFidePlayersForDistinctPlayerSurnames,
+                    cancellationToken: cancellationToken));
+            return list.ToList();
+        }
+
+        /// <inheritdoc />
         public async Task UpdatePlayerMetadataLinksAsync(
             int playerId,
             int? worldChampionId,
@@ -1831,6 +1868,128 @@ namespace Repositories
                     SqlStatements.UpdatePlayerMetadataLinks,
                     new { Id = playerId, WorldChampionId = worldChampionId, FidePlayerId = fidePlayerId },
                     cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task BulkUpdatePlayerMetadataLinksAsync(
+            IReadOnlyList<PlayerMetadataLinkUpdate> updates,
+            CancellationToken cancellationToken = default)
+        {
+            if (updates.Count == 0)
+                return;
+
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(
+                    """
+                    CREATE TABLE #PlayerMetadataUpdates (
+                        Id INT NOT NULL PRIMARY KEY,
+                        WorldChampionId INT NULL,
+                        FidePlayerId INT NULL
+                    );
+                    """,
+                    cancellationToken: cancellationToken));
+
+            using (var bulk = new SqlBulkCopy(connection)
+            {
+                DestinationTableName = "#PlayerMetadataUpdates",
+                BatchSize = updates.Count
+            })
+            {
+                bulk.ColumnMappings.Add("Id", "Id");
+                bulk.ColumnMappings.Add("WorldChampionId", "WorldChampionId");
+                bulk.ColumnMappings.Add("FidePlayerId", "FidePlayerId");
+
+                var table = new System.Data.DataTable();
+                table.Columns.Add("Id", typeof(int));
+                var wcColumn = table.Columns.Add("WorldChampionId", typeof(int));
+                wcColumn.AllowDBNull = true;
+                var fideColumn = table.Columns.Add("FidePlayerId", typeof(int));
+                fideColumn.AllowDBNull = true;
+
+                foreach (var row in updates)
+                {
+                    table.Rows.Add(
+                        row.Id,
+                        row.WorldChampionId.HasValue ? row.WorldChampionId.Value : DBNull.Value,
+                        row.FidePlayerId.HasValue ? row.FidePlayerId.Value : DBNull.Value);
+                }
+
+                await bulk.WriteToServerAsync(table, cancellationToken);
+            }
+
+            await connection.ExecuteAsync(
+                new CommandDefinition(SqlStatements.MergePlayerMetadataLinks, cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task<int> GetFideCatalogCountAsync(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            return await connection.ExecuteScalarAsync<int>(
+                new CommandDefinition(SqlStatements.GetFideCatalogCount, cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task ClearAllFidePlayerLinksAsync(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(SqlStatements.ClearAllFidePlayerLinks, cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task TruncateFideCatalogAsync(CancellationToken cancellationToken = default)
+        {
+            using var connection = GetOpenConnection();
+            await connection.ExecuteAsync(
+                new CommandDefinition(SqlStatements.TruncateFideCatalog, cancellationToken: cancellationToken));
+        }
+
+        /// <inheritdoc />
+        public async Task BulkInsertFidePlayersAsync(IReadOnlyList<FidePlayer> rows, CancellationToken cancellationToken = default)
+        {
+            if (rows.Count == 0)
+                return;
+
+            using var connection = GetOpenConnection();
+            using var bulk = new SqlBulkCopy(connection)
+            {
+                DestinationTableName = "Ref.FidePlayer",
+                BatchSize = rows.Count,
+                BulkCopyTimeout = 0
+            };
+
+            bulk.ColumnMappings.Add("Id", "Id");
+            bulk.ColumnMappings.Add("Surname", "Surname");
+            bulk.ColumnMappings.Add("Forenames", "Forenames");
+            bulk.ColumnMappings.Add("Federation", "Federation");
+            bulk.ColumnMappings.Add("Sex", "Sex");
+            bulk.ColumnMappings.Add("FideTitle", "FideTitle");
+            bulk.ColumnMappings.Add("BirthYear", "BirthYear");
+
+            var table = new System.Data.DataTable();
+            table.Columns.Add("Id", typeof(int));
+            table.Columns.Add("Surname", typeof(string));
+            table.Columns.Add("Forenames", typeof(string));
+            table.Columns.Add("Federation", typeof(string));
+            table.Columns.Add("Sex", typeof(string));
+            table.Columns.Add("FideTitle", typeof(string));
+            table.Columns.Add("BirthYear", typeof(short));
+
+            foreach (var row in rows)
+            {
+                table.Rows.Add(
+                    row.Id,
+                    row.Surname,
+                    row.Forenames,
+                    row.Federation ?? (object)DBNull.Value,
+                    row.Sex ?? (object)DBNull.Value,
+                    row.FideTitle ?? (object)DBNull.Value,
+                    row.BirthYear ?? (object)DBNull.Value);
+            }
+
+            await bulk.WriteToServerAsync(table, cancellationToken);
         }
 
         private static BoardPosition MapBoardPosition(BoardPositionDbRow r)

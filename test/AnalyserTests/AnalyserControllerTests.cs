@@ -189,17 +189,41 @@ namespace ControllerTests
                 Times.Never);
         }
 
+        [Fact]
+        public async Task GetFideCatalogStatus_ReturnsCountAndPath()
+        {
+            var chessRepoMock = new Mock<IChessRepository>();
+            chessRepoMock.Setup(r => r.GetFideCatalogCountAsync(It.IsAny<CancellationToken>())).ReturnsAsync(42);
+            var controller = CreateController(
+                chessRepository: chessRepoMock.Object,
+                fideCatalogOptions: Options.Create(new Services.FideCatalog.FideCatalogSeedOptions
+                {
+                    ListPath = "data/fide/players_list_foa.txt"
+                }));
+
+            var result = await controller.GetFideCatalogStatus();
+
+            var ok = Assert.IsType<OkObjectResult>(result);
+            var response = Assert.IsType<FideCatalogStatusResponse>(ok.Value);
+            Assert.Equal(42, response.CatalogCount);
+            Assert.Equal("data/fide/players_list_foa.txt", response.ConfiguredListPath);
+        }
+
         private static Analyser.Controllers.AnalyserController CreateController(
             IChessRepository? chessRepository = null,
             IEtlService? etlService = null,
             IEtlProgressStore? progressStore = null,
+            IMaintenanceProgressStore? maintenanceProgressStore = null,
             IServiceScopeFactory? scopeFactory = null,
-            IOptions<Analyser.PgnOptions>? pgnOptions = null) =>
+            IOptions<Analyser.PgnOptions>? pgnOptions = null,
+            IOptions<Services.FideCatalog.FideCatalogSeedOptions>? fideCatalogOptions = null) =>
             new(
                 chessRepository ?? Mock.Of<IChessRepository>(),
                 etlService ?? Mock.Of<IEtlService>(),
                 progressStore ?? Mock.Of<IEtlProgressStore>(),
+                maintenanceProgressStore ?? Mock.Of<IMaintenanceProgressStore>(),
                 scopeFactory ?? Mock.Of<IServiceScopeFactory>(),
-                pgnOptions ?? Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" }));
+                pgnOptions ?? Options.Create(new Analyser.PgnOptions { DefaultFilePath = "C:\\Library\\PGN" }),
+                fideCatalogOptions ?? Options.Create(new Services.FideCatalog.FideCatalogSeedOptions()));
     }
 }

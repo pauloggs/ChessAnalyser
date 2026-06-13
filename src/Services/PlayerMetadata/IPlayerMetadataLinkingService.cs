@@ -16,5 +16,7 @@ public interface IPlayerMetadataLinkingService
         CancellationToken cancellationToken = default);
 
     /// <summary>Backfills metadata FKs for every player in <c>App.Player</c>.</summary>
-    Task<PlayerMetadataLinkResult> LinkAllPlayersAsync(CancellationToken cancellationToken = default);
+    Task<PlayerMetadataLinkResult> LinkAllPlayersAsync(
+        IProgress<MaintenanceProgress>? progress = null,
+        CancellationToken cancellationToken = default);
 }

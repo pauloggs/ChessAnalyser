@@ -10,6 +10,9 @@ public sealed class PlayerMetadataLinkingService(
     IWorldChampionMatcher worldChampionMatcher,
     IFidePlayerMatcher fidePlayerMatcher) : IPlayerMetadataLinkingService
 {
+    private const int UpdateBatchSize = 1000;
+    private const int ProgressInterval = 100;
+
     private readonly IChessRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
     private readonly IWorldChampionMatcher _worldChampionMatcher =
         worldChampionMatcher ?? throw new ArgumentNullException(nameof(worldChampionMatcher));
@@ -30,83 +33,151 @@ public sealed class PlayerMetadataLinkingService(
 
         _worldChampions ??= await _repository.GetWorldChampionsAsync(cancellationToken);
         var referenceGameYear = gameYear ?? await _repository.GetMinGameYearForPlayerAsync(playerId, cancellationToken);
+        var fideCandidates = await _repository.GetFidePlayersBySurnameAsync(player.Surname, cancellationToken);
 
-        var matchedWorldChampionId = _worldChampionMatcher.Match(player.Surname, player.Forenames, _worldChampions);
+        var outcome = ComputeOutcome(player, referenceGameYear, fideCandidates, _worldChampions);
+        if (outcome.ShouldUpdate)
+        {
+            await _repository.UpdatePlayerMetadataLinksAsync(
+                playerId,
+                outcome.WorldChampionId,
+                outcome.FidePlayerId,
+                cancellationToken);
+        }
+
+        return outcome.Result;
+    }
+
+    /// <inheritdoc />
+    public async Task<PlayerMetadataLinkResult> LinkAllPlayersAsync(
+        IProgress<MaintenanceProgress>? progress = null,
+        CancellationToken cancellationToken = default)
+    {
+        Report(progress, "Running", 0, "Loading reference data…", 0);
+
+        _worldChampions = await _repository.GetWorldChampionsAsync(cancellationToken);
+        var players = await _repository.GetPlayers();
+        var minGameYears = await _repository.GetAllPlayerMinGameYearsAsync(cancellationToken);
+        var fideCatalog = await _repository.GetFidePlayersForDistinctPlayerSurnamesAsync(cancellationToken);
+        var fideBySurname = BuildFideSurnameIndex(fideCatalog);
+
+        var total = players.Count;
+        var processed = 0;
+        var aggregate = PlayerMetadataLinkResult.Empty;
+        var pendingUpdates = new List<PlayerMetadataLinkUpdate>(capacity: Math.Min(total, UpdateBatchSize));
+
+        Report(progress, "Running", 0, $"Linking 0 / {total:N0} players…", 0);
+
+        foreach (var player in players)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+
+            minGameYears.TryGetValue(player.Id, out var referenceGameYear);
+            fideBySurname.TryGetValue(player.Surname, out var fideCandidates);
+            fideCandidates ??= [];
+
+            var outcome = ComputeOutcome(player, referenceGameYear, fideCandidates, _worldChampions);
+            aggregate = aggregate.Add(outcome.Result);
+
+            if (outcome.ShouldUpdate)
+            {
+                pendingUpdates.Add(new PlayerMetadataLinkUpdate
+                {
+                    Id = player.Id,
+                    WorldChampionId = outcome.WorldChampionId,
+                    FidePlayerId = outcome.FidePlayerId
+                });
+
+                if (pendingUpdates.Count >= UpdateBatchSize)
+                {
+                    await _repository.BulkUpdatePlayerMetadataLinksAsync(pendingUpdates, cancellationToken);
+                    pendingUpdates.Clear();
+                }
+            }
+
+            processed++;
+            if (processed == total || processed % ProgressInterval == 0)
+            {
+                var percent = total > 0 ? (int)Math.Round(processed * 100.0 / total) : 100;
+                Report(progress, "Running", percent, $"Linking {processed:N0} / {total:N0} players…", processed);
+            }
+        }
+
+        if (pendingUpdates.Count > 0)
+            await _repository.BulkUpdatePlayerMetadataLinksAsync(pendingUpdates, cancellationToken);
+
+        return aggregate;
+    }
+
+    private static Dictionary<string, List<FidePlayer>> BuildFideSurnameIndex(IReadOnlyList<FidePlayer> catalog)
+    {
+        var index = new Dictionary<string, List<FidePlayer>>(StringComparer.OrdinalIgnoreCase);
+        foreach (var row in catalog)
+        {
+            if (!index.TryGetValue(row.Surname, out var list))
+            {
+                list = [];
+                index[row.Surname] = list;
+            }
+
+            list.Add(row);
+        }
+
+        return index;
+    }
+
+    private LinkOutcome ComputeOutcome(
+        Player player,
+        short? referenceGameYear,
+        IReadOnlyList<FidePlayer> fideCandidates,
+        IReadOnlyList<WorldChampion> worldChampions)
+    {
+        var matchedWorldChampionId = _worldChampionMatcher.Match(player.Surname, player.Forenames, worldChampions);
         var newWorldChampionId = matchedWorldChampionId ?? player.WorldChampionId;
 
-        var fideCandidates = await _repository.GetFidePlayersBySurnameAsync(player.Surname, cancellationToken);
         var matchedFidePlayerId = _fidePlayerMatcher.Match(
             player.Surname,
             player.Forenames,
             fideCandidates,
             referenceGameYear);
 
-        var newFidePlayerId = await ResolveFidePlayerIdAsync(
-            player,
-            matchedFidePlayerId,
-            fideCandidates,
-            referenceGameYear,
-            cancellationToken);
-
         var worldChampionChanged = matchedWorldChampionId.HasValue
             && matchedWorldChampionId != player.WorldChampionId;
-        var fideLinked = newFidePlayerId.HasValue && newFidePlayerId != player.FidePlayerId;
-        var fideCleared = player.FidePlayerId.HasValue && !newFidePlayerId.HasValue;
+        var fideLinked = matchedFidePlayerId.HasValue && matchedFidePlayerId != player.FidePlayerId;
+        var fideCleared = player.FidePlayerId.HasValue && !matchedFidePlayerId.HasValue;
         var unchanged = !worldChampionChanged && !fideLinked && !fideCleared;
 
-        if (worldChampionChanged || fideLinked || fideCleared)
-        {
-            await _repository.UpdatePlayerMetadataLinksAsync(
-                playerId,
-                newWorldChampionId,
-                newFidePlayerId,
-                cancellationToken);
-        }
-
-        return PlayerMetadataLinkResult.Empty.WithSinglePlayer(
-            worldChampionChanged,
-            fideLinked,
-            fideCleared,
-            unchanged);
+        return new LinkOutcome(
+            worldChampionChanged || fideLinked || fideCleared,
+            newWorldChampionId,
+            matchedFidePlayerId,
+            PlayerMetadataLinkResult.Empty.WithSinglePlayer(
+                worldChampionChanged,
+                fideLinked,
+                fideCleared,
+                unchanged));
     }
 
-    /// <inheritdoc />
-    public async Task<PlayerMetadataLinkResult> LinkAllPlayersAsync(CancellationToken cancellationToken = default)
+    private static void Report(
+        IProgress<MaintenanceProgress>? progress,
+        string status,
+        int? percent,
+        string? message,
+        int rowsProcessed)
     {
-        _worldChampions = await _repository.GetWorldChampionsAsync(cancellationToken);
-        var players = await _repository.GetPlayers();
-        var aggregate = PlayerMetadataLinkResult.Empty;
-
-        foreach (var player in players)
+        progress?.Report(new MaintenanceProgress
         {
-            var outcome = await TryLinkPlayerAsync(player.Id, gameYear: null, cancellationToken);
-            aggregate = aggregate.Add(outcome);
-        }
-
-        return aggregate;
+            Operation = "LinkPlayerMetadata",
+            Status = status,
+            PercentComplete = percent,
+            Message = message,
+            RowsProcessed = rowsProcessed
+        });
     }
 
-    private async Task<int?> ResolveFidePlayerIdAsync(
-        Player player,
-        int? matchedFidePlayerId,
-        IReadOnlyList<FidePlayer> surnameCandidates,
-        short? referenceGameYear,
-        CancellationToken cancellationToken)
-    {
-        if (matchedFidePlayerId.HasValue)
-            return matchedFidePlayerId;
-
-        if (!player.FidePlayerId.HasValue)
-            return null;
-
-        var linked = surnameCandidates.FirstOrDefault(c => c.Id == player.FidePlayerId.Value)
-            ?? await _repository.GetFidePlayerByIdAsync(player.FidePlayerId.Value, cancellationToken);
-
-        if (linked is null)
-            return player.FidePlayerId;
-
-        return FidePlayerMatcher.IsBirthYearCompatible(linked.BirthYear, referenceGameYear)
-            ? player.FidePlayerId
-            : null;
-    }
+    private sealed record LinkOutcome(
+        bool ShouldUpdate,
+        int? WorldChampionId,
+        int? FidePlayerId,
+        PlayerMetadataLinkResult Result);
 }

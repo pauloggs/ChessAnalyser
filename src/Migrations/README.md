@@ -23,6 +23,7 @@ dotnet run --project src/Migrations/Migrations.csproj
 | `004` | `dbo.Player` — `Id`, `Surname`, `Forenames` |
 | `011` | `Ref.WorldChampion` (drop/recreate + seed 18 rows) + `dbo.Player.WorldChampionId` FK |
 | `012` | `Ref.FidePlayer` (create if missing) + `dbo.Player.FidePlayerId` FK |
+| `014` | `IX_Game_WhitePlayerId_GameYear` / `IX_Game_BlackPlayerId_GameYear` (metadata link perf) |
 | `013` | `App` schema — transfer operational tables from `dbo`; recreate `App.DeleteGameById` |
 
 **Schemas:** `App.*` — games, players, positions, analytics facts. `Ref.*` — reference catalogs (FIDE, world champions). `dbo.SchemaVersions` — DbUp journal (unchanged).

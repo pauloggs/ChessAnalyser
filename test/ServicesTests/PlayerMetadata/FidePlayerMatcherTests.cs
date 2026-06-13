@@ -47,6 +47,42 @@ public class FidePlayerMatcherTests
     }
 
     [Fact]
+    public void Match_KasparovGary_ReturnsGarryId()
+    {
+        var kasparovCatalog = new List<FidePlayer>
+        {
+            new() { Id = 4100018, Surname = "Kasparov", Forenames = "Garry", BirthYear = 1963, FideTitle = "GM" },
+            new() { Id = 1662627, Surname = "Kasparov", Forenames = "Mark", BirthYear = 2008 },
+        };
+
+        Assert.Equal(4100018, _sut.Match("Kasparov", "Gary", kasparovCatalog, 1978));
+    }
+
+    [Fact]
+    public void Match_CarlsenInitial_PrefersTitledMagnusOverMikkel()
+    {
+        var carlsenCatalog = new List<FidePlayer>
+        {
+            new() { Id = 1489054, Surname = "Carlsen", Forenames = "Mikkel", BirthYear = 1987 },
+            new() { Id = 1503014, Surname = "Carlsen", Forenames = "Magnus", BirthYear = 1990, FideTitle = "GM" },
+        };
+
+        Assert.Equal(1503014, _sut.Match("Carlsen", "M", carlsenCatalog, 2001));
+    }
+
+    [Fact]
+    public void Match_SingleLetterForename_SkipsWeakMatchWhenNotUnique()
+    {
+        var catalog = new List<FidePlayer>
+        {
+            new() { Id = 1, Surname = "Blanco", Forenames = "Jose", BirthYear = 1980 },
+            new() { Id = 2, Surname = "Blanco", Forenames = "Juan", BirthYear = 1985 },
+        };
+
+        Assert.Null(_sut.Match("Blanco", "J", catalog, 2020));
+    }
+
+    [Fact]
     public void Match_BirthYearAfterGameYear_ReturnsNull()
     {
         Assert.Null(_sut.Match("Carlsen", "Magnus", Catalog, 1985));

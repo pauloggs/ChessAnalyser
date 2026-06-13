@@ -72,6 +72,47 @@ namespace Repositories
               AND (g.WhitePlayerId = @PlayerId OR g.BlackPlayerId = @PlayerId);
             """;
 
+        public static string GetAllPlayerMinGameYears =>
+            """
+            SELECT v.PlayerId, MIN(v.GameYear) AS MinGameYear
+            FROM (
+                SELECT g.WhitePlayerId AS PlayerId, g.GameYear
+                FROM App.Game g
+                WHERE g.GameYear IS NOT NULL
+                UNION ALL
+                SELECT g.BlackPlayerId AS PlayerId, g.GameYear
+                FROM App.Game g
+                WHERE g.GameYear IS NOT NULL
+            ) v
+            GROUP BY v.PlayerId;
+            """;
+
+        public static string GetFidePlayersForDistinctPlayerSurnames =>
+            """
+            SELECT fp.Id, fp.Surname, fp.Forenames, fp.Federation, fp.Sex, fp.FideTitle, fp.BirthYear
+            FROM Ref.FidePlayer fp
+            INNER JOIN (SELECT DISTINCT Surname FROM App.Player) ps
+                ON fp.Surname = ps.Surname;
+            """;
+
+        public static string MergePlayerMetadataLinks =>
+            """
+            MERGE App.Player AS target
+            USING #PlayerMetadataUpdates AS source ON target.Id = source.Id
+            WHEN MATCHED THEN UPDATE SET
+                target.WorldChampionId = source.WorldChampionId,
+                target.FidePlayerId = source.FidePlayerId;
+            """;
+
+        public static string GetFideCatalogCount =>
+            "SELECT COUNT(1) FROM Ref.FidePlayer;";
+
+        public static string ClearAllFidePlayerLinks =>
+            "UPDATE App.Player SET FidePlayerId = NULL WHERE FidePlayerId IS NOT NULL;";
+
+        public static string TruncateFideCatalog =>
+            "DELETE FROM Ref.FidePlayer;";
+
         public static string InsertGame =>
         """
         IF (NOT EXISTS (SELECT TOP 1 Id FROM App.Game WHERE GameId = @GameId))
