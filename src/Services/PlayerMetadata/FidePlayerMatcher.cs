@@ -1,174 +1,135 @@
-using Interfaces.DTO;
-using Repositories;
-using Services.Helpers;
+using Interfaces.DTO.Ref;
 
 namespace Services.PlayerMetadata;
 
-/// <inheritdoc />
+/// <summary>
+/// Matches PGN names to <c>Ref.FidePlayer</c> by surname + <see cref="PlayerForenamesMatcher"/>,
+/// with birth-year filtering and title-based disambiguation when multiple candidates remain.
+/// </summary>
 public sealed class FidePlayerMatcher : IFidePlayerMatcher
 {
-    private readonly IChessRepository? _repository;
-    private IReadOnlyList<FidePlayerRecord> _records = Array.Empty<FidePlayerRecord>();
-    private Dictionary<string, List<FidePlayerRecord>> _bySurname = new(StringComparer.OrdinalIgnoreCase);
-    private bool _loaded;
-
-    public FidePlayerMatcher(IChessRepository repository)
+    private static readonly HashSet<string> StrongTitles = new(StringComparer.OrdinalIgnoreCase)
     {
-        _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-    }
-
-    /// <summary>Parameterless constructor for unit tests that call <see cref="SetRecords"/> directly.</summary>
-    public FidePlayerMatcher()
-    {
-    }
+        "GM", "WGM", "IM", "WIM", "FM", "WFM"
+    };
 
     /// <inheritdoc />
-    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    public int? Match(
+        string surname,
+        string forenames,
+        IReadOnlyList<FidePlayer> candidates,
+        short? referenceGameYear)
     {
-        if (_loaded || _repository == null)
-            return;
+        if (string.IsNullOrWhiteSpace(surname) || candidates.Count == 0)
+            return null;
 
-        var records = await _repository.GetFidePlayers(cancellationToken).ConfigureAwait(false);
-        SetRecords(records);
-        _loaded = true;
-    }
+        var surnameNorm = surname.Trim();
+        var surnameMatches = candidates
+            .Where(c => string.Equals(c.Surname, surnameNorm, StringComparison.OrdinalIgnoreCase))
+            .ToList();
+        if (surnameMatches.Count == 0)
+            return null;
 
-    /// <inheritdoc />
-    public void InvalidateCache()
-    {
-        _loaded = false;
-        _records = Array.Empty<FidePlayerRecord>();
-        _bySurname = new Dictionary<string, List<FidePlayerRecord>>(StringComparer.OrdinalIgnoreCase);
-    }
+        PlayerForenameVariantHelper.TryGetCanonicalForenames(surnameNorm, forenames, out var canonicalForenames);
 
-    /// <inheritdoc />
-    public void LoadCatalogSnapshot(IReadOnlyList<FidePlayerRecord> records)
-    {
-        SetRecords(records);
-        _loaded = true;
-    }
+        var forenameMatches = surnameMatches
+            .Where(c => ForenamesMatchForCatalog(forenames, canonicalForenames, c.Forenames))
+            .ToList();
+        if (forenameMatches.Count == 0)
+            return null;
 
-    /// <summary>Indexes FIDE rows for matching. Used by tests and after loading from <c>Ref.FidePlayer</c>.</summary>
-    public void SetRecords(IReadOnlyList<FidePlayerRecord> records)
-    {
-        _records = records ?? throw new ArgumentNullException(nameof(records));
-        _bySurname = records
-            .GroupBy(r => r.Surname.Trim(), StringComparer.OrdinalIgnoreCase)
-            .ToDictionary(g => g.Key, g => g.ToList(), StringComparer.OrdinalIgnoreCase);
-    }
-
-    /// <inheritdoc />
-    public FidePlayerMatchResult Match(string surname, string? forenames, FidePlayerMatchContext? context = null)
-    {
-        if (string.IsNullOrWhiteSpace(surname))
-            return Unmatched();
-
-        if (!_bySurname.TryGetValue(surname.Trim(), out var candidates))
-            return Unmatched();
-
-        var forenamesNorm = (forenames ?? string.Empty).Trim();
-        var matches = candidates
-            .Where(c => PlayerForenamesMatcher.ForenamesMatch(c.Forenames, forenamesNorm))
+        var viable = forenameMatches
+            .Where(c => IsBirthYearCompatible(c.BirthYear, referenceGameYear))
             .ToList();
 
-        if (matches.Count == 0)
-            return Unmatched();
-
-        matches = matches.Where(m => IsCorpusCompatible(m.BirthYear, context)).ToList();
-        if (matches.Count == 0)
-            return Unmatched();
-
-        if (matches.Count == 1)
-            return Matched(matches[0]);
-
-        return ResolveAmbiguous(matches, context);
+        return viable.Count switch
+        {
+            0 => null,
+            1 => viable[0].Id,
+            _ => Disambiguate(forenames, canonicalForenames, viable, referenceGameYear)
+        };
     }
 
     /// <summary>
-    /// True when corpus game years are consistent with the candidate birth year (DESIGN §13.5).
-    /// When corpus years or birth year are unknown, returns true (no basis to reject).
+    /// True when a candidate could have played in <paramref name="referenceGameYear"/>.
     /// </summary>
-    internal static bool IsCorpusCompatible(short? candidateBirthYear, FidePlayerMatchContext? context)
+    public static bool IsBirthYearCompatible(short? birthYear, short? referenceGameYear) =>
+        birthYear is null || referenceGameYear is null || birthYear <= referenceGameYear;
+
+    private static bool ForenamesMatchForCatalog(
+        string pgnForenames,
+        string canonicalForenames,
+        string? catalogForenames)
     {
-        if (context is null || candidateBirthYear is null)
+        if (PlayerNameMatchHelper.ForenamesMatch(pgnForenames, catalogForenames))
             return true;
 
-        var birth = candidateBirthYear.Value;
-
-        if (context.CorpusFirstGameYear is short first && birth > first)
-            return false;
-
-        if (context.CorpusLastGameYear is short last && birth > last)
-            return false;
-
-        if (context.KnownBirthYear is short knownBirth &&
-            Math.Abs(knownBirth - birth) > 2)
-            return false;
-
-        if (context.CorpusFirstGameYear is not short firstYear ||
-            context.CorpusLastGameYear is not short lastYear)
-            return true;
-
-        if (firstYear < birth + MinCompetitiveAge)
-            return false;
-
-        if (lastYear > birth + MaxPlausibleCareerEndAge)
-            return false;
-
-        return true;
+        return !string.IsNullOrEmpty(canonicalForenames)
+            && PlayerNameMatchHelper.ForenamesMatch(canonicalForenames, catalogForenames);
     }
 
-    private const int MinCompetitiveAge = 5;
-    private const int MaxPlausibleCareerEndAge = 100;
-
-    private static FidePlayerMatchResult ResolveAmbiguous(
-        IReadOnlyList<FidePlayerRecord> matches,
-        FidePlayerMatchContext? context)
+    private static int? Disambiguate(
+        string pgnForenames,
+        string canonicalForenames,
+        IReadOnlyList<FidePlayer> viable,
+        short? referenceGameYear)
     {
-        var scored = matches
-            .Select(m => (Record: m, Score: ScoreCandidate(m, context)))
+        var pgnNorm = PlayerNameMatchHelper.NormalizeForenames(pgnForenames);
+        var isSingleLetterPgn = pgnNorm.Length == 1;
+
+        var scored = viable
+            .Select(c => (Player: c, Score: ScoreCandidate(pgnForenames, canonicalForenames, c, referenceGameYear, isSingleLetterPgn)))
             .OrderByDescending(x => x.Score)
-            .ThenBy(x => x.Record.FideId)
             .ToList();
 
-        if (scored[0].Score >= 100)
-            return Matched(scored[0].Record);
+        if (scored[0].Score < 0)
+            return null;
 
-        if (scored.Count >= 2 && scored[0].Score >= 30 && scored[0].Score - scored[1].Score >= 20)
-            return Matched(scored[0].Record);
+        if (scored.Count == 1 || scored[0].Score > scored[1].Score)
+            return scored[0].Player.Id;
 
-        return new FidePlayerMatchResult { Outcome = FidePlayerMatchOutcome.Ambiguous };
+        return null;
     }
 
-    internal static int ScoreCandidate(FidePlayerRecord candidate, FidePlayerMatchContext? context)
+    private static int ScoreCandidate(
+        string pgnForenames,
+        string canonicalForenames,
+        FidePlayer candidate,
+        short? referenceGameYear,
+        bool isSingleLetterPgn)
     {
-        if (context is null)
-            return 0;
-
         var score = 0;
 
-        if (context.KnownBirthYear is short knownBirth && candidate.BirthYear == knownBirth)
+        if (IsExactForenameMatch(pgnForenames, candidate.Forenames))
             score += 100;
-        else if (context.KnownBirthYear is short kb && candidate.BirthYear is short cb &&
-                 Math.Abs(kb - cb) <= 1)
+        else if (!string.IsNullOrEmpty(canonicalForenames)
+            && IsExactForenameMatch(canonicalForenames, candidate.Forenames))
+            score += 90;
+        else if (PlayerNameMatchHelper.ForenamesMatch(pgnForenames, candidate.Forenames))
+            score += 60;
+        else if (!string.IsNullOrEmpty(canonicalForenames)
+            && PlayerNameMatchHelper.ForenamesMatch(canonicalForenames, candidate.Forenames))
             score += 50;
 
-        if (context.CorpusFirstGameYear is short first &&
-            context.CorpusLastGameYear is short last &&
-            candidate.BirthYear is short birth)
+        if (!string.IsNullOrWhiteSpace(candidate.FideTitle) && StrongTitles.Contains(candidate.FideTitle))
+            score += 40;
+
+        if (referenceGameYear.HasValue && candidate.BirthYear.HasValue)
         {
-            if (first >= birth + MinCompetitiveAge && last <= birth + MaxPlausibleCareerEndAge)
-                score += 30;
-            else if (first >= birth + 3 && last <= birth + 110)
+            var age = referenceGameYear.Value - candidate.BirthYear.Value;
+            if (age is >= 8 and <= 90)
                 score += 10;
         }
+
+        if (isSingleLetterPgn && score < 100)
+            score -= 50;
 
         return score;
     }
 
-    private static FidePlayerMatchResult Matched(FidePlayerRecord record) =>
-        new() { Outcome = FidePlayerMatchOutcome.Matched, Record = record };
-
-    private static FidePlayerMatchResult Unmatched() =>
-        new() { Outcome = FidePlayerMatchOutcome.Unmatched };
+    private static bool IsExactForenameMatch(string? forenames1, string? forenames2) =>
+        string.Equals(
+            PlayerNameMatchHelper.NormalizeForenames(forenames1),
+            PlayerNameMatchHelper.NormalizeForenames(forenames2),
+            StringComparison.OrdinalIgnoreCase);
 }

@@ -48,6 +48,8 @@ dotnet run --project src/Migrations/Migrations.csproj
 
 Details and script order: [src/Migrations/README.md](src/Migrations/README.md).
 
+**Player metadata (optional):** place the FIDE combined list at `data/fide/players_list_foa.txt` (see [data/fide/README.md](data/fide/README.md)), then seed and link via the Analyser CLI or the home-page **Player metadata** section.
+
 ### 4. Run the web API
 
 ```bash

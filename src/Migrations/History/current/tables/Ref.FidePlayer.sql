@@ -1,7 +1,7 @@
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
 CREATE TABLE [Ref].[FidePlayer](
-	[FideId] [int] NOT NULL,
+	[Id] [int] NOT NULL,
 	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[Federation] [char](3) COLLATE SQL_Latin1_General_CP1_CI_AS NULL,
@@ -10,7 +10,7 @@ CREATE TABLE [Ref].[FidePlayer](
 	[BirthYear] [smallint] NULL,
  CONSTRAINT [PK_Ref_FidePlayer] PRIMARY KEY CLUSTERED 
 (
-	[FideId] ASC
+	[Id] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
 

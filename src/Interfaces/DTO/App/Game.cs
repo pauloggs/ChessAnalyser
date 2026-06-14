@@ -1,0 +1,89 @@
+using System.Collections.Generic;
+using System.ComponentModel.DataAnnotations.Schema;
+
+namespace Interfaces.DTO.App;
+
+/// <summary>
+/// Holds information about a complete chess game. Persisted to <c>App.Game</c>.
+/// </summary>
+[Table("Game", Schema = "App")]
+public class Game
+{
+    public int Id { get; set; }
+
+    /// <summary>
+    /// The name of the game, typically derived from the Event tag in PGN.
+    /// </summary>
+    public required string Name { get; set; }
+
+    /// <summary>
+    /// Represents a dictionary of all the retrieved tags from the
+    /// PGN file, such as Event, Round etc.
+    /// </summary>
+    public Dictionary<string, string> Tags { get; set; }
+
+    /// <summary>
+    /// Represents a dictionary of each Ply at each Ply number of the game.
+    /// For example, Ply 0 and Ply 1 represent the first move by White and Black respectively.
+    /// </summary>
+    public Dictionary<int, Ply> Plies { get; set; }
+
+    /// <summary>
+    /// Represents a dictionary of BoardPosition objects at each zero-index Ply of the game.
+    /// Ply 0 represents  first move by White, which is the first position after the starting position.
+    /// </summary>
+    public Dictionary<int, BoardPosition> BoardPositions { get; set; }
+
+    /// <summary>
+    /// The starting board position before any moves are made.
+    /// This represents the initial arrangement of pieces at the beginning of the game.
+    /// </summary>
+    public BoardPosition? InitialBoardPosition { get; set; }
+
+    /// <summary>
+    /// GameMoves is generated from a concatenation of all the moves in the game.
+    /// </summary>
+    public string GameId { get; set; }
+
+    public string Winner { get; set; }
+
+    /// <summary>ID of the player who played White. Resolved from PGN [White] tag.</summary>
+    public int? WhitePlayerId { get; set; }
+
+    /// <summary>ID of the player who played Black. Resolved from PGN [Black] tag.</summary>
+    public int? BlackPlayerId { get; set; }
+
+    /// <summary>PGN [Event] header for analytics filters.</summary>
+    public string? Event { get; set; }
+
+    /// <summary>PGN [Site] header for analytics filters.</summary>
+    public string? Site { get; set; }
+
+    /// <summary>Raw PGN [Date] tag (e.g. <c>1934.01.01</c> or <c>????.??.??</c>).</summary>
+    public string? DateTag { get; set; }
+
+    /// <summary>Four-digit year when fully known from <see cref="DateTag"/>; otherwise null (DESIGN Q3).</summary>
+    public short? GameYear { get; set; }
+
+    /// <summary>PGN [ECO] opening code (max 16 chars in DB).</summary>
+    public string? Eco { get; set; }
+
+    /// <summary>
+    /// Source PGN file name (when loaded from file). Used for error reporting during parsing.
+    /// </summary>
+    public string? SourcePgnFileName { get; set; }
+
+    /// <summary>
+    /// 1-based index of this game within the source PGN file. Used for error reporting during parsing.
+    /// </summary>
+    public int? GameIndexInFile { get; set; }
+
+    public Game()
+    {
+        Tags = [];
+        Plies = [];
+        BoardPositions = [];
+        Winner = "None";
+        GameId = string.Empty;
+    }
+}

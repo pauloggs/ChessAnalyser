@@ -1,40 +1,33 @@
-using Interfaces.DTO;
-using Repositories;
+using Interfaces.DTO.Ref;
 using Services.Helpers;
 
 namespace Services.PlayerMetadata;
 
-/// <inheritdoc />
-public sealed class WorldChampionMatcher(IChessRepository repository) : IWorldChampionMatcher
+/// <summary>
+/// Matches PGN player names to <c>Ref.WorldChampion</c> using forename heuristics and known PGN variants.
+/// </summary>
+public sealed class WorldChampionMatcher : IWorldChampionMatcher
 {
-    private readonly IChessRepository _repository = repository ?? throw new ArgumentNullException(nameof(repository));
-    private IReadOnlyList<WorldChampionRef>? _champions;
-
     /// <inheritdoc />
-    public async Task EnsureLoadedAsync(CancellationToken cancellationToken = default)
+    public int? Match(string surname, string forenames, IReadOnlyList<WorldChampion> catalog)
     {
-        if (_champions != null)
-            return;
+        if (string.IsNullOrWhiteSpace(surname) || catalog.Count == 0)
+            return null;
 
-        _champions = await _repository.GetWorldChampions(cancellationToken).ConfigureAwait(false);
-    }
-
-    /// <inheritdoc />
-    public bool IsWorldChampion(string surname, string? forenames)
-    {
-        if (_champions == null || _champions.Count == 0 || string.IsNullOrWhiteSpace(surname))
-            return false;
-
-        var normalizedForenames = (forenames ?? string.Empty).Trim();
-        foreach (var champion in _champions)
+        var surnameNorm = surname.Trim();
+        foreach (var champion in catalog)
         {
-            if (!string.Equals(champion.Surname, surname.Trim(), StringComparison.OrdinalIgnoreCase))
+            if (!string.Equals(champion.Surname, surnameNorm, StringComparison.OrdinalIgnoreCase))
                 continue;
 
-            if (PlayerForenamesMatcher.ForenamesMatch(champion.Forenames, normalizedForenames))
-                return true;
+            if (PlayerNameMatchHelper.ForenamesMatch(forenames, champion.Forenames))
+                return champion.Id;
+
+            if (PlayerForenameVariantHelper.TryGetCanonicalForenames(surnameNorm, forenames, out var variant)
+                && PlayerNameMatchHelper.ForenamesMatch(variant, champion.Forenames))
+                return champion.Id;
         }
 
-        return false;
+        return null;
     }
 }

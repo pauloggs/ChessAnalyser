@@ -4,8 +4,8 @@ using Repositories;
 namespace Services.Analytics;
 
 /// <summary>
-/// Reference metric: average <see cref="Interfaces.DTO.GamePositionSummary.WhiteMaterial"/> /
-/// <see cref="Interfaces.DTO.GamePositionSummary.BlackMaterial"/> at a fixed ply, grouped by <c>GameYear</c> (PLAN §5.3.4).
+/// Reference metric: average <see cref="GamePositionSummary.WhiteMaterial"/> /
+/// <see cref="GamePositionSummary.BlackMaterial"/> at a fixed ply, grouped by <c>GameYear</c> (PLAN §5.3.4).
 /// </summary>
 public sealed class AverageMaterialByYearAndColourExecutor(IChessRepository repository) : IMetricExecutor
 {

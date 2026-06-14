@@ -12,6 +12,4 @@ public sealed class PlayerOptionResponse
     public required string Forenames { get; init; }
 
     public required string DisplayName { get; init; }
-
-    public bool WasWorldChampion { get; init; }
 }

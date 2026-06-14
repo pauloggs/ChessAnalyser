@@ -71,6 +71,7 @@
     <h1>Chess Analyser</h1>
     <nav>
       <a href="#etl">PGN load</a>
+      <a href="#metadata">Player metadata</a>
       <a href="#metrics">Metrics</a>
       <a href="#games">Games</a>
       <a href="/swagger" target="_blank" rel="noopener">API docs (Swagger)</a>
@@ -80,6 +81,7 @@
   <div class="section-strip" role="navigation" aria-label="Page sections">
     <strong>Sections on this page</strong> (scroll down if you do not see them all):
     <a href="#etl">PGN load</a> ·
+    <a href="#metadata">Player metadata</a> ·
     <a href="#metrics">Metrics</a> ·
     <a href="#games">Games</a>
   </div>
@@ -101,6 +103,23 @@
       <div class="progress-bar" id="bar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
     </div>
     <div class="status" id="status"></div>
+  </section>
+
+  <section id="metadata">
+    <h2>Player metadata</h2>
+    <p class="hint">Seed <code>Ref.FidePlayer</code> from your local FIDE TXT file, then link <code>App.Player</code> FKs to FIDE and world-champion catalogs.</p>
+    <p id="fideCatalogStatus" class="hint">Loading catalog status…</p>
+    <div class="checkbox-row">
+      <input type="checkbox" id="fideForceReload" />
+      <label for="fideForceReload" style="display:inline; margin:0;">Force reload (clears existing catalog and FIDE player links)</label>
+    </div>
+    <button type="button" id="seedFideCatalog">Seed FIDE catalog</button>
+    <button type="button" id="linkPlayerMetadata">Link player metadata</button>
+    <button type="button" id="cancelMaintenance" style="display: none;">Cancel</button>
+    <div class="progress-wrap" id="metadataWrap" style="display: none;">
+      <div class="progress-bar" id="metadataBar" role="progressbar" aria-valuenow="0" aria-valuemin="0" aria-valuemax="100"></div>
+    </div>
+    <div class="status" id="metadataStatus"></div>
   </section>
 
   <section id="metrics">
@@ -262,8 +281,6 @@
           var opt = document.createElement('option');
           opt.value = p.displayName || (p.surname || ('Player ' + p.id));
           opt.textContent = p.displayName || ('Player ' + p.id);
-          if (p.wasWorldChampion)
-            opt.title = 'World champion';
           opt.dataset.surname = p.surname || '';
           opt.dataset.forenames = p.forenames || '';
           select.appendChild(opt);
@@ -406,6 +423,122 @@
       cancelBtn.addEventListener('click', function () {
         cancelBtn.disabled = true;
         fetch(analyser + '/CancelLoad', { method: 'POST' }).catch(function () {});
+      });
+
+      /* Player metadata */
+      var fideCatalogStatusEl = document.getElementById('fideCatalogStatus');
+      var fideForceReload = document.getElementById('fideForceReload');
+      var seedFideBtn = document.getElementById('seedFideCatalog');
+      var linkMetadataBtn = document.getElementById('linkPlayerMetadata');
+      var cancelMaintenanceBtn = document.getElementById('cancelMaintenance');
+      var metadataWrap = document.getElementById('metadataWrap');
+      var metadataBar = document.getElementById('metadataBar');
+      var metadataStatusEl = document.getElementById('metadataStatus');
+
+      function refreshFideCatalogStatus() {
+        fetch(analyser + '/FideCatalogStatus')
+          .then(function (r) { return r.ok ? r.json() : null; })
+          .then(function (data) {
+            if (!data) {
+              fideCatalogStatusEl.textContent = 'Could not load FIDE catalog status.';
+              return;
+            }
+            var fileNote = data.listFileExists ? 'file found' : 'file missing at configured path';
+            fideCatalogStatusEl.textContent =
+              'Ref.FidePlayer rows: ' + (data.catalogCount || 0) +
+              ' — configured path: ' + (data.configuredListPath || '') + ' (' + fileNote + ')';
+          })
+          .catch(function () {
+            fideCatalogStatusEl.textContent = 'Could not load FIDE catalog status.';
+          });
+      }
+
+      refreshFideCatalogStatus();
+
+      function setMetadataLoading(loading) {
+        seedFideBtn.disabled = loading;
+        linkMetadataBtn.disabled = loading;
+        fideForceReload.disabled = loading;
+        cancelMaintenanceBtn.style.display = loading ? 'inline-block' : 'none';
+        if (!loading) cancelMaintenanceBtn.disabled = false;
+      }
+
+      function setMetadataProgress(percent, status, message) {
+        metadataWrap.style.display = 'block';
+        metadataBar.style.width = (percent != null ? percent : 0) + '%';
+        metadataBar.setAttribute('aria-valuenow', percent != null ? percent : 0);
+        metadataBar.classList.toggle('failed', status === 'Failed' || status === 'Cancelled');
+        var t = status || '';
+        if (message) t += (t ? ': ' : '') + message;
+        metadataStatusEl.textContent = t;
+        metadataStatusEl.className = 'status' + (status === 'Failed' || status === 'Cancelled' ? ' error' : '');
+      }
+
+      function pollMaintenance() {
+        return fetch(analyser + '/MaintenanceProgress')
+          .then(function (r) {
+            if (!r.ok) throw new Error(r.status + ' ' + r.statusText);
+            return parseJsonSafe(r);
+          })
+          .then(function (data) {
+            if (!data) {
+              setMetadataProgress(0, 'Running', 'Starting…');
+              return new Promise(function (r) { setTimeout(r, 500); }).then(pollMaintenance);
+            }
+            setMetadataProgress(data.percentComplete, data.status, data.message || (data.rowsProcessed != null ? data.rowsProcessed + ' players' : null));
+            var done = data.status === 'Completed' || data.status === 'Failed' || data.status === 'Skipped' || data.status === 'Cancelled';
+            if (done) {
+              setMetadataLoading(false);
+              refreshFideCatalogStatus();
+              if (data.status === 'Completed') setMetadataProgress(100, 'Completed', data.message);
+            } else if (data.status === 'Running') {
+              return new Promise(function (r) { setTimeout(r, 500); }).then(pollMaintenance);
+            }
+          })
+          .catch(function (e) {
+            metadataStatusEl.textContent = 'Error: ' + e.message;
+            metadataStatusEl.className = 'status error';
+            setMetadataLoading(false);
+          });
+      }
+
+      seedFideBtn.addEventListener('click', function () {
+        setMetadataLoading(true);
+        setMetadataProgress(0, 'Starting…', null);
+        fetch(analyser + '/SeedFideCatalog', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ force: !!fideForceReload.checked })
+        })
+          .then(function (r) {
+            if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + r.statusText + (t ? ': ' + t : '')); });
+            return pollMaintenance();
+          })
+          .catch(function (e) {
+            metadataStatusEl.textContent = 'Error: ' + e.message;
+            metadataStatusEl.className = 'status error';
+            setMetadataLoading(false);
+          });
+      });
+
+      linkMetadataBtn.addEventListener('click', function () {
+        setMetadataLoading(true);
+        setMetadataProgress(0, 'Starting…', null);
+        fetch(analyser + '/LinkPlayerMetadata', { method: 'POST' })
+          .then(function (r) {
+            if (!r.ok) return r.text().then(function (t) { throw new Error(r.status + ' ' + r.statusText + (t ? ': ' + t : '')); });
+            return pollMaintenance();
+          })
+          .catch(function (e) {
+            metadataStatusEl.textContent = 'Error: ' + e.message;
+            metadataStatusEl.className = 'status error';
+            setMetadataLoading(false);
+          });
+      });
+
+      cancelMaintenanceBtn.addEventListener('click', function () {
+        cancelMaintenanceBtn.disabled = true;
+        fetch(analyser + '/CancelMaintenance', { method: 'POST' }).catch(function () {});
       });
 
       /* Metrics */

@@ -1,21 +1,18 @@
-using Interfaces.DTO;
+using Interfaces.DTO.Ref;
 
 namespace Services.PlayerMetadata;
 
-/// <summary>Matches corpus player names to rows from <c>Ref.FidePlayer</c>.</summary>
+/// <summary>
+/// Matches PGN player names to <c>Ref.FidePlayer</c> rows (DESIGN §13.5).
+/// </summary>
 public interface IFidePlayerMatcher
 {
-    /// <summary>Loads catalog rows from <c>Ref.FidePlayer</c> when not already cached in this scope.</summary>
-    Task EnsureLoadedAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>Clears the in-memory catalog so the next match reloads from the database.</summary>
-    void InvalidateCache();
-
-    /// <summary>Loads an in-memory catalog snapshot without persisting (e.g. dry-run import preview).</summary>
-    void LoadCatalogSnapshot(IReadOnlyList<FidePlayerRecord> records);
-
     /// <summary>
-    /// Finds a FIDE row for the given surname and forenames using <see cref="Services.Helpers.PlayerForenamesMatcher"/>.
+    /// Returns the FIDE catalog <see cref="FidePlayer.Id"/> when uniquely matched; otherwise null.
     /// </summary>
-    FidePlayerMatchResult Match(string surname, string? forenames, FidePlayerMatchContext? context = null);
+    int? Match(
+        string surname,
+        string forenames,
+        IReadOnlyList<FidePlayer> candidates,
+        short? referenceGameYear);
 }

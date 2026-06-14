@@ -1,16 +1,16 @@
 namespace Services.Helpers
 {
     /// <summary>
-    /// Maps PGN tag dictionary (lowercase keys, see <see cref="TagHelper"/>) onto explicit <see cref="Interfaces.DTO.Game"/>
+    /// Maps PGN tag dictionary (lowercase keys, see <see cref="TagHelper"/>) onto explicit <see cref="Game"/>
     /// analytics columns before persistence (DESIGN §3.5, PLAN §5.1).
     /// </summary>
     public static class PgnGameHeaderMapper
     {
         /// <summary>
-        /// Fills <see cref="Interfaces.DTO.Game"/> header fields from <see cref="Interfaces.DTO.Game.Tags"/>.
+        /// Fills <see cref="Game"/> header fields from <see cref="Game.Tags"/>.
         /// Idempotent if called more than once with the same tags.
         /// </summary>
-        public static void ApplyFromTags(Interfaces.DTO.Game game)
+        public static void ApplyFromTags(Game game)
         {
             ArgumentNullException.ThrowIfNull(game);
             var tags = game.Tags ?? [];

@@ -1,5 +1,6 @@
 using Interfaces.Analytics;
 using Interfaces.DTO;
+using Interfaces.DTO.Ref;
 using Microsoft.Extensions.Configuration;
 using Repositories;
 
@@ -29,27 +30,6 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
     public Task<List<Player>> GetPlayersBySurname(string surname) => Throw<List<Player>>();
 
     public Task<int> InsertPlayer(Player player) => Throw<int>();
-
-    public Task UpdatePlayerWasWorldChampionAsync(int playerId, bool wasWorldChampion, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task UpdatePlayerFideMetadataAsync(int playerId, PlayerFideMetadata metadata, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task<IReadOnlyList<WorldChampionRef>> GetWorldChampions(CancellationToken cancellationToken = default) =>
-        Throw<IReadOnlyList<WorldChampionRef>>();
-
-    public Task<IReadOnlyList<FidePlayerRecord>> GetFidePlayers(CancellationToken cancellationToken = default) =>
-        Throw<IReadOnlyList<FidePlayerRecord>>();
-
-    public Task ReplaceFideCatalogAsync(IReadOnlyList<FidePlayerRecord> records, CancellationToken cancellationToken = default) =>
-        Throw();
-
-    public Task<int?> GetPlayerIdByFideIdAsync(int fideId, CancellationToken cancellationToken = default) =>
-        Throw<int?>();
-
-    public Task<PlayerCorpusActivity?> GetPlayerCorpusActivityAsync(int playerId, CancellationToken cancellationToken = default) =>
-        Throw<PlayerCorpusActivity?>();
 
     public Task<int> InsertGame(Game game) => Throw<int>();
 
@@ -239,6 +219,41 @@ public sealed class MaterializationWriteOnlyNoOpRepository : IChessRepository
     public Task<IReadOnlyList<(int PlyIndex, BoardPosition Position)>> GetBoardPositionsForGameOrderedAsync(
         int gameId,
         CancellationToken cancellationToken = default) => Throw<IReadOnlyList<(int PlyIndex, BoardPosition Position)>>();
+
+    public Task<IReadOnlyList<WorldChampion>> GetWorldChampionsAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<WorldChampion>>();
+
+    public Task<IReadOnlyList<FidePlayer>> GetFidePlayersBySurnameAsync(string surname, CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<FidePlayer>>();
+
+    public Task<FidePlayer?> GetFidePlayerByIdAsync(int fidePlayerId, CancellationToken cancellationToken = default) =>
+        Throw<FidePlayer?>();
+
+    public Task<short?> GetMinGameYearForPlayerAsync(int playerId, CancellationToken cancellationToken = default) =>
+        Throw<short?>();
+
+    public Task<IReadOnlyDictionary<int, short>> GetAllPlayerMinGameYearsAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyDictionary<int, short>>();
+
+    public Task<IReadOnlyList<FidePlayer>> GetFidePlayersForDistinctPlayerSurnamesAsync(CancellationToken cancellationToken = default) =>
+        Throw<IReadOnlyList<FidePlayer>>();
+
+    public Task UpdatePlayerMetadataLinksAsync(
+        int playerId,
+        int? worldChampionId,
+        int? fidePlayerId,
+        CancellationToken cancellationToken = default) => Throw();
+
+    public Task BulkUpdatePlayerMetadataLinksAsync(IReadOnlyList<PlayerMetadataLinkUpdate> updates, CancellationToken cancellationToken = default) =>
+        Throw();
+
+    public Task<int> GetFideCatalogCountAsync(CancellationToken cancellationToken = default) => Throw<int>();
+
+    public Task ClearAllFidePlayerLinksAsync(CancellationToken cancellationToken = default) => Throw();
+
+    public Task TruncateFideCatalogAsync(CancellationToken cancellationToken = default) => Throw();
+
+    public Task BulkInsertFidePlayersAsync(IReadOnlyList<FidePlayer> rows, CancellationToken cancellationToken = default) => Throw();
 
     private static Task<T> Throw<T>() =>
         Task.FromException<T>(new InvalidOperationException("Not supported on write-only no-op repository."));

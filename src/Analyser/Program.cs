@@ -6,6 +6,7 @@ using Repositories;
 using Services;
 using Services.Analytics;
 using Services.Helpers;
+using Services.FideCatalog;
 using Services.PlayerMetadata;
 using System.Reflection;
 using System.Linq;
@@ -13,6 +14,7 @@ using System.Linq;
 var builder = WebApplication.CreateBuilder(args);
 
 builder.Services.Configure<PgnOptions>(builder.Configuration.GetSection(PgnOptions.SectionName));
+builder.Services.Configure<FideCatalogSeedOptions>(builder.Configuration.GetSection(FideCatalogSeedOptions.SectionName));
 
 // Add services to the container.
 builder.Services.AddControllers();
@@ -65,8 +67,10 @@ builder.Services.AddScoped<IPersistenceService, PersistenceService>();
 builder.Services.AddScoped<IPlayerResolver, PlayerResolver>();
 builder.Services.AddScoped<IWorldChampionMatcher, WorldChampionMatcher>();
 builder.Services.AddScoped<IFidePlayerMatcher, FidePlayerMatcher>();
-builder.Services.AddScoped<IPlayerFideMetadataEnricher, PlayerFideMetadataEnricher>();
-builder.Services.AddScoped<IPlayerMetadataSyncService, PlayerMetadataSyncService>();
+builder.Services.AddScoped<IPlayerMetadataLinkingService, PlayerMetadataLinkingService>();
+builder.Services.AddScoped<IFideRatingListReader, FideRatingListReader>();
+builder.Services.AddScoped<IFideCatalogSeedService, FideCatalogSeedService>();
+builder.Services.AddSingleton<IMaintenanceProgressStore, MaintenanceProgressStore>();
 builder.Services.AddScoped<IMoveInterpreter, MoveInterpreter>();
 builder.Services.AddScoped<IBoardPositionService, BoardPositionService>();
 builder.Services.AddScoped<IMoveInterpreterHelper, MoveInterpreterHelper>();
@@ -117,6 +121,41 @@ builder.Services.AddScoped<IAnalyticsBackfillService, AnalyticsBackfillService>(
 
 var app = builder.Build();
 
+if (args.Any(a => string.Equals(a, "--seed-fide-catalog", StringComparison.OrdinalIgnoreCase)))
+{
+    var force = args.Any(a => string.Equals(a, "--force", StringComparison.OrdinalIgnoreCase));
+    string? listPath = null;
+    for (var i = 0; i < args.Length - 1; i++)
+    {
+        if (string.Equals(args[i], "--path", StringComparison.OrdinalIgnoreCase))
+            listPath = args[i + 1];
+    }
+
+    await using var scope = app.Services.CreateAsyncScope();
+    var seed = scope.ServiceProvider.GetRequiredService<IFideCatalogSeedService>();
+    var outcome = await seed.SeedAsync(listPath, force);
+    if (outcome.Skipped)
+    {
+        Console.WriteLine($"FIDE catalog seed skipped: {outcome.SkipReason}");
+        Environment.Exit(outcome.SkipReason?.Contains("not found", StringComparison.OrdinalIgnoreCase) == true ? 1 : 0);
+    }
+
+    Console.WriteLine(
+        $"FIDE catalog seed: inserted={outcome.RowsInserted}, skippedLines={outcome.RowsSkipped}, source={outcome.SourcePath}");
+    Environment.Exit(0);
+}
+
+if (args.Any(a => string.Equals(a, "--link-player-metadata", StringComparison.OrdinalIgnoreCase)))
+{
+    await using var scope = app.Services.CreateAsyncScope();
+    var linking = scope.ServiceProvider.GetRequiredService<IPlayerMetadataLinkingService>();
+    var outcome = await linking.LinkAllPlayersAsync();
+    Console.WriteLine(
+        $"Player metadata link: processed={outcome.PlayersProcessed}, worldChampion={outcome.WorldChampionLinked}, " +
+        $"fideLinked={outcome.FideLinked}, fideCleared={outcome.FideCleared}, unchanged={outcome.Unchanged}.");
+    Environment.Exit(0);
+}
+
 if (args.Any(a => string.Equals(a, "--backfill-analytics", StringComparison.OrdinalIgnoreCase)))
 {
     int? maxGames = null;
@@ -133,7 +172,7 @@ if (args.Any(a => string.Equals(a, "--backfill-analytics", StringComparison.Ordi
     var outcome = await backfill.BackfillMissingAnalyticsAsync(new AnalyticsBackfillOptions { MaxGames = maxGames });
     Console.WriteLine(
         $"Analytics backfill: considered={outcome.GamesConsidered}, materialized={outcome.GamesMaterialized}, skipped={outcome.GamesSkipped}, failed={outcome.GamesFailed}.");
-    return;
+    Environment.Exit(0);
 }
 
 if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison.OrdinalIgnoreCase)))
@@ -153,7 +192,7 @@ if (args.Any(a => string.Equals(a, "--profile-materialization", StringComparison
         $"{result.GamesPerSecond:F0} games/s, {result.DerivedRowsPerSecond:F0} summary+move rows/s " +
         $"({result.SummaryRowsPerIteration} summaries + {result.MoveRowsPerIteration} move per game). " +
         $"See docs/ANALYTICS_MATERIALIZATION_PERF.md for methodology (PLAN §11 item 12 / DESIGN NFR-3).");
-    return;
+    Environment.Exit(0);
 }
 
 // Configure the HTTP request pipeline.

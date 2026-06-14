@@ -1,18 +1,12 @@
-using Services.Helpers;
+using Interfaces.DTO.Ref;
 
 namespace Services.PlayerMetadata;
 
 /// <summary>
-/// Matches player names against rows loaded from <c>Ref.WorldChampion</c>.
+/// Matches PGN player names to <c>Ref.WorldChampion</c> rows (DESIGN §13.5).
 /// </summary>
 public interface IWorldChampionMatcher
 {
-    /// <summary>Loads champion rows from the database when not already cached for this scope.</summary>
-    Task EnsureLoadedAsync(CancellationToken cancellationToken = default);
-
-    /// <summary>
-    /// True when <paramref name="surname"/> and <paramref name="forenames"/> match a reference row
-    /// using <see cref="PlayerForenamesMatcher"/>.
-    /// </summary>
-    bool IsWorldChampion(string surname, string? forenames);
+    /// <summary>Returns the champion <see cref="WorldChampion.Id"/> when matched; otherwise null.</summary>
+    int? Match(string surname, string forenames, IReadOnlyList<WorldChampion> catalog);
 }

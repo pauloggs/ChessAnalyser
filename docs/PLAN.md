@@ -697,7 +697,11 @@ player (e.g. Petrosian) on the same filters.
 
 **Goal:** Enrich `dbo.Player` from **external reference data** (primarily FIDE bulk files) and support **optional metadata filters** on analytics and game browsing per [DESIGN.md §13](./DESIGN.md).
 
-**Decision (2026):** PGN files being loaded are **metadata-thin** (game headers + names). Player title, federation, sex, and birth year will **not** come from PGN tags in v1. Enrichment is **automatic and offline**: migrations seed `Ref.FidePlayer` and backfill existing players; ETL enriches each game's white/black using that game's **GameYear**, then runs a full idempotent pass — no separate Analyser CLI.
+## Stage 5 — Player metadata enrichment and filtering
+
+> **Reset (2026-06):** Migrations rolled back to `010`, then re-applied through **`012`** with 3NF FKs (`WorldChampionId`, `FidePlayerId`). Prior §15.1–15.3 implementation (denormalised columns, enricher, migration `015` seed) was removed. **Re-implement** matchers and linking in C# against `Interfaces.DTO.Ref.WorldChampion` / `FidePlayer`. Checklists in §15.1–15.3 below are **historical** (pre-reset).
+
+**Decision (2026):** PGN files are metadata-thin. Reference data lives in `Ref.*`; `dbo.Player` holds FKs only. Matching logic is **C# only** (no SQL alias tables).
 
 **Non-goals for Stage 5 v1:** historical rating at game time, reign-period champion filters, Wikidata bulk import, Lichess fallback (optional later slice).
 
@@ -746,20 +750,21 @@ player (e.g. Petrosian) on the same filters.
 
 ---
 
-### 15.3 Ref.FidePlayer catalog + automatic seed (PR 3)
+### 15.3 Ref.FidePlayer catalog + metadata link (PR 3)
 
-**Branch:** `feat/ref-fide-player-catalog`
+**Branch:** `feat/ref-fide-player-catalog` (delivered on `feature/rollback-fide-and-wc-and-simplify`)
 
-1. [x] Migration **`014_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table.
-2. [x] Migration **`015_SeedRefFidePlayer.sql`** + Migrations host — load `data/fide/players_list_foa.txt` into Ref when empty; backfill `dbo.Player`.
-3. [x] **`IPlayerFideMetadataEnricher`** — `EnrichAllAsync()` backfill + `TryEnrichPlayerAsync(playerId, gameYear)` on each persisted game (`EtlService`); `PlayerResolver` sets `WasWorldChampion` on insert only.
-4. [x] **Game-year verification** in `FidePlayerMatcher` — reject candidates whose birth year is after any corpus game year; clear incompatible stored FIDE metadata on re-enrichment.
-5. [x] No manual Analyser CLI import — seed runs as part of `dotnet run --project src/Migrations`.
-6. [x] Service tests (including homonym / Botvinnik fixture).
+1. [x] Migration **`012_CreateRefFidePlayer.sql`** — `Ref.FidePlayer` catalog table + `App.Player.FidePlayerId` FK.
+2. [x] Migration **`014_AddGamePlayerYearIndexes.sql`** — game-year indexes for bulk metadata link.
+3. [x] **`FideRatingListReader`** + **`FideCatalogSeedService`** — load `data/fide/players_list_foa.txt` via Analyser CLI (`--seed-fide-catalog`) or UI; `SqlBulkCopy` batches; not the Migrations host.
+4. [x] **`IPlayerMetadataLinkingService`** — bulk link all players (preload years + FIDE subset, in-memory matchers, batched `MERGE`); per-player link on ETL via `TryLinkPlayerAsync`.
+5. [x] **`PlayerForenameVariantHelper`** — shared PGN variants (Gary/Garry, Robert/Bobby, …) for WC and FIDE matchers; title-based FIDE disambiguation.
+6. [x] **Maintenance API** — `SeedFideCatalog`, `LinkPlayerMetadata`, `CancelMaintenance`, `MaintenanceProgress` (+ UI section).
+7. [x] Service tests (matcher, reader, bulk link path).
 
-**Acceptance:** migrations populate Ref + players when FIDE file is present; new ETL players auto-enriched per game year; idempotent re-run.
+**Acceptance:** FIDE file seeds `Ref.FidePlayer` when present; link backfill sets WC/FIDE FKs idempotently; ~5k players link in seconds.
 
-**Note:** ~1.8M-row catalog is streamed by the Migrations host (not a multi-GB SQL INSERT script in git).
+**Note:** ~1.8M-row catalog load may take several minutes; linking is fast once catalog is present.
 
 ---
 

@@ -2,7 +2,7 @@
 
 **Purpose:** Let a **new** chat or agent continue without re-reading full history. Update this file when you finish a meaningful slice of work.
 
-**Last updated:** 2026-06-11 (PLAN §15.3 merged — PR #75: `Ref.FidePlayer` + automatic enrichment).
+**Last updated:** 2026-06-13 (FIDE catalog seed CLI/UI, bulk metadata linking, cancel support).
 
 ---
 
@@ -27,11 +27,12 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 - **Done (analytics groundwork):** **PLAN §11** (items 1–13) and **§12** (metrics HTTP API + local **`wwwroot`** UI).
 - **Done (style metrics Phases 1–8 except EcoConcentration):** through **`EcoDiversity`**; **`EcoConcentration`** unchecked (§12.6 item 16).
 - **Done (corpus benchmarks):** all benchmark-enabled style metrics through Phase 8.
-- **Done (player metadata v0):** `WasWorldChampion` on `dbo.Player`, `Ref.WorldChampion` reference table (migrations `011`/`013`); backfill via `IPlayerFideMetadataEnricher.EnrichAllAsync()` (Migrations host + end of ETL).
-- **Done (player metadata v1 schema):** FIDE columns on `dbo.Player` + `UpdatePlayerFideMetadataAsync` (PLAN §15.1).
-- **Done (player metadata §15.2):** `FideRatingListReader`, `FidePlayerMatcher`, `GetPlayerCorpusActivityAsync`.
-- **Done (player metadata §15.3, PR #75):** `Ref.FidePlayer` catalog; migration `015` + Migrations host seed from `data/fide/players_list_foa.txt`; `IPlayerFideMetadataEnricher` (idempotent backfill + per-game ETL enrichment with **GameYear** verification); homonym rejection when birth year > corpus game years.
-- **Next (player metadata):** PLAN §15.4 API — expose metadata on player picker.
+- **Done (player metadata schema):** Migrations `011`/`012` — `Ref.WorldChampion` (seeded), `Ref.FidePlayer` (retained catalog), `App.Player.WorldChampionId` / `FidePlayerId` FKs. DTOs: `Interfaces.DTO.Ref.WorldChampion`, `FidePlayer`. No denormalised FIDE/WC columns on `App.Player`.
+- **Done (player metadata ops):** FIDE catalog seed via `dotnet run --project src/Analyser -- --seed-fide-catalog` (`--force`, `--path`) or UI **Player metadata** section; link via `--link-player-metadata` or same UI (~5k players in a few seconds — bulk preload + batch `MERGE`). API: `GET /Analyser/FideCatalogStatus`, `POST /Analyser/SeedFideCatalog`, `POST /Analyser/LinkPlayerMetadata`, `POST /Analyser/CancelMaintenance`, `GET /Analyser/MaintenanceProgress`. `ListPath` resolves from repo root (`RepoRootLocator`). See `data/fide/README.md`.
+- **Done (schema layout):** Migration `013` — operational tables in **`App.*`**; `Ref.*` + `dbo.SchemaVersions` unchanged; C# SQL uses `App.` prefixes. Migration `014` — `IX_Game_*PlayerId_GameYear` for metadata link perf.
+- **Done (DTO layout):** `Interfaces.DTO.Ref` (`WorldChampion`, `FidePlayer`); `Interfaces.DTO.App` (`Player`, `Game`, `BoardPosition`, `GameMoveFact`, `GamePositionSummary`, `GameParseError`); parsing/API DTOs remain in `Interfaces.DTO`.
+- **Pending (player metadata API/filters):** PLAN §15.4+ — expose enriched fields on player picker; analytics/game filters.
+- **Done (player metadata linking):** `IWorldChampionMatcher` / `IFidePlayerMatcher` / `IPlayerMetadataLinkingService` — sets `App.Player.WorldChampionId` / `FidePlayerId` on ETL and via bulk `--link-player-metadata` / UI backfill. Shared `PlayerForenameVariantHelper` (Gary→Garry, etc.); title-based FIDE disambiguation.
 - **HTTP auth for metrics is deferred** while the app stays **local-only / undeployed** (see PLAN §12.1 / §13).
 
 ---
@@ -51,7 +52,7 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ### 3.1 Recommended next step (small slice)
 
-**Do next:** [PLAN §15.4](./PLAN.md) — expose player metadata on API / player picker.
+**Do next:** PLAN §15.4 API — expose metadata on player picker (`fideId`, `federation`, `wasWorldChampion`, etc.).
 
 **Then (in order):** §15.5–15.7 filters.
 
@@ -72,9 +73,9 @@ All **Design / Plan / Implement** specs for **board-position analytics** live in
 
 ## 5. Technical snapshot
 
-- **`dbo.GameMove`** + **`dbo.GamePositionSummary`** — derived on ETL/backfill; required for style metrics.
+- **`App.GameMove`** + **`App.GamePositionSummary`** — derived on ETL/backfill; required for style metrics.
 - **Corpus benchmarks:** opt-in `includeCorpusBenchmark` + `benchmarkMinGames` (default 30); shared `ICorpusBenchmarkCalculator`.
-- **Player metadata today:** `WasWorldChampion` (on insert + enricher backfill); FIDE columns (`FideId`, `Federation`, `Sex`, `FideTitle`, `BirthYear`) populated automatically when `Ref.FidePlayer` is seeded — migrations host backfill + ETL per-game/`EnrichAllAsync`. No manual Analyser CLI. Metadata **filters** on analytics/games still pending (§15.5–15.7).
+- **Player metadata today:** `App.Player` = identity + nullable `WorldChampionId` / `FidePlayerId` FKs; attributes on `Ref.WorldChampion` / `Ref.FidePlayer`. C# matchers link FKs on ETL and bulk link backfill (CLI/UI). FIDE catalog loaded separately via Analyser seed (not Migrations host). API/filters not wired yet.
 - **Conventions:** [PLAN.md §7](./PLAN.md), [DESIGN.md §8](./DESIGN.md).
 
 ---

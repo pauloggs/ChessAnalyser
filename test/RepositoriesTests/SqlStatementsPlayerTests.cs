@@ -5,45 +5,34 @@ namespace RepositoriesTests;
 public class SqlStatementsPlayerTests
 {
     [Fact]
-    public void GetPlayers_SelectsFideMetadataColumns()
+    public void GetPlayers_IncludesMetadataForeignKeys()
     {
-        Assert.Contains("FideId", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("Federation", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("Sex", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("FideTitle", SqlStatements.GetPlayers, StringComparison.Ordinal);
-        Assert.Contains("BirthYear", SqlStatements.GetPlayers, StringComparison.Ordinal);
+        Assert.Contains("WorldChampionId", SqlStatements.GetPlayers, StringComparison.Ordinal);
+        Assert.Contains("FidePlayerId", SqlStatements.GetPlayers, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GetPlayersBySurname_SelectsFideMetadataColumns()
+    public void UpdatePlayerMetadataLinks_UpdatesForeignKeys()
     {
-        Assert.Contains("FideId", SqlStatements.GetPlayersBySurname, StringComparison.Ordinal);
-        Assert.Contains("BirthYear", SqlStatements.GetPlayersBySurname, StringComparison.Ordinal);
+        var sql = SqlStatements.UpdatePlayerMetadataLinks;
+        Assert.Contains("UPDATE App.Player", sql, StringComparison.Ordinal);
+        Assert.Contains("WorldChampionId", sql, StringComparison.Ordinal);
+        Assert.Contains("FidePlayerId", sql, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void UpdatePlayerFideMetadata_UpdatesAllFideColumns()
+    public void GetPlayersBySurname_SelectsIdentityColumnsOnly()
     {
-        var sql = SqlStatements.UpdatePlayerFideMetadata;
-        Assert.Contains("FideId = @FideId", sql, StringComparison.Ordinal);
-        Assert.Contains("Federation = @Federation", sql, StringComparison.Ordinal);
-        Assert.Contains("Sex = @Sex", sql, StringComparison.Ordinal);
-        Assert.Contains("FideTitle = @FideTitle", sql, StringComparison.Ordinal);
-        Assert.Contains("BirthYear = @BirthYear", sql, StringComparison.Ordinal);
-        Assert.Contains("WHERE Id = @Id", sql, StringComparison.Ordinal);
+        Assert.Contains("Surname", SqlStatements.GetPlayersBySurname, StringComparison.Ordinal);
+        Assert.Contains("Forenames", SqlStatements.GetPlayersBySurname, StringComparison.Ordinal);
     }
 
     [Fact]
-    public void GetWorldChampions_SelectsFromRefSchema()
+    public void InsertPlayer_InsertsSurnameAndForenames()
     {
-        Assert.Contains("Ref.WorldChampion", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
-        Assert.Contains("ChampionOrder", SqlStatements.GetWorldChampions, StringComparison.Ordinal);
-    }
-
-    [Fact]
-    public void GetPlayerCorpusActivity_SelectsMinMaxGameYear()
-    {
-        Assert.Contains("MIN(g.GameYear)", SqlStatements.GetPlayerCorpusActivity, StringComparison.Ordinal);
-        Assert.Contains("MAX(g.GameYear)", SqlStatements.GetPlayerCorpusActivity, StringComparison.Ordinal);
+        var sql = SqlStatements.InsertPlayer;
+        Assert.Contains("INSERT INTO App.Player (Surname, Forenames)", sql, StringComparison.Ordinal);
+        Assert.Contains("@Surname", sql, StringComparison.Ordinal);
+        Assert.Contains("@Forenames", sql, StringComparison.Ordinal);
     }
 }
