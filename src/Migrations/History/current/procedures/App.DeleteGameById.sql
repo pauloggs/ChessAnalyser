@@ -1,8 +1,5 @@
 SET ANSI_NULLS ON
 SET QUOTED_IDENTIFIER ON
--- Explicit delete path for a game and dependent rows.
--- Avoids broad ON DELETE CASCADE behavior by requiring an intentional proc call.
-
 CREATE   PROCEDURE App.DeleteGameById
     @GameId INT
 AS

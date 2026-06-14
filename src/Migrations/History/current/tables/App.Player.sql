@@ -1,13 +1,9 @@
 SET ANSI_NULLS ON
-GO
-
 SET QUOTED_IDENTIFIER ON
-GO
-
 CREATE TABLE [App].[Player](
 	[Id] [int] IDENTITY(1,1) NOT NULL,
-	[Surname] [nvarchar](200) NOT NULL,
-	[Forenames] [nvarchar](400) NOT NULL,
+	[Surname] [nvarchar](200) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
+	[Forenames] [nvarchar](400) COLLATE SQL_Latin1_General_CP1_CI_AS NOT NULL,
 	[WorldChampionId] [int] NULL,
 	[FidePlayerId] [int] NULL,
  CONSTRAINT [PK_Player] PRIMARY KEY CLUSTERED 
@@ -20,21 +16,11 @@ CREATE TABLE [App].[Player](
 	[Forenames] ASC
 )WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON, OPTIMIZE_FOR_SEQUENTIAL_KEY = OFF) ON [PRIMARY]
 ) ON [PRIMARY]
-GO
 
 ALTER TABLE [App].[Player] ADD  DEFAULT (N'') FOR [Forenames]
-GO
-
-ALTER TABLE [App].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
-REFERENCES [Ref].[WorldChampion] ([Id])
-GO
-
-ALTER TABLE [App].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
-GO
-
 ALTER TABLE [App].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_FidePlayer] FOREIGN KEY([FidePlayerId])
 REFERENCES [Ref].[FidePlayer] ([Id])
-GO
-
 ALTER TABLE [App].[Player] CHECK CONSTRAINT [FK_Player_FidePlayer]
-GO
+ALTER TABLE [App].[Player]  WITH CHECK ADD  CONSTRAINT [FK_Player_WorldChampion] FOREIGN KEY([WorldChampionId])
+REFERENCES [Ref].[WorldChampion] ([Id])
+ALTER TABLE [App].[Player] CHECK CONSTRAINT [FK_Player_WorldChampion]
